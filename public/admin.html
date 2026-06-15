@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin — NZSL Cultural Foundation</title>
+    <meta name="theme-color" content="#1a1a1a" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <!-- Login Screen -->
+    <div id="loginPage" class="admin-login-page">
+      <div class="admin-login-card">
+        <h1 style="font-family: var(--font-display)">NZSL Foundation</h1>
+        <p>Admin Panel — Sign in to manage content</p>
+        <form id="loginForm">
+          <div class="form-group">
+            <label class="form-label" for="email">Email</label>
+            <input
+              class="form-input"
+              id="email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <input
+              class="form-input"
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+          <button class="btn btn-primary btn-full" type="submit" id="loginBtn">
+            Sign In
+          </button>
+          <div
+            id="loginError"
+            class="form-error"
+            style="margin-top: 1rem"
+          ></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboardPage" class="admin-layout" style="display: none">
+      <!-- Sidebar -->
+      <aside class="admin-sidebar">
+        <div class="admin-sidebar-logo">
+          <img
+            src="/logo.png"
+            alt=""
+            style="width: 28px; height: 28px; border-radius: 4px"
+          />
+          NZSL Admin
+        </div>
+        <ul class="admin-sidebar-nav">
+          <li>
+            <a href="#" class="active" data-section="dashboard">📊 Dashboard</a>
+          </li>
+          <div class="admin-sidebar-section">Content</div>
+          <li><a href="#" data-section="events">🎪 Events</a></li>
+          <li><a href="#" data-section="gallery">🖼️ Gallery</a></li>
+          <li><a href="#" data-section="stories">📖 Stories</a></li>
+          <div class="admin-sidebar-section">People</div>
+          <li><a href="#" data-section="leadership">👥 Leadership</a></li>
+          <div class="admin-sidebar-section">Settings</div>
+          <li><a href="#" data-section="settings">⚙️ Site Settings</a></li>
+        </ul>
+        <div
+          style="
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+          "
+        >
+          <a
+            href="/"
+            target="_blank"
+            class="admin-btn"
+            style="
+              width: 100%;
+              text-align: center;
+              display: block;
+              margin-bottom: 0.5rem;
+            "
+            >🌐 View Site</a
+          >
+          <button
+            id="btnLogout"
+            class="admin-btn admin-btn-danger"
+            style="width: 100%"
+          >
+            Log Out
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <!-- Dashboard Section -->
+        <div id="section-dashboard" class="admin-section">
+          <div class="admin-header">
+            <h1>Dashboard</h1>
+            <div
+              id="adminProfile"
+              style="font-size: 0.85rem; color: var(--text-secondary)"
+            ></div>
+          </div>
+          <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+              <div class="stat-card-icon events">🎪</div>
+              <div class="stat-card-value" id="statEvents">0</div>
+              <div class="stat-card-label">Events</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-icon gallery">🖼️</div>
+              <div class="stat-card-value" id="statGallery">0</div>
+              <div class="stat-card-label">Gallery Items</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-icon stories">📖</div>
+              <div class="stat-card-value" id="statStories">0</div>
+              <div class="stat-card-label">Stories</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-icon news">👥</div>
+              <div class="stat-card-value" id="statLeadership">0</div>
+              <div class="stat-card-label">Leaders</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Events Section -->
+        <div id="section-events" class="admin-section" style="display: none">
+          <div class="admin-header">
+            <h1>Events</h1>
+            <div class="admin-header-actions">
+              <button class="btn btn-primary btn-sm" onclick="showEventModal()">
+                + New Event
+              </button>
+            </div>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Date</th>
+                  <th>Category</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="eventsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Gallery Section -->
+        <div id="section-gallery" class="admin-section" style="display: none">
+          <div class="admin-header">
+            <h1>Gallery</h1>
+            <div class="admin-header-actions">
+              <button
+                class="btn btn-primary btn-sm"
+                onclick="showGalleryUpload()"
+              >
+                + Upload Image
+              </button>
+            </div>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Category</th>
+                  <th>Photographer</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="galleryTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Stories Section -->
+        <div id="section-stories" class="admin-section" style="display: none">
+          <div class="admin-header">
+            <h1>Stories</h1>
+            <div class="admin-header-actions">
+              <button class="btn btn-primary btn-sm" onclick="showStoryModal()">
+                + New Story
+              </button>
+            </div>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Category</th>
+                  <th>Author</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="storiesTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Leadership Section -->
+        <div
+          id="section-leadership"
+          class="admin-section"
+          style="display: none"
+        >
+          <div class="admin-header">
+            <h1>Leadership</h1>
+            <div class="admin-header-actions">
+              <button
+                class="btn btn-primary btn-sm"
+                onclick="showLeaderModal()"
+              >
+                + Add Leader
+              </button>
+            </div>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Order</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="leadershipTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="section-settings" class="admin-section" style="display: none">
+          <div class="admin-header">
+            <h1>Site Settings</h1>
+            <div class="admin-header-actions">
+              <button class="btn btn-primary btn-sm" onclick="saveSettings()">
+                Save Settings
+              </button>
+            </div>
+          </div>
+          <div id="settingsForm"></div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modalContainer"></div>
+
+    <script src="/js/admin.js"></script>
+  </body>
+</html>

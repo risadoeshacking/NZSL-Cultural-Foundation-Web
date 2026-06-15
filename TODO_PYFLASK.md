@@ -1,0 +1,25 @@
+# Python/Flask migration TODO
+
+- [x] Create `app.py` Flask server that serves:
+  - [x] Static files from `public/`
+  - [x] Uploads from `/uploads/*`
+  - [x] SPA fallback to `public/index.html`
+  - [x] API routes under `/api/*` matching the existing Node behavior (best-effort)
+- [x] Add `requirements.txt` with needed Python dependencies (Flask, psycopg, PyJWT, bcrypt, flask-cors, rate limiting)
+- [x] Implement PostgreSQL access layer using env vars `DATABASE_URL` or `PG*`
+- [x] Implement JWT auth middleware compatible with Node:
+  - [x] `Authorization: Bearer <token>`
+  - [x] verify with `JWT_SECRET`
+  - [x] load admin row from `admins` table
+- [x] Implement API endpoints:
+  - [x] `/api/health`
+  - [x] `/api/auth/login`, `/api/auth/profile`, `/api/auth/change-password`
+  - [x] `/api/events` + admin CRUD
+  - [x] `/api/news` + admin CRUD
+  - [x] `/api/stories` + admin CRUD
+  - [x] `/api/gallery` + admin CRUD + upload
+  - [x] `/api/dashboard/stats`
+- [x] Implement multipart image upload validation (jpg/png/gif/webp/svg), max 10MB default
+- [ ] Minimal XSS sanitization: verify it matches expectations and expand if needed
+- [ ] Update README instructions to run `python3 app.py`
+- [ ] Run quick local smoke tests with curl / browser
