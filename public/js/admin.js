@@ -41,6 +41,7 @@ function switchSection(section) {
   });
   if (section === "dashboard") loadDashboardStats();
   if (section === "events") loadEventsTable();
+  if (section === "posts") loadPostsTable();
   if (section === "gallery") loadGalleryTable();
   if (section === "stories") loadStoriesTable();
   if (section === "leadership") loadLeadershipTable();
@@ -50,14 +51,17 @@ function switchSection(section) {
 // --- Dashboard ---
 async function loadDashboardStats() {
   try {
-    const [events, gallery, stories, leadership] = await Promise.all([
+    const [events, posts, gallery, stories, leadership] = await Promise.all([
       adminFetch("/events/admin/all", { token: currentToken }),
+      adminFetch("/news/admin/all", { token: currentToken }),
       adminFetch("/gallery/admin/all", { token: currentToken }),
       adminFetch("/stories/admin/all", { token: currentToken }),
       adminFetch("/leadership/admin/all", { token: currentToken }),
     ]);
     document.getElementById("statEvents").textContent =
       events.events?.length || 0;
+    document.getElementById("statPosts").textContent =
+      posts.news?.length || 0;
     document.getElementById("statGallery").textContent =
       gallery.images?.length || 0;
     document.getElementById("statStories").textContent =
@@ -83,18 +87,14 @@ async function loadEventsTable() {
       .map(
         (e) => `
       <tr>
-        <td><div class="admin-table-title">${
-          e.title
-        }</div><div class="admin-table-subtitle">${e.location || ""}</div></td>
+        <td><div class="admin-table-title">${e.title}</div><div class="admin-table-subtitle">${e.location || ""}</div></td>
         <td>${new Date(e.date).toLocaleDateString("en-NZ")}</td>
         <td>${e.category}</td>
         <td><span class="status-badge ${e.status}">${e.status}</span></td>
-        <td class="admin-actions">
+        <td class="admin-actions-cell"><div class="admin-actions">
           <button class="admin-btn" onclick="editEvent('${e.id}')">Edit</button>
-          <button class="admin-btn admin-btn-danger" onclick="deleteEvent('${
-            e.id
-          }')">Delete</button>
-        </td>
+          <button class="admin-btn admin-btn-danger" onclick="deleteEvent('${e.id}')">Delete</button>
+        </div></td>
       </tr>
     `
       )
@@ -222,6 +222,162 @@ async function deleteEvent(id) {
   }
 }
 
+// --- Posts (News) ---
+async function loadPostsTable() {
+  try {
+    const data = await adminFetch("/news/admin/all", { token: currentToken });
+    const tbody = document.getElementById("postsTableBody");
+    tbody.innerHTML = (data.news || [])
+      .map(
+        (p) => `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:12px">
+            ${p.thumbnail
+              ? `<img src="${p.thumbnail}" style="width:48px;height:36px;object-fit:cover;border-radius:4px;flex-shrink:0;border:1px solid var(--border)" />`
+              : `<div style="width:48px;height:36px;border-radius:4px;background:var(--bg-elevated);border:1px solid var(--border);flex-shrink:0"></div>`}
+            <div>
+              <div class="admin-table-title">${p.title}</div>
+              <div class="admin-table-subtitle">${p.summary || ""}</div>
+            </div>
+          </div>
+        </td>
+        <td>${p.category}</td>
+        <td>${p.author || ""}</td>
+        <td><span class="status-badge ${p.status}">${p.status}</span></td>
+        <td class="admin-actions-cell"><div class="admin-actions">
+          <button class="admin-btn" onclick="editPost('${p.id}')">Edit</button>
+          <button class="admin-btn admin-btn-danger" onclick="deletePost('${p.id}')">Delete</button>
+        </div></td>
+      </tr>
+    `
+      )
+      .join("");
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function showPostModal(post = null) {
+  const isEdit = !!post;
+  const currentThumb = post?.thumbnail || "";
+  document.getElementById("modalContainer").innerHTML = `
+    <div class="admin-modal-overlay" onclick="closeModal(event)">
+      <div class="admin-modal" onclick="event.stopPropagation()">
+        <h2>${isEdit ? "Edit Post" : "New Post"}</h2>
+        <form id="postForm" onsubmit="savePost(event, ${isEdit ? `'${post.id}'` : "null"})">
+
+          <div class="admin-form-group">
+            <label>Cover Image</label>
+            ${currentThumb ? `<div id="postThumbPreviewWrap" style="margin-bottom:8px;border-radius:6px;overflow:hidden;max-height:160px;">
+              <img id="postThumbPreview" src="${currentThumb}" style="width:100%;height:160px;object-fit:cover;display:block;" />
+            </div>` : `<div id="postThumbPreviewWrap" style="display:none;margin-bottom:8px;border-radius:6px;overflow:hidden;max-height:160px;">
+              <img id="postThumbPreview" src="" style="width:100%;height:160px;object-fit:cover;display:block;" />
+            </div>`}
+            <input type="file" id="postImageInput" accept="image/*" style="font-size:0.8rem;width:100%" onchange="previewPostImage(this)" />
+            <p style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">JPG, PNG, WebP — max 10MB</p>
+            <input type="hidden" name="thumbnail" id="postThumbInput" value="${currentThumb}" />
+          </div>
+
+          <div class="admin-form-group"><label>Title</label><input name="title" value="${post?.title || ""}" required /></div>
+          <div class="admin-form-group"><label>Summary</label><input name="summary" value="${post?.summary || ""}" placeholder="Short description shown in listings..." /></div>
+          <div class="admin-form-row">
+            <div class="admin-form-group"><label>Category</label><select name="category">
+              <option value="general" ${post?.category === "general" ? "selected" : ""}>General</option>
+              <option value="cultural" ${post?.category === "cultural" ? "selected" : ""}>Cultural</option>
+              <option value="community" ${post?.category === "community" ? "selected" : ""}>Community</option>
+              <option value="announcement" ${post?.category === "announcement" ? "selected" : ""}>Announcement</option>
+            </select></div>
+            <div class="admin-form-group"><label>Author</label><input name="author" value="${post?.author || ""}" /></div>
+          </div>
+          <div class="admin-form-group"><label>Content</label><textarea name="content" rows="8" required>${post?.content || ""}</textarea></div>
+          <div class="admin-form-group"><label>Status</label><select name="status">
+            <option value="published" ${post?.status === "published" ? "selected" : ""}>Published</option>
+            <option value="draft" ${post?.status === "draft" ? "selected" : ""}>Draft</option>
+          </select></div>
+          <div class="admin-form-actions">
+            <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm" id="postSaveBtn">${isEdit ? "Update" : "Publish"}</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+}
+
+function previewPostImage(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const wrap = document.getElementById("postThumbPreviewWrap");
+    const img = document.getElementById("postThumbPreview");
+    img.src = e.target.result;
+    wrap.style.display = "block";
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+async function savePost(e, id) {
+  e.preventDefault();
+  const btn = document.getElementById("postSaveBtn");
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+
+  try {
+    // Upload image first if a file was chosen
+    const fileInput = document.getElementById("postImageInput");
+    let thumbnail = document.getElementById("postThumbInput")?.value || "";
+
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      const fd = new FormData();
+      fd.append("image", fileInput.files[0]);
+      const res = await fetch(`${API_BASE}/news/admin/thumbnail`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${currentToken}` },
+        body: fd,
+      });
+      if (!res.ok) throw new Error("Image upload failed");
+      const uploadData = await res.json();
+      thumbnail = uploadData.thumbnail;
+    }
+
+    const form = new FormData(e.target);
+    const body = Object.fromEntries(form.entries());
+    if (thumbnail) body.thumbnail = thumbnail;
+
+    if (id) {
+      await adminFetch(`/news/admin/${id}`, { token: currentToken, method: "PUT", body });
+    } else {
+      await adminFetch("/news/admin", { token: currentToken, method: "POST", body });
+    }
+    closeModal();
+    loadPostsTable();
+  } catch (err) {
+    alert(err.message);
+    btn.disabled = false;
+    btn.textContent = id ? "Update" : "Publish";
+  }
+}
+
+async function editPost(id) {
+  try {
+    const data = await adminFetch("/news/admin/all", { token: currentToken });
+    const post = data.news.find((p) => p.id === id);
+    if (post) showPostModal(post);
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function deletePost(id) {
+  if (!confirm("Delete this post?")) return;
+  try {
+    await adminFetch(`/news/admin/${id}`, { token: currentToken, method: "DELETE" });
+    loadPostsTable();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
 // --- Gallery ---
 async function loadGalleryTable() {
   try {
@@ -236,11 +392,9 @@ async function loadGalleryTable() {
         <td><div class="admin-table-title">${img.title || "Untitled"}</div></td>
         <td>${img.category}</td>
         <td>${img.photographer || ""}</td>
-        <td class="admin-actions">
-          <button class="admin-btn admin-btn-danger" onclick="deleteGalleryImage('${
-            img.id
-          }')">Delete</button>
-        </td>
+        <td class="admin-actions-cell"><div class="admin-actions">
+          <button class="admin-btn admin-btn-danger" onclick="deleteGalleryImage('${img.id}')">Delete</button>
+        </div></td>
       </tr>
     `
       )
@@ -323,12 +477,10 @@ async function loadStoriesTable() {
         <td>${s.category}</td>
         <td>${s.author || ""}</td>
         <td><span class="status-badge ${s.status}">${s.status}</span></td>
-        <td class="admin-actions">
+        <td class="admin-actions-cell"><div class="admin-actions">
           <button class="admin-btn" onclick="editStory('${s.id}')">Edit</button>
-          <button class="admin-btn admin-btn-danger" onclick="deleteStory('${
-            s.id
-          }')">Delete</button>
-        </td>
+          <button class="admin-btn admin-btn-danger" onclick="deleteStory('${s.id}')">Delete</button>
+        </div></td>
       </tr>
     `
       )
@@ -459,10 +611,10 @@ async function loadLeadershipTable() {
         <td>${l.role}</td>
         <td><span class="status-badge ${l.status}">${l.status}</span></td>
         <td>${l.sort_order}</td>
-        <td class="admin-actions">
+        <td class="admin-actions-cell"><div class="admin-actions">
           <button class="admin-btn" onclick="editLeader('${l.id}')">Edit</button>
           <button class="admin-btn admin-btn-danger" onclick="deleteLeader('${l.id}')">Delete</button>
-        </td>
+        </div></td>
       </tr>
     `
       )
@@ -474,72 +626,104 @@ async function loadLeadershipTable() {
 
 function showLeaderModal(leader = null) {
   const isEdit = !!leader;
+  const currentPhoto = leader?.photo_url || "";
   document.getElementById("modalContainer").innerHTML = `
     <div class="admin-modal-overlay" onclick="closeModal(event)">
       <div class="admin-modal" onclick="event.stopPropagation()">
-        <h2>${isEdit ? "Edit Leader" : "Add Leader"}</h2>
-        <form id="leaderForm" onsubmit="saveLeader(event, ${
-          isEdit ? `'${leader.id}'` : "null"
-        })">
-          <div class="admin-form-group"><label>Name</label><input name="name" value="${
-            leader?.name || ""
-          }" required /></div>
-          <div class="admin-form-group"><label>Role</label><input name="role" value="${
-            leader?.role || ""
-          }" required /></div>
-          <div class="admin-form-group"><label>Bio</label><textarea name="bio" rows="4">${
-            leader?.bio || ""
-          }</textarea></div>
-          <div class="admin-form-group"><label>Contribution</label><textarea name="contribution" rows="3">${
-            leader?.contribution || ""
-          }</textarea></div>
+        <h2>${isEdit ? "Edit Person" : "Add Person"}</h2>
+        <form id="leaderForm" onsubmit="saveLeader(event, ${isEdit ? `'${leader.id}'` : "null"})">
+
+          <div class="admin-form-group">
+            <label>Photo</label>
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px">
+              <div id="photoPreviewWrap" style="
+                width:80px;height:80px;border-radius:50%;overflow:hidden;
+                background:var(--bg-elevated);border:2px solid var(--border);
+                display:flex;align-items:center;justify-content:center;flex-shrink:0;
+              ">
+                ${currentPhoto
+                  ? `<img id="photoPreview" src="${currentPhoto}" style="width:100%;height:100%;object-fit:cover" />`
+                  : `<span id="photoPreview" style="font-size:1.8rem;color:var(--text-tertiary)">&#128100;</span>`}
+              </div>
+              <div style="flex:1">
+                <input type="file" id="photoFileInput" accept="image/*" style="font-size:0.8rem;width:100%" onchange="previewLeaderPhoto(this)" />
+                <p style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">JPG, PNG, WebP — max 10MB</p>
+              </div>
+            </div>
+            <input type="hidden" name="photo_url" id="photoUrlInput" value="${currentPhoto}" />
+          </div>
+
+          <div class="admin-form-group"><label>Full Name</label><input name="name" value="${leader?.name || ""}" required /></div>
+          <div class="admin-form-group"><label>Role / Title</label><input name="role" value="${leader?.role || ""}" required placeholder="e.g. President, Cultural Director" /></div>
+          <div class="admin-form-group"><label>About them</label><textarea name="bio" rows="4" placeholder="A short bio...">${leader?.bio || ""}</textarea></div>
+          <div class="admin-form-group"><label>What they do</label><textarea name="contribution" rows="3" placeholder="Their key contribution or focus area...">${leader?.contribution || ""}</textarea></div>
           <div class="admin-form-row">
-            <div class="admin-form-group"><label>Sort Order</label><input name="sort_order" type="number" value="${
-              leader?.sort_order || 0
-            }" /></div>
+            <div class="admin-form-group"><label>Display Order</label><input name="sort_order" type="number" value="${leader?.sort_order || 0}" /></div>
             <div class="admin-form-group"><label>Status</label><select name="status">
-              <option value="active" ${
-                leader?.status === "active" ? "selected" : ""
-              }>Active</option>
-              <option value="inactive" ${
-                leader?.status === "inactive" ? "selected" : ""
-              }>Inactive</option>
+              <option value="active" ${leader?.status === "active" ? "selected" : ""}>Visible</option>
+              <option value="inactive" ${leader?.status === "inactive" ? "selected" : ""}>Hidden</option>
             </select></div>
           </div>
           <div class="admin-form-actions">
             <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary btn-sm">${
-              isEdit ? "Update" : "Create"
-            }</button>
+            <button type="submit" class="btn btn-primary btn-sm" id="leaderSaveBtn">${isEdit ? "Update" : "Add Person"}</button>
           </div>
         </form>
       </div>
     </div>`;
 }
 
+function previewLeaderPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const wrap = document.getElementById("photoPreviewWrap");
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    wrap.innerHTML = `<img id="photoPreview" src="${e.target.result}" style="width:100%;height:100%;object-fit:cover" />`;
+  };
+  reader.readAsDataURL(file);
+}
+
 async function saveLeader(e, id) {
   e.preventDefault();
-  const form = new FormData(e.target);
-  const body = Object.fromEntries(form.entries());
-  body.sort_order = parseInt(body.sort_order) || 0;
+  const btn = document.getElementById("leaderSaveBtn");
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+
   try {
-    if (id) {
-      await adminFetch(`/leadership/admin/${id}`, {
-        token: currentToken,
-        method: "PUT",
-        body,
-      });
-    } else {
-      await adminFetch("/leadership/admin", {
-        token: currentToken,
+    // Upload photo first if a file was selected
+    const fileInput = document.getElementById("photoFileInput");
+    let photo_url = document.getElementById("photoUrlInput")?.value || "";
+
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      const fd = new FormData();
+      fd.append("photo", fileInput.files[0]);
+      const res = await fetch(`${API_BASE}/leadership/admin/photo`, {
         method: "POST",
-        body,
+        headers: { Authorization: `Bearer ${currentToken}` },
+        body: fd,
       });
+      if (!res.ok) throw new Error("Photo upload failed");
+      const uploadData = await res.json();
+      photo_url = uploadData.photo_url;
+    }
+
+    const form = new FormData(e.target);
+    const body = Object.fromEntries(form.entries());
+    body.sort_order = parseInt(body.sort_order) || 0;
+    if (photo_url) body.photo_url = photo_url;
+
+    if (id) {
+      await adminFetch(`/leadership/admin/${id}`, { token: currentToken, method: "PUT", body });
+    } else {
+      await adminFetch("/leadership/admin", { token: currentToken, method: "POST", body });
     }
     closeModal();
     loadLeadershipTable();
   } catch (err) {
     alert(err.message);
+    btn.disabled = false;
+    btn.textContent = "Save";
   }
 }
 
@@ -583,16 +767,23 @@ async function loadSettings() {
       .map(
         ([cat, settings]) => `
       <div class="admin-table-container" style="margin-bottom: 1.5rem">
-        <div class="admin-table-header"><h2 style="text-transform: capitalize">${cat} Settings</h2></div>
+        <div class="admin-table-header" style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border)">
+          <h2 style="text-transform: capitalize; font-size: 1rem; margin: 0">${cat} Settings</h2>
+        </div>
         <div style="padding: 1.5rem">
           ${settings
             .map(
               (s) => `
             <div class="admin-form-group">
-              <label>${s.key.replace(/_/g, " ")}</label>
-              <input data-key="${s.key}" data-category="${
-                s.category
-              }" class="setting-input" value="${s.value || ""}" />
+              <label>${s.label || s.key.replace(/_/g, " ")}</label>
+              <input
+                data-key="${s.key}"
+                data-category="${s.category}"
+                class="setting-input"
+                type="url"
+                placeholder="https://"
+                value="${s.value || ""}"
+              />
             </div>
           `
             )
@@ -603,7 +794,8 @@ async function loadSettings() {
       )
       .join("");
   } catch (e) {
-    console.error(e);
+    document.getElementById("settingsForm").innerHTML =
+      '<p style="color:var(--text-muted);padding:1.5rem">No settings found. Run the database migration to add the site_settings table.</p>';
   }
 }
 

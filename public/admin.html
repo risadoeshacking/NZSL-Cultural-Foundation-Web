@@ -68,16 +68,17 @@
         </div>
         <ul class="admin-sidebar-nav">
           <li>
-            <a href="#" class="active" data-section="dashboard">📊 Dashboard</a>
+            <a href="#" class="active" data-section="dashboard">Dashboard</a>
           </li>
-          <div class="admin-sidebar-section">Content</div>
-          <li><a href="#" data-section="events">🎪 Events</a></li>
-          <li><a href="#" data-section="gallery">🖼️ Gallery</a></li>
-          <li><a href="#" data-section="stories">📖 Stories</a></li>
-          <div class="admin-sidebar-section">People</div>
-          <li><a href="#" data-section="leadership">👥 Leadership</a></li>
-          <div class="admin-sidebar-section">Settings</div>
-          <li><a href="#" data-section="settings">⚙️ Site Settings</a></li>
+          <li class="admin-sidebar-section">Content</li>
+          <li><a href="#" data-section="events">Events</a></li>
+          <li><a href="#" data-section="posts">Posts</a></li>
+          <li><a href="#" data-section="gallery">Gallery</a></li>
+          <li><a href="#" data-section="stories">Stories</a></li>
+          <li class="admin-sidebar-section">People</li>
+          <li><a href="#" data-section="leadership">About — People</a></li>
+          <li class="admin-sidebar-section">Settings</li>
+          <li><a href="#" data-section="settings">Social Media &amp; Settings</a></li>
         </ul>
         <div
           style="
@@ -96,7 +97,7 @@
               display: block;
               margin-bottom: 0.5rem;
             "
-            >🌐 View Site</a
+            >View Site</a
           >
           <button
             id="btnLogout"
@@ -121,24 +122,24 @@
           </div>
           <div class="stats-grid" id="statsGrid">
             <div class="stat-card">
-              <div class="stat-card-icon events">🎪</div>
               <div class="stat-card-value" id="statEvents">0</div>
               <div class="stat-card-label">Events</div>
             </div>
             <div class="stat-card">
-              <div class="stat-card-icon gallery">🖼️</div>
+              <div class="stat-card-value" id="statPosts">0</div>
+              <div class="stat-card-label">Posts</div>
+            </div>
+            <div class="stat-card">
               <div class="stat-card-value" id="statGallery">0</div>
               <div class="stat-card-label">Gallery Items</div>
             </div>
             <div class="stat-card">
-              <div class="stat-card-icon stories">📖</div>
               <div class="stat-card-value" id="statStories">0</div>
               <div class="stat-card-label">Stories</div>
             </div>
             <div class="stat-card">
-              <div class="stat-card-icon news">👥</div>
               <div class="stat-card-value" id="statLeadership">0</div>
-              <div class="stat-card-label">Leaders</div>
+              <div class="stat-card-label">People</div>
             </div>
           </div>
         </div>
@@ -165,6 +166,32 @@
                 </tr>
               </thead>
               <tbody id="eventsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Posts Section -->
+        <div id="section-posts" class="admin-section" style="display: none">
+          <div class="admin-header">
+            <h1>Posts</h1>
+            <div class="admin-header-actions">
+              <button class="btn btn-primary btn-sm" onclick="showPostModal()">
+                + New Post
+              </button>
+            </div>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Category</th>
+                  <th>Author</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="postsTableBody"></tbody>
             </table>
           </div>
         </div>

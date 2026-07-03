@@ -1182,6 +1182,149 @@ function initCinematicFlags() {
 }
 
 // ========================================
+// CULTURAL MARQUEE
+// ========================================
+function initCulturalMarquee() {
+  const track = document.getElementById('marqueeTrack');
+  if (!track) return;
+
+  const items = [
+    { text: 'Kandyan Dance',    cls: '' },
+    { text: 'ශ්‍රී ලංකාව',       cls: 'sinhala' },
+    { text: 'Vesak',            cls: '' },
+    { text: 'Avurudu',          cls: '' },
+    { text: 'ආයුබෝවන්',         cls: 'sinhala' },
+    { text: 'Batik Art',        cls: '' },
+    { text: 'Bharatanatyam',    cls: '' },
+    { text: 'Poson Poya',       cls: '' },
+    { text: 'Deepavali',        cls: '' },
+    { text: 'Rabana',           cls: '' },
+    { text: 'Colombo • Wellington', cls: '' },
+    { text: 'ලෝකය සිරා',        cls: 'sinhala' },
+    { text: 'Ceylon Spices',    cls: '' },
+    { text: 'Aotearoa',         cls: '' },
+    { text: 'Two Nations · One Heart', cls: '' },
+    { text: 'ශ්‍රී ලංකා',        cls: 'sinhala' },
+    { text: 'Heritage',         cls: '' },
+    { text: 'Community',        cls: '' },
+    { text: 'Kottu · Hoppers · Lamprais', cls: '' },
+    { text: 'Sinhala New Year', cls: '' },
+    { text: 'Tamil Heritage',   cls: '' },
+    { text: 'සංස්කෘතිය',        cls: 'sinhala' },
+  ];
+
+  function buildItems() {
+    return items.map(item =>
+      `<span class="marquee-item ${item.cls}">${item.text}</span><span class="marquee-sep" aria-hidden="true"></span>`
+    ).join('');
+  }
+
+  // Duplicate for seamless loop
+  track.innerHTML = buildItems() + buildItems();
+}
+
+// ========================================
+// FLOATING LOTUS PETALS
+// ========================================
+function initFloatingPetals() {
+  const field = document.getElementById('petalField');
+  if (!field || prefersReducedMotion()) return;
+
+  const COUNT   = 18;
+  const colours = ['', '', '', 'purple', 'gold', '', 'purple'];
+
+  for (let i = 0; i < COUNT; i++) {
+    const petal = document.createElement('div');
+    petal.className = 'petal ' + (colours[i % colours.length]);
+
+    const size  = 5 + Math.random() * 9;
+    const left  = Math.random() * 100;
+    const dur   = 12 + Math.random() * 16;
+    const delay = -(Math.random() * dur); // negative delay = already mid-air at load
+    const drift = (Math.random() - 0.5) * 160;
+    const spin  = (Math.random() > 0.5 ? '' : '-') + (180 + Math.random() * 360) + 'deg';
+
+    petal.style.cssText = [
+      `--pw: ${size}px`,
+      `--dur: ${dur}s`,
+      `--delay: ${delay}s`,
+      `--petal-drift: ${drift}px`,
+      `--petal-spin: ${spin}`,
+      `left: ${left}%`,
+    ].join(';');
+
+    field.appendChild(petal);
+  }
+}
+
+// ========================================
+// COMMUNITY FEED (Recent News from DB)
+// ========================================
+async function loadCommunityFeed() {
+  const grid    = document.getElementById('communityFeedGrid');
+  const loading = document.getElementById('communityLoading');
+  if (!grid) return;
+
+  const data = await apiFetch('/news?limit=6');
+
+  if (loading) loading.remove();
+
+  if (!data || !data.news || data.news.length === 0) {
+    grid.innerHTML = `
+      <div class="loading-state" style="grid-column:1/-1;opacity:.5">
+        <span>No updates yet — check back soon.</span>
+      </div>`;
+    return;
+  }
+
+  const tagColour = cat => {
+    const map = { news: '', community: 'purple', culture: 'teal', heritage: 'teal', general: '' };
+    return map[String(cat).toLowerCase()] || '';
+  };
+
+  grid.innerHTML = data.news.map((post, i) => {
+    const date  = post.created_at ? formatDate(post.created_at) : '';
+    const title = post.title || 'Community Update';
+    const excerpt = post.summary || (post.content || '').substring(0, 160) + '…';
+    const cat   = post.category || 'news';
+    const img   = post.thumbnail;
+
+    const imageHtml = img
+      ? `<img class="fb-post-image" src="${img}" alt="${title}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\'fb-post-image-placeholder\'><svg viewBox=\'0 0 48 48\' fill=\'none\'><circle cx=\'24\' cy=\'18\' r=\'7\' stroke=\'currentColor\' stroke-width=\'1.5\'/><path d=\'M8 40c0-8.8 7.2-16 16-16s16 7.2 16 16\' stroke=\'currentColor\' stroke-width=\'1.5\' stroke-linecap=\'round\'/></svg></div>'">`
+      : `<div class="fb-post-image-placeholder"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+           <path d="M6 36L16 24l8 10 6-8 12 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+           <rect x="4" y="4" width="40" height="40" rx="4" stroke="currentColor" stroke-width="1.3" opacity=".3"/>
+         </svg></div>`;
+
+    return `
+      <article class="fb-post-card reveal" style="animation-delay:${i * 0.1}s">
+        ${imageHtml}
+        <div>
+          <span class="fb-post-date">${date}</span>
+        </div>
+        <p class="fb-post-title">${title}</p>
+        <p class="fb-post-excerpt">${excerpt}</p>
+        <span class="fb-post-tag ${tagColour(cat)}">${cat}</span>
+      </article>`;
+  }).join('');
+
+  // Trigger reveal on new cards
+  initScrollReveal();
+}
+
+// ========================================
+// SECTION GLOW LINES — inject into headings
+// ========================================
+function initSectionGlowLines() {
+  document.querySelectorAll('.section-header .section-label').forEach(label => {
+    if (label.previousElementSibling?.classList.contains('section-glow-line')) return;
+    const line = document.createElement('div');
+    line.className = 'section-glow-line';
+    label.parentNode.insertBefore(line, label);
+  });
+}
+
+// ========================================
 // BOOT
 // ========================================
 function initApp() {
@@ -1198,10 +1341,14 @@ function initApp() {
   initBridgeFlags();
   initCinematicFlags();
 
+  // New cultural enhancements
+  initCulturalMarquee();
+  initFloatingPetals();
+  initSectionGlowLines();
+
   loadEvents();
   loadGallery();
-  loadLeadership();
-  loadStories();
+  loadCommunityFeed();
 
   const lightbox = document.getElementById('lightbox');
   if (lightbox) {

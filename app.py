@@ -3,6 +3,9 @@ import re
 import uuid
 from datetime import datetime
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
@@ -126,7 +129,7 @@ def create_app():
             return None, (jsonify({"error": "Invalid token."}), 401)
 
         rows = db.query(
-            "SELECT id, email, name, role FROM admins WHERE id = %s",
+            "SELECT id::text, email, name, role FROM admins WHERE id = %s",
             [admin_id],
         )
         if not rows:
@@ -205,8 +208,8 @@ def create_app():
 
         exp_seconds = parse_expires(expires_in)
         token = jwt.encode(
-            {"id": admin["id"], "email": admin["email"], "role": admin.get(
-                "role"), "exp": datetime.utcnow().timestamp() + exp_seconds},
+            {"id": str(admin["id"]), "email": admin["email"], "role": admin.get(
+                "role"), "exp": int(datetime.utcnow().timestamp() + exp_seconds)},
             jwt_secret,
             algorithm="HS256",
         )
@@ -511,6 +514,34 @@ def create_app():
             return jsonify({"error": "Article not found"}), 404
         return jsonify({"message": "Article deleted successfully"})
 
+    @app.post("/api/news/admin/thumbnail")
+    def admin_upload_post_thumbnail():
+        admin, err = require_admin()
+        if err:
+            return err
+
+        if "image" not in request.files:
+            return jsonify({"error": "No image file provided"}), 400
+        file = request.files["image"]
+        if not file or file.filename == "":
+            return jsonify({"error": "No image file provided"}), 400
+
+        try:
+            validate_image(file)
+        except ValueError as e:
+            msg = str(e)
+            return jsonify({"error": msg}), (413 if "too large" in msg.lower() else 400)
+
+        subfolder = "posts"
+        dest_dir = os.path.join(uploads_dir, subfolder)
+        os.makedirs(dest_dir, exist_ok=True)
+
+        ext = os.path.splitext(file.filename.lower())[1]
+        filename = f"{uuid.uuid4().hex}{ext}"
+        file.save(os.path.join(dest_dir, filename))
+
+        return jsonify({"thumbnail": f"/uploads/{subfolder}/{filename}"}), 201
+
     # Stories
     @app.get("/api/stories")
     def get_stories():
@@ -776,6 +807,158 @@ def create_app():
             return jsonify({"error": "Image not found"}), 404
         return jsonify({"message": "Image deleted successfully"})
 
+    # Leadership
+    @app.get("/api/leadership")
+    def get_leadership():
+        rows = db.query(
+            "SELECT * FROM leadership WHERE status = %s ORDER BY sort_order ASC, created_at ASC",
+            ["active"],
+        )
+        return jsonify({"leaders": rows})
+
+    @app.get("/api/leadership/admin/all")
+    def admin_all_leadership():
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("SELECT * FROM leadership ORDER BY sort_order ASC, created_at ASC")
+        return jsonify({"leaders": rows})
+
+    @app.post("/api/leadership/admin")
+    def admin_create_leader():
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        name = data.get("name")
+        role = data.get("role")
+        if not name or not role:
+            return jsonify({"error": "Name and role are required"}), 400
+
+        sql = (
+            "INSERT INTO leadership (name, role, bio, contribution, photo_url, sort_order, status, created_by) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *"
+        )
+        params = [
+            sanitize_text(name),
+            sanitize_text(role),
+            sanitize_text(data.get("bio")),
+            sanitize_text(data.get("contribution")),
+            data.get("photo_url") or None,
+            int(data.get("sort_order") or 0),
+            data.get("status") or "active",
+            admin["id"],
+        ]
+        rows = db.query(sql, params)
+        return jsonify({"leader": rows[0]}), 201
+
+    @app.put("/api/leadership/admin/<id>")
+    def admin_update_leader(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+
+        sql = (
+            "UPDATE leadership SET "
+            "name = COALESCE(%s, name), "
+            "role = COALESCE(%s, role), "
+            "bio = COALESCE(%s, bio), "
+            "contribution = COALESCE(%s, contribution), "
+            "photo_url = COALESCE(%s, photo_url), "
+            "sort_order = COALESCE(%s, sort_order), "
+            "status = COALESCE(%s, status), "
+            "updated_at = NOW() "
+            "WHERE id = %s RETURNING *"
+        )
+        params = [
+            sanitize_text(data["name"]) if data.get("name") else None,
+            sanitize_text(data["role"]) if data.get("role") else None,
+            sanitize_text(data["bio"]) if "bio" in data else None,
+            sanitize_text(data["contribution"]) if "contribution" in data else None,
+            data.get("photo_url") or None,
+            int(data["sort_order"]) if "sort_order" in data else None,
+            data.get("status") or None,
+            id,
+        ]
+        rows = db.query(sql, params)
+        if not rows:
+            return jsonify({"error": "Leader not found"}), 404
+        return jsonify({"leader": rows[0]})
+
+    @app.delete("/api/leadership/admin/<id>")
+    def admin_delete_leader(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("DELETE FROM leadership WHERE id = %s RETURNING id", [id])
+        if not rows:
+            return jsonify({"error": "Leader not found"}), 404
+        return jsonify({"message": "Leader deleted successfully"})
+
+    @app.post("/api/leadership/admin/photo")
+    def admin_upload_leader_photo():
+        admin, err = require_admin()
+        if err:
+            return err
+
+        if "photo" not in request.files:
+            return jsonify({"error": "No photo file provided"}), 400
+        file = request.files["photo"]
+        if not file or file.filename == "":
+            return jsonify({"error": "No photo file provided"}), 400
+
+        try:
+            validate_image(file)
+        except ValueError as e:
+            msg = str(e)
+            if "File too large" in msg:
+                return jsonify({"error": msg}), 413
+            return jsonify({"error": msg}), 400
+
+        subfolder = "people"
+        dest_dir = os.path.join(uploads_dir, subfolder)
+        os.makedirs(dest_dir, exist_ok=True)
+
+        ext = os.path.splitext(file.filename.lower())[1]
+        filename = f"{uuid.uuid4().hex}{ext}"
+        dest_path = os.path.join(dest_dir, filename)
+        file.save(dest_path)
+
+        photo_url = f"/uploads/{subfolder}/{filename}"
+        return jsonify({"photo_url": photo_url}), 201
+
+    # Site Settings
+    @app.get("/api/settings")
+    def get_settings_public():
+        rows = db.query("SELECT key, value, category, label FROM site_settings ORDER BY category, key")
+        return jsonify({"settings": rows})
+
+    @app.get("/api/settings/admin")
+    def get_settings_admin():
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("SELECT * FROM site_settings ORDER BY category, key")
+        return jsonify({"settings": rows})
+
+    @app.put("/api/settings/admin")
+    def update_settings_admin():
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        settings = data.get("settings", [])
+        for s in settings:
+            key = s.get("key")
+            value = s.get("value", "")
+            if key:
+                db.execute(
+                    "UPDATE site_settings SET value = %s, updated_at = NOW() WHERE key = %s",
+                    [value, key],
+                )
+        return jsonify({"message": "Settings updated successfully"})
+
     # Dashboard stats
     @app.get("/api/dashboard/stats")
     def dashboard_stats():
@@ -814,19 +997,32 @@ def create_app():
             }
         )
 
-    # SPA fallback - serve index.html for all non-API GET routes
-    @app.get("/", defaults={"path": ""})
+    # Explicit page routes — must be defined before the catch-all so Flask
+    # prefers these over the built-in static-file /<path:filename> handler.
+    _pages = ["about", "events", "gallery", "leadership", "admin", "contact"]
+
+    def _make_page_view(filename):
+        def view():
+            return app.send_static_file(filename)
+        return view
+
+    for _page in _pages:
+        app.add_url_rule(
+            f"/{_page}",
+            endpoint=f"page_{_page}",
+            view_func=_make_page_view(f"{_page}.html"),
+        )
+
+    @app.get("/")
+    def index_page():
+        return app.send_static_file("index.html")
+
+    # Catch-all: anything else that isn't an API route falls back to index
     @app.get("/<path:path>")
     def spa_fallback(path):
         if request.path.startswith("/api/"):
             return jsonify({"error": "Not found"}), 404
-
-        # If file exists in public, serve it
-        # Flask static will already serve known assets, but fallback for deep routes.
-        index_path = os.path.join(public_dir, "index.html")
-        if os.path.exists(index_path):
-            return app.send_static_file("index.html")
-        return jsonify({"error": "Not found"}), 404
+        return app.send_static_file("index.html")
 
     return app
 

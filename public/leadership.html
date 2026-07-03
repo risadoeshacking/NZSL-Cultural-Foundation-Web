@@ -79,6 +79,7 @@
               Dedicated to preserving, showcasing, and celebrating Sri Lankan
               culture in Aotearoa New Zealand.
             </p>
+            <div class="footer-social" id="footerSocial"></div>
           </div>
           <div>
             <div class="footer-heading">Navigate</div>
@@ -136,28 +137,42 @@
         }
         if (loading) loading.remove();
         grid.innerHTML = data.leaders
-          .map(
-            (leader, i) => `
+          .map((leader, i) => {
+            const initials = leader.name.split(" ").map(w => w[0]).slice(0,2).join("").toUpperCase();
+            return `
           <div class="leader-full-card reveal reveal-delay-${(i % 4) + 1}">
-            <div class="leader-full-portrait">
-              <div class="leader-portrait-placeholder">👤</div>
+            <div class="leader-photo-wrap">
+              ${leader.photo_url
+                ? `<img class="leader-photo-img" src="${leader.photo_url}" alt="${leader.name}">`
+                : `<div class="leader-photo-placeholder"><span class="leader-photo-placeholder-initials">${initials}</span></div>`}
+              <div class="leader-photo-overlay"></div>
+              <div class="leader-photo-meta">
+                <div class="leader-full-role">${leader.role}</div>
+                <h3 class="leader-full-name">${leader.name}</h3>
+              </div>
             </div>
             <div class="leader-full-info">
-              <div class="leader-full-role">${leader.role}</div>
-              <h3 class="leader-full-name">${leader.name}</h3>
-              <p class="leader-full-bio">${leader.bio || ""}</p>
-              ${
-                leader.contribution
-                  ? `<p class="leader-full-contribution">${leader.contribution}</p>`
-                  : ""
-              }
+              ${leader.bio ? `<p class="leader-full-bio">${leader.bio}</p>` : ""}
+              ${leader.contribution ? `<p class="leader-full-contribution">${leader.contribution}</p>` : ""}
             </div>
-          </div>
-        `
-          )
+          </div>`;
+          })
           .join("");
         initScrollReveal();
         initPremiumCardTilt();
+
+        // Social media footer
+        try {
+          const settingsData = await apiFetch("/settings");
+          const social = (settingsData?.settings || []).filter(s => s.category === "social" && s.value);
+          const labels = { facebook_url: "Facebook", instagram_url: "Instagram", youtube_url: "YouTube", twitter_url: "X (Twitter)", linkedin_url: "LinkedIn" };
+          const el = document.getElementById("footerSocial");
+          if (el && social.length > 0) {
+            el.innerHTML = social.map(s =>
+              `<a href="${s.value}" target="_blank" rel="noopener noreferrer" class="footer-social-link">${labels[s.key] || s.key.replace(/_url$/, "")}</a>`
+            ).join("");
+          }
+        } catch (_) {}
       })();
     </script>
   </body>

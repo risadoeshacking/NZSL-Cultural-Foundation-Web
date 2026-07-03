@@ -166,6 +166,25 @@
       </div>
     </section>
 
+    <section class="section section-alt" id="our-team">
+      <div class="container">
+        <div class="section-header reveal">
+          <div>
+            <div class="section-label">Our People</div>
+            <h2 class="heading-lg section-title">Meet the Team</h2>
+            <p class="section-subtitle">The dedicated individuals who guide our foundation's mission.</p>
+          </div>
+          <a href="/leadership" class="btn btn-ghost">Full Leadership →</a>
+        </div>
+        <div class="leadership-full-grid" id="aboutTeamGrid">
+          <div class="loading-state" id="teamLoading">
+            <div class="loader"></div>
+            <span>Loading team...</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <footer class="site-footer">
       <div class="container">
         <div class="footer-grid">
@@ -178,6 +197,7 @@
               Dedicated to preserving, showcasing, and celebrating Sri Lankan
               culture in Aotearoa New Zealand.
             </p>
+            <div class="footer-social" id="footerSocial"></div>
           </div>
           <div>
             <div class="footer-heading">Navigate</div>
@@ -222,5 +242,56 @@
     </footer>
 
     <script src="/js/app.js"></script>
+    <script>
+      (async function () {
+        // Load team section
+        const grid = document.getElementById("aboutTeamGrid");
+        const loading = document.getElementById("teamLoading");
+        try {
+          const data = await apiFetch("/leadership");
+          if (loading) loading.remove();
+          if (!data || !data.leaders || data.leaders.length === 0) {
+            grid.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem">No team members listed yet.</p>';
+          } else {
+            grid.innerHTML = data.leaders.slice(0, 6).map((leader, i) => {
+              const initials = leader.name.split(" ").map(w => w[0]).slice(0,2).join("").toUpperCase();
+              return `
+              <div class="leader-full-card reveal reveal-delay-${(i % 4) + 1}">
+                <div class="leader-photo-wrap">
+                  ${leader.photo_url
+                    ? `<img class="leader-photo-img" src="${leader.photo_url}" alt="${leader.name}">`
+                    : `<div class="leader-photo-placeholder"><span class="leader-photo-placeholder-initials">${initials}</span></div>`}
+                  <div class="leader-photo-overlay"></div>
+                  <div class="leader-photo-meta">
+                    <div class="leader-full-role">${leader.role}</div>
+                    <h3 class="leader-full-name">${leader.name}</h3>
+                  </div>
+                </div>
+                <div class="leader-full-info">
+                  ${leader.bio ? `<p class="leader-full-bio">${leader.bio}</p>` : ""}
+                  ${leader.contribution ? `<p class="leader-full-contribution">${leader.contribution}</p>` : ""}
+                </div>
+              </div>`;
+            }).join("");
+            if (typeof initScrollReveal === "function") initScrollReveal();
+          }
+        } catch (e) {
+          if (loading) loading.innerHTML = "<span>Could not load team.</span>";
+        }
+
+        // Load social media links in footer
+        try {
+          const settingsData = await apiFetch("/settings");
+          const social = (settingsData?.settings || []).filter(s => s.category === "social" && s.value);
+          const labels = { facebook_url: "Facebook", instagram_url: "Instagram", youtube_url: "YouTube", twitter_url: "X (Twitter)", linkedin_url: "LinkedIn" };
+          const el = document.getElementById("footerSocial");
+          if (el && social.length > 0) {
+            el.innerHTML = social.map(s =>
+              `<a href="${s.value}" target="_blank" rel="noopener noreferrer" class="footer-social-link">${labels[s.key] || s.key.replace(/_url$/, "")}</a>`
+            ).join("");
+          }
+        } catch (_) {}
+      })();
+    </script>
   </body>
 </html>
