@@ -42,6 +42,14 @@ from psycopg.errors import UniqueViolation
 
 def _env(name: str, default=None):
     v = os.environ.get(name)
+    if v is not None:
+        v = v.strip().strip('"').strip("'")
+        # Guard against pasting a whole "KEY=value" line into a UI (like
+        # Render's) that already has a separate field for the key name —
+        # that leaves the key name duplicated at the front of the value.
+        prefix = f"{name}="
+        if v.startswith(prefix):
+            v = v[len(prefix):].strip().strip('"').strip("'")
     return v if v not in (None, "") else default
 
 
