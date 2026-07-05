@@ -48,6 +48,7 @@ function switchSection(section) {
   if (section === "membership") loadMembershipTable();
   if (section === "videos") loadVideosTable();
   if (section === "settings") loadSettings();
+  if (section === "account") loadAccountSection();
 }
 
 // --- Dashboard ---
@@ -981,6 +982,74 @@ async function saveSettings() {
     alert(e.message);
   }
 }
+
+// --- My Account ---
+async function loadAccountSection() {
+  try {
+    const data = await adminFetch("/auth/profile", { token: currentToken });
+    document.getElementById("accountNameInput").value = data.admin?.name || "";
+    document.getElementById("accountEmailInput").value = data.admin?.email || "";
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const nameForm = document.getElementById("accountNameForm");
+  if (nameForm) {
+    nameForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("accountNameMsg");
+      msg.textContent = "";
+      try {
+        const data = await adminFetch("/auth/update-profile", {
+          token: currentToken,
+          method: "PUT",
+          body: { name: document.getElementById("accountNameInput").value.trim() },
+        });
+        document.getElementById("adminProfile").textContent = `Signed in as ${data.admin?.name || "Admin"}`;
+        msg.textContent = "Saved!";
+        msg.style.color = "var(--accent)";
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.style.color = "#ef4444";
+      }
+    });
+  }
+
+  const passwordForm = document.getElementById("accountPasswordForm");
+  if (passwordForm) {
+    passwordForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("accountPasswordMsg");
+      msg.textContent = "";
+      const form = new FormData(e.target);
+      const currentPassword = form.get("currentPassword");
+      const newPassword = form.get("newPassword");
+      const confirmPassword = form.get("confirmPassword");
+
+      if (newPassword !== confirmPassword) {
+        msg.textContent = "New passwords don't match.";
+        msg.style.color = "#ef4444";
+        return;
+      }
+
+      try {
+        await adminFetch("/auth/change-password", {
+          token: currentToken,
+          method: "PUT",
+          body: { currentPassword, newPassword },
+        });
+        msg.textContent = "Password updated!";
+        msg.style.color = "var(--accent)";
+        e.target.reset();
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.style.color = "#ef4444";
+      }
+    });
+  }
+});
 
 // --- Modal ---
 function closeModal(e) {

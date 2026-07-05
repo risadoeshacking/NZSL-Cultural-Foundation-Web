@@ -82,6 +82,7 @@
           <li><a href="#" data-section="videos">Videos</a></li>
           <li class="admin-sidebar-section">Settings</li>
           <li><a href="#" data-section="settings">Social Media &amp; Settings</a></li>
+          <li><a href="#" data-section="account">My Account</a></li>
         </ul>
         <div
           style="
@@ -348,6 +349,57 @@
             </div>
           </div>
           <div id="settingsForm"></div>
+        </div>
+
+        <!-- My Account Section -->
+        <div id="section-account" class="admin-section" style="display: none">
+          <div class="admin-header">
+            <h1>My Account</h1>
+          </div>
+
+          <div class="admin-table-container" style="margin-bottom: 1.5rem">
+            <div class="admin-table-header" style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border)">
+              <h2 style="font-size: 1rem; margin: 0">Profile</h2>
+            </div>
+            <div style="padding: 1.5rem; max-width: 420px">
+              <form id="accountNameForm">
+                <div class="admin-form-group">
+                  <label>Name</label>
+                  <input name="name" id="accountNameInput" required />
+                </div>
+                <div class="admin-form-group" style="opacity: 0.6">
+                  <label>Email</label>
+                  <input id="accountEmailInput" disabled />
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Save Name</button>
+                <span id="accountNameMsg" style="font-size: 0.8rem; margin-left: 0.75rem"></span>
+              </form>
+            </div>
+          </div>
+
+          <div class="admin-table-container">
+            <div class="admin-table-header" style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border)">
+              <h2 style="font-size: 1rem; margin: 0">Change Password</h2>
+            </div>
+            <div style="padding: 1.5rem; max-width: 420px">
+              <form id="accountPasswordForm">
+                <div class="admin-form-group">
+                  <label>Current Password</label>
+                  <input name="currentPassword" type="password" required />
+                </div>
+                <div class="admin-form-group">
+                  <label>New Password</label>
+                  <input name="newPassword" type="password" required minlength="8" />
+                </div>
+                <div class="admin-form-group">
+                  <label>Confirm New Password</label>
+                  <input name="confirmPassword" type="password" required minlength="8" />
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm">Update Password</button>
+                <span id="accountPasswordMsg" style="font-size: 0.8rem; margin-left: 0.75rem"></span>
+              </form>
+            </div>
+          </div>
         </div>
       </main>
     </div>

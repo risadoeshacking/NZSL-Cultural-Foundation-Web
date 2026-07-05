@@ -112,6 +112,35 @@ class DB:
 db = DB()
 
 
+def bootstrap_default_admin():
+    """Create a default admin from ADMIN_EMAIL/ADMIN_PASSWORD if no admin
+    with that email exists yet. Only ever creates — never overwrites an
+    existing password, so changing the password later (via the admin panel
+    or create_admin.py) sticks across restarts instead of being silently
+    reset back to the env var every deploy."""
+    admin_email = _env("ADMIN_EMAIL")
+    admin_password = _env("ADMIN_PASSWORD")
+    if not admin_email or not admin_password:
+        return
+
+    email = admin_email.strip().lower()
+    try:
+        existing = db.query("SELECT id FROM admins WHERE email = %s", [email])
+        if existing:
+            return
+        password_hash = bcrypt.hashpw(
+            admin_password.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
+        db.execute(
+            "INSERT INTO admins (id, email, name, password_hash, role) VALUES (%s,%s,%s,%s,%s)",
+            [str(uuid.uuid4()), email, "Admin", password_hash, "admin"],
+        )
+        print(f"Bootstrapped default admin account: {email}")
+    except UniqueViolation:
+        pass
+    except Exception as e:
+        print(f"WARNING: could not bootstrap default admin ({e})")
+
+
 def create_app():
     app = Flask(__name__, static_folder="public", static_url_path="")
     CORS(app)
@@ -250,7 +279,7 @@ def create_app():
         if not email or not password:
             return jsonify({"error": "Email and password are required"}), 400
 
-        rows = db.query("SELECT * FROM admins WHERE email = %s", [email])
+        rows = db.query("SELECT * FROM admins WHERE email = %s", [email.strip().lower()])
         if not rows:
             return jsonify({"error": "Invalid credentials"}), 401
 
@@ -331,6 +360,22 @@ def create_app():
         db.execute("UPDATE admins SET password_hash = %s, updated_at = NOW() WHERE id = %s", [
                    hashed, admin["id"]])
         return jsonify({"message": "Password updated successfully"})
+
+    @app.put("/api/auth/update-profile")
+    def update_profile():
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        name = (data.get("name") or "").strip()
+        if not name:
+            return jsonify({"error": "Name is required"}), 400
+
+        rows = db.query(
+            "UPDATE admins SET name = %s, updated_at = NOW() WHERE id = %s RETURNING id::text, email, name, role",
+            [sanitize_text(name), admin["id"]],
+        )
+        return jsonify({"admin": rows[0]})
 
     # Events
     @app.get("/api/events")
@@ -1296,6 +1341,7 @@ def create_app():
 
 
 app = create_app()
+bootstrap_default_admin()
 
 
 if __name__ == "__main__":
