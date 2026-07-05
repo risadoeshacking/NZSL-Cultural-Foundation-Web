@@ -14,6 +14,25 @@ from flask_limiter.util import get_remote_address
 import jwt
 import bcrypt
 import requests
+
+# Sanitize CLOUDINARY_URL *before* importing cloudinary — its SDK validates
+# and auto-configures from this env var the moment it's imported, and will
+# crash the whole process on any malformed value (e.g. accidentally pasting
+# "CLOUDINARY_URL=cloudinary://..." as the value instead of just the
+# "cloudinary://..." part). Fall back to local file storage instead of
+# taking the whole site down over one bad env var.
+_cloudinary_url = (os.environ.get("CLOUDINARY_URL") or "").strip().strip('"').strip("'")
+if _cloudinary_url.startswith("CLOUDINARY_URL="):
+    _cloudinary_url = _cloudinary_url[len("CLOUDINARY_URL="):].strip()
+if _cloudinary_url and not _cloudinary_url.startswith("cloudinary://"):
+    print(f"WARNING: CLOUDINARY_URL is set but invalid (must start with 'cloudinary://') — "
+          f"ignoring it; uploads will fall back to local disk.")
+    _cloudinary_url = ""
+if _cloudinary_url:
+    os.environ["CLOUDINARY_URL"] = _cloudinary_url
+else:
+    os.environ.pop("CLOUDINARY_URL", None)
+
 import cloudinary
 import cloudinary.uploader
 from psycopg.rows import dict_row
