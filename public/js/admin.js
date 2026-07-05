@@ -45,6 +45,8 @@ function switchSection(section) {
   if (section === "gallery") loadGalleryTable();
   if (section === "stories") loadStoriesTable();
   if (section === "leadership") loadLeadershipTable();
+  if (section === "membership") loadMembershipTable();
+  if (section === "videos") loadVideosTable();
   if (section === "settings") loadSettings();
 }
 
@@ -152,6 +154,9 @@ function showEventModal(event = null) {
           <div class="admin-form-group"><label>Location</label><input name="location" value="${
             event?.location || ""
           }" /></div>
+          <div class="admin-form-group"><label>Cover Image URL (optional)</label><input name="cover_image" value="${
+            event?.cover_image || ""
+          }" placeholder="https://..." /></div>
           <div class="admin-form-group"><label>Description</label><textarea name="description" rows="4">${
             event?.description || ""
           }</textarea></div>
@@ -752,6 +757,165 @@ async function deleteLeader(id) {
   }
 }
 
+// --- Membership ---
+function formatDueDate(d) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-NZ");
+}
+
+async function loadMembershipTable() {
+  try {
+    const data = await adminFetch("/membership/admin/all", { token: currentToken });
+    const tbody = document.getElementById("membershipTableBody");
+    const programLabels = { dancing: "Dancing", vocals: "Vocals", both: "Both" };
+    const ageLabels = { "16_and_under": "16 and below", "16_and_over": "16 and over" };
+    tbody.innerHTML = (data.memberships || [])
+      .map(
+        (m) => `
+      <tr>
+        <td><div class="admin-table-title">${m.full_name}</div><div class="admin-table-subtitle">${m.email} · ${m.phone}</div></td>
+        <td>${programLabels[m.program] || m.program}</td>
+        <td>${ageLabels[m.age_group] || m.age_group}</td>
+        <td><span class="status-badge ${m.payment_status === "paid" ? "published" : "pending"}">${m.payment_status}</span></td>
+        <td><span class="status-badge ${m.display_status}">${m.display_status}</span></td>
+        <td>${formatDueDate(m.next_due_date)}</td>
+        <td class="admin-actions-cell"><div class="admin-actions">
+          <button class="admin-btn" onclick="markMembershipPaid('${m.id}')">Mark Paid</button>
+          ${m.status !== "active" ? `<button class="admin-btn" onclick="activateMembership('${m.id}')">Activate</button>` : ""}
+          <button class="admin-btn admin-btn-danger" onclick="deleteMembership('${m.id}')">Delete</button>
+        </div></td>
+      </tr>
+    `
+      )
+      .join("");
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function markMembershipPaid(id) {
+  try {
+    await adminFetch(`/membership/admin/${id}/payment`, {
+      token: currentToken,
+      method: "PUT",
+    });
+    loadMembershipTable();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function activateMembership(id) {
+  if (!confirm("Activate this membership? The next payment will be due in one month.")) return;
+  try {
+    await adminFetch(`/membership/admin/${id}/activate`, {
+      token: currentToken,
+      method: "PUT",
+    });
+    loadMembershipTable();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function deleteMembership(id) {
+  if (!confirm("Delete this membership registration?")) return;
+  try {
+    await adminFetch(`/membership/admin/${id}`, {
+      token: currentToken,
+      method: "DELETE",
+    });
+    loadMembershipTable();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+// --- Videos ---
+async function loadVideosTable() {
+  try {
+    const data = await adminFetch("/videos/admin/all", { token: currentToken });
+    const tbody = document.getElementById("videosTableBody");
+    tbody.innerHTML = (data.videos || [])
+      .map(
+        (v) => `
+      <tr>
+        <td><img src="https://img.youtube.com/vi/${v.video_id}/default.jpg" style="width:64px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--border)" /></td>
+        <td><div class="admin-table-title">${v.title}</div></td>
+        <td class="admin-actions-cell"><div class="admin-actions">
+          <button class="admin-btn" onclick="editVideo('${v.id}')">Edit</button>
+          <button class="admin-btn admin-btn-danger" onclick="deleteVideo('${v.id}')">Delete</button>
+        </div></td>
+      </tr>
+    `
+      )
+      .join("");
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function showVideoModal(video = null) {
+  const isEdit = !!video;
+  document.getElementById("modalContainer").innerHTML = `
+    <div class="admin-modal-overlay" onclick="closeModal(event)">
+      <div class="admin-modal" onclick="event.stopPropagation()">
+        <h2>${isEdit ? "Edit Video" : "Add Video"}</h2>
+        <form id="videoForm" onsubmit="saveVideo(event, ${isEdit ? `'${video.id}'` : "null"})">
+          <div class="admin-form-group"><label>Title</label><input name="title" value="${
+            video?.title || ""
+          }" required /></div>
+          <div class="admin-form-group"><label>YouTube URL</label><input name="youtube_url" value="${
+            video?.youtube_url || ""
+          }" placeholder="https://www.youtube.com/watch?v=..." required /></div>
+          <div class="admin-form-actions">
+            <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm">${
+              isEdit ? "Update" : "Add"
+            }</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+}
+
+async function saveVideo(e, id) {
+  e.preventDefault();
+  const form = new FormData(e.target);
+  const body = Object.fromEntries(form.entries());
+  try {
+    if (id) {
+      await adminFetch(`/videos/admin/${id}`, { token: currentToken, method: "PUT", body });
+    } else {
+      await adminFetch("/videos/admin", { token: currentToken, method: "POST", body });
+    }
+    closeModal();
+    loadVideosTable();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function editVideo(id) {
+  try {
+    const data = await adminFetch("/videos/admin/all", { token: currentToken });
+    const video = data.videos.find((v) => v.id === id);
+    if (video) showVideoModal(video);
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function deleteVideo(id) {
+  if (!confirm("Delete this video?")) return;
+  try {
+    await adminFetch(`/videos/admin/${id}`, { token: currentToken, method: "DELETE" });
+    loadVideosTable();
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
 // --- Settings ---
 async function loadSettings() {
   try {
@@ -780,8 +944,8 @@ async function loadSettings() {
                 data-key="${s.key}"
                 data-category="${s.category}"
                 class="setting-input"
-                type="url"
-                placeholder="https://"
+                type="${s.category === "payment" ? "text" : "url"}"
+                placeholder="${s.category === "payment" ? "" : "https://"}"
                 value="${s.value || ""}"
               />
             </div>

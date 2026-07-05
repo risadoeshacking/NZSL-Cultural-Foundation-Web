@@ -77,6 +77,9 @@
           <li><a href="#" data-section="stories">Stories</a></li>
           <li class="admin-sidebar-section">People</li>
           <li><a href="#" data-section="leadership">About — People</a></li>
+          <li class="admin-sidebar-section">Community</li>
+          <li><a href="#" data-section="membership">Membership</a></li>
+          <li><a href="#" data-section="videos">Videos</a></li>
           <li class="admin-sidebar-section">Settings</li>
           <li><a href="#" data-section="settings">Social Media &amp; Settings</a></li>
         </ul>
@@ -279,6 +282,57 @@
                 </tr>
               </thead>
               <tbody id="leadershipTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Membership Section -->
+        <div
+          id="section-membership"
+          class="admin-section"
+          style="display: none"
+        >
+          <div class="admin-header">
+            <h1>Membership</h1>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Program</th>
+                  <th>Age Group</th>
+                  <th>Payment</th>
+                  <th>Status</th>
+                  <th>Next Due</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="membershipTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Videos Section -->
+        <div id="section-videos" class="admin-section" style="display: none">
+          <div class="admin-header">
+            <h1>Videos</h1>
+            <div class="admin-header-actions">
+              <button class="btn btn-primary btn-sm" onclick="showVideoModal()">
+                + Add Video
+              </button>
+            </div>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Thumbnail</th>
+                  <th>Title</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="videosTableBody"></tbody>
             </table>
           </div>
         </div>

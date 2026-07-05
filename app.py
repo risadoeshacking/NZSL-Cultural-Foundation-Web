@@ -1,7 +1,8 @@
 import os
 import re
 import uuid
-from datetime import datetime
+import calendar
+from datetime import datetime, date
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -12,8 +13,12 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import jwt
 import bcrypt
+import requests
+import cloudinary
+import cloudinary.uploader
 from psycopg.rows import dict_row
 from psycopg import connect
+from psycopg.errors import UniqueViolation
 
 
 def _env(name: str, default=None):
@@ -95,6 +100,31 @@ def create_app():
     if not os.path.exists(uploads_dir):
         os.makedirs(uploads_dir, exist_ok=True)
 
+    cloudinary_url = _env("CLOUDINARY_URL")
+    if cloudinary_url:
+        cloudinary.config(cloudinary_url=cloudinary_url)
+
+    def store_uploaded_file(file_storage, ext, subfolder):
+        """Persist an uploaded image. Uses Cloudinary when CLOUDINARY_URL is
+        configured (required in production — Render's filesystem is wiped on
+        every restart/redeploy); otherwise falls back to local disk so local
+        development keeps working with zero extra setup."""
+        if cloudinary_url:
+            result = cloudinary.uploader.upload(
+                file_storage.stream,
+                folder=f"nzsl/{subfolder}",
+                public_id=uuid.uuid4().hex,
+                resource_type="image",
+            )
+            return result["secure_url"]
+
+        dest_dir = os.path.join(uploads_dir, subfolder)
+        os.makedirs(dest_dir, exist_ok=True)
+        filename = f"{uuid.uuid4().hex}{ext}"
+        file_storage.stream.seek(0)
+        file_storage.save(os.path.join(dest_dir, filename))
+        return f"/uploads/{subfolder}/{filename}"
+
     public_dir = os.path.join(os.path.dirname(__file__), "public")
 
     # Serve /uploads like Express
@@ -170,6 +200,15 @@ def create_app():
         resp.headers.setdefault("Referrer-Policy", "no-referrer")
         return resp
 
+    # Catch-all: never let an unhandled exception surface as a raw crash
+    @app.errorhandler(Exception)
+    def handle_unexpected_error(e):
+        from werkzeug.exceptions import HTTPException
+        if isinstance(e, HTTPException):
+            return e
+        app.logger.exception("Unhandled error")
+        return jsonify({"error": "Internal server error"}), 500
+
     # Health
     @app.get("/api/health")
     def health():
@@ -189,8 +228,11 @@ def create_app():
             return jsonify({"error": "Invalid credentials"}), 401
 
         admin = rows[0]
-        valid = bcrypt.checkpw(password.encode(
-            "utf-8"), admin["password_hash"].encode("utf-8"))
+        try:
+            valid = bcrypt.checkpw(password.encode(
+                "utf-8"), admin["password_hash"].encode("utf-8"))
+        except Exception:
+            valid = False
         if not valid:
             return jsonify({"error": "Invalid credentials"}), 401
 
@@ -199,7 +241,7 @@ def create_app():
         # Parse like Node default only needs seconds for jwt; accept "7d"/"30d"/"1h".
 
         def parse_expires(v):
-            m = re.match(r"^(\\d+)([smhd])$", v.strip(), re.I)
+            m = re.match(r"^(\d+)([smhd])$", v.strip(), re.I)
             if not m:
                 return 7 * 24 * 3600
             n = int(m.group(1))
@@ -249,8 +291,11 @@ def create_app():
             return jsonify({"error": "Invalid credentials"}), 401
         admin_row = rows[0]
 
-        valid = bcrypt.checkpw(current_password.encode(
-            "utf-8"), admin_row["password_hash"].encode("utf-8"))
+        try:
+            valid = bcrypt.checkpw(current_password.encode(
+                "utf-8"), admin_row["password_hash"].encode("utf-8"))
+        except Exception:
+            valid = False
         if not valid:
             return jsonify({"error": "Current password is incorrect"}), 401
 
@@ -532,15 +577,9 @@ def create_app():
             msg = str(e)
             return jsonify({"error": msg}), (413 if "too large" in msg.lower() else 400)
 
-        subfolder = "posts"
-        dest_dir = os.path.join(uploads_dir, subfolder)
-        os.makedirs(dest_dir, exist_ok=True)
-
         ext = os.path.splitext(file.filename.lower())[1]
-        filename = f"{uuid.uuid4().hex}{ext}"
-        file.save(os.path.join(dest_dir, filename))
-
-        return jsonify({"thumbnail": f"/uploads/{subfolder}/{filename}"}), 201
+        thumbnail_url = store_uploaded_file(file, ext, "posts")
+        return jsonify({"thumbnail": thumbnail_url}), 201
 
     # Stories
     @app.get("/api/stories")
@@ -732,16 +771,8 @@ def create_app():
                 return jsonify({"error": msg}), 413
             return jsonify({"error": msg}), 400
 
-        subfolder = "gallery"
-        dest_dir = os.path.join(uploads_dir, subfolder)
-        os.makedirs(dest_dir, exist_ok=True)
-
         ext = os.path.splitext(file.filename.lower())[1]
-        filename = f"{uuid.uuid4().hex}{ext}"
-        dest_path = os.path.join(dest_dir, filename)
-        file.save(dest_path)
-
-        image_url = f"/uploads/{subfolder}/{filename}"
+        image_url = store_uploaded_file(file, ext, "gallery")
         data = request.form.to_dict(flat=True)
         title = data.get("title")
         description = data.get("description")
@@ -916,16 +947,8 @@ def create_app():
                 return jsonify({"error": msg}), 413
             return jsonify({"error": msg}), 400
 
-        subfolder = "people"
-        dest_dir = os.path.join(uploads_dir, subfolder)
-        os.makedirs(dest_dir, exist_ok=True)
-
         ext = os.path.splitext(file.filename.lower())[1]
-        filename = f"{uuid.uuid4().hex}{ext}"
-        dest_path = os.path.join(dest_dir, filename)
-        file.save(dest_path)
-
-        photo_url = f"/uploads/{subfolder}/{filename}"
+        photo_url = store_uploaded_file(file, ext, "people")
         return jsonify({"photo_url": photo_url}), 201
 
     # Site Settings
@@ -958,6 +981,224 @@ def create_app():
                     [value, key],
                 )
         return jsonify({"message": "Settings updated successfully"})
+
+    # Memberships
+    def _add_one_month(d):
+        year = d.year + (d.month // 12)
+        month = d.month % 12 + 1
+        day = min(d.day, calendar.monthrange(year, month)[1])
+        return date(year, month, day)
+
+    def _membership_with_status(row):
+        m = dict(row)
+        if m["status"] == "active" and m.get("next_due_date") and m["next_due_date"] < date.today():
+            m["display_status"] = "expired"
+        else:
+            m["display_status"] = m["status"]
+        return m
+
+    EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+    @app.post("/api/membership/register")
+    def membership_register():
+        data = request.get_json(silent=True) or {}
+        full_name = (data.get("fullName") or data.get("full_name") or "").strip()
+        email = (data.get("email") or "").strip().lower()
+        phone = (data.get("phone") or "").strip()
+        age_group = data.get("ageGroup") or data.get("age_group")
+        program = data.get("program")
+
+        if not full_name or not email or not phone or not age_group or not program:
+            return jsonify({"error": "All fields are required"}), 400
+        if not EMAIL_RE.match(email):
+            return jsonify({"error": "Please enter a valid email address"}), 400
+        if age_group not in ("16_and_under", "16_and_over"):
+            return jsonify({"error": "Invalid age group"}), 400
+        if program not in ("dancing", "vocals", "both"):
+            return jsonify({"error": "Invalid program selection"}), 400
+
+        try:
+            rows = db.query(
+                "INSERT INTO memberships (full_name, email, phone, age_group, program) "
+                "VALUES (%s,%s,%s,%s,%s) RETURNING *",
+                [sanitize_text(full_name), email, sanitize_text(phone), age_group, program],
+            )
+        except UniqueViolation:
+            return jsonify(
+                {"error": "This email has already registered for this program."}
+            ), 409
+        return jsonify({"membership": _membership_with_status(rows[0])}), 201
+
+    @app.get("/api/membership/admin/all")
+    def admin_all_memberships():
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("SELECT * FROM memberships ORDER BY created_at DESC")
+        return jsonify({"memberships": [_membership_with_status(r) for r in rows]})
+
+    @app.put("/api/membership/admin/<id>/payment")
+    def admin_mark_membership_paid(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("SELECT * FROM memberships WHERE id = %s", [id])
+        if not rows:
+            return jsonify({"error": "Membership not found"}), 404
+        m = rows[0]
+        if m["status"] == "active":
+            today = date.today()
+            base = m["next_due_date"] if m["next_due_date"] and m["next_due_date"] >= today else today
+            new_due = _add_one_month(base)
+            rows = db.query(
+                "UPDATE memberships SET payment_status = 'paid', next_due_date = %s, updated_at = NOW() "
+                "WHERE id = %s RETURNING *",
+                [new_due, id],
+            )
+        else:
+            rows = db.query(
+                "UPDATE memberships SET payment_status = 'paid', updated_at = NOW() WHERE id = %s RETURNING *",
+                [id],
+            )
+        return jsonify({"membership": _membership_with_status(rows[0])})
+
+    @app.put("/api/membership/admin/<id>/activate")
+    def admin_activate_membership(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("SELECT * FROM memberships WHERE id = %s", [id])
+        if not rows:
+            return jsonify({"error": "Membership not found"}), 404
+        next_due = _add_one_month(date.today())
+        rows = db.query(
+            "UPDATE memberships SET status = 'active', payment_status = 'paid', "
+            "activated_at = COALESCE(activated_at, NOW()), next_due_date = %s, updated_at = NOW() "
+            "WHERE id = %s RETURNING *",
+            [next_due, id],
+        )
+        return jsonify({"membership": _membership_with_status(rows[0])})
+
+    @app.delete("/api/membership/admin/<id>")
+    def admin_delete_membership(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("DELETE FROM memberships WHERE id = %s RETURNING id", [id])
+        if not rows:
+            return jsonify({"error": "Membership not found"}), 404
+        return jsonify({"message": "Membership deleted successfully"})
+
+    # YouTube Videos
+    def extract_youtube_id(url):
+        if not url:
+            return None
+        m = re.search(
+            r"(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([A-Za-z0-9_-]{11})",
+            url,
+        )
+        return m.group(1) if m else None
+
+    def check_youtube_embeddable(video_id):
+        # YouTube's oEmbed endpoint 401s/403s when the video owner has
+        # disabled playback on other websites — surfaces the real cause of
+        # "Error 153" at add-time instead of a broken player later.
+        # Fail open on network errors so a transient outage can't block adds.
+        try:
+            resp = requests.get(
+                "https://www.youtube.com/oembed",
+                params={"url": f"https://www.youtube.com/watch?v={video_id}", "format": "json"},
+                timeout=4,
+            )
+            if resp.status_code in (401, 403, 404):
+                return False
+            return True
+        except Exception:
+            return True
+
+    @app.get("/api/videos")
+    def get_videos():
+        rows = db.query("SELECT * FROM videos ORDER BY sort_order ASC, created_at DESC")
+        return jsonify({"videos": rows})
+
+    @app.get("/api/videos/admin/all")
+    def admin_all_videos():
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("SELECT * FROM videos ORDER BY sort_order ASC, created_at DESC")
+        return jsonify({"videos": rows})
+
+    @app.post("/api/videos/admin")
+    def admin_create_video():
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        title = data.get("title")
+        youtube_url = data.get("youtube_url")
+        if not title or not youtube_url:
+            return jsonify({"error": "Title and YouTube URL are required"}), 400
+        video_id = extract_youtube_id(youtube_url)
+        if not video_id:
+            return jsonify({"error": "Could not find a valid YouTube video in that URL"}), 400
+        if not check_youtube_embeddable(video_id):
+            return jsonify({
+                "error": "This video's owner has disabled playback on other websites, "
+                         "so it can't be embedded here (YouTube 'Error 153'). Please choose a different video."
+            }), 400
+        rows = db.query(
+            "INSERT INTO videos (title, youtube_url, video_id, sort_order, created_by) "
+            "VALUES (%s,%s,%s,%s,%s) RETURNING *",
+            [sanitize_text(title), youtube_url.strip(), video_id, int(data.get("sort_order") or 0), admin["id"]],
+        )
+        return jsonify({"video": rows[0]}), 201
+
+    @app.put("/api/videos/admin/<id>")
+    def admin_update_video(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        video_id = None
+        if data.get("youtube_url"):
+            video_id = extract_youtube_id(data["youtube_url"])
+            if not video_id:
+                return jsonify({"error": "Could not find a valid YouTube video in that URL"}), 400
+            if not check_youtube_embeddable(video_id):
+                return jsonify({
+                    "error": "This video's owner has disabled playback on other websites, "
+                             "so it can't be embedded here (YouTube 'Error 153'). Please choose a different video."
+                }), 400
+        rows = db.query(
+            "UPDATE videos SET "
+            "title = COALESCE(%s, title), "
+            "youtube_url = COALESCE(%s, youtube_url), "
+            "video_id = COALESCE(%s, video_id), "
+            "sort_order = COALESCE(%s, sort_order), "
+            "updated_at = NOW() "
+            "WHERE id = %s RETURNING *",
+            [
+                sanitize_text(data["title"]) if data.get("title") else None,
+                data.get("youtube_url") or None,
+                video_id,
+                int(data["sort_order"]) if "sort_order" in data else None,
+                id,
+            ],
+        )
+        if not rows:
+            return jsonify({"error": "Video not found"}), 404
+        return jsonify({"video": rows[0]})
+
+    @app.delete("/api/videos/admin/<id>")
+    def admin_delete_video(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("DELETE FROM videos WHERE id = %s RETURNING id", [id])
+        if not rows:
+            return jsonify({"error": "Video not found"}), 404
+        return jsonify({"message": "Video deleted successfully"})
 
     # Dashboard stats
     @app.get("/api/dashboard/stats")
@@ -999,7 +1240,7 @@ def create_app():
 
     # Explicit page routes — must be defined before the catch-all so Flask
     # prefers these over the built-in static-file /<path:filename> handler.
-    _pages = ["about", "events", "gallery", "leadership", "admin", "contact"]
+    _pages = ["about", "events", "gallery", "leadership", "admin", "contact", "membership"]
 
     def _make_page_view(filename):
         def view():

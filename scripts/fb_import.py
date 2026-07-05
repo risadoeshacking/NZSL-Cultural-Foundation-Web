@@ -30,6 +30,8 @@ import os
 import sys
 import uuid
 import time
+import secrets
+import bcrypt
 import urllib.request
 import urllib.parse
 from pathlib import Path
@@ -127,9 +129,14 @@ def get_admin_id() -> str:
     if rows:
         return str(rows[0]["id"])
     aid = str(uuid.uuid4())
+    # Random, unguessable hash — this account is a system placeholder for
+    # created_by, never meant to log in, but must still be a *valid* bcrypt
+    # hash so auth code never chokes on it.
+    random_hash = bcrypt.hashpw(secrets.token_hex(32).encode(
+        "utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
     db_ex(
         "INSERT INTO admins (id,email,name,password_hash,role) VALUES (%s,%s,%s,%s,%s)",
-        [aid, "fb-import@nzslfoundation.org.nz", "FB Importer", "$2b$12$placeholder", "admin"],
+        [aid, "fb-import@nzslfoundation.org.nz", "FB Importer", random_hash, "admin"],
     )
     return aid
 

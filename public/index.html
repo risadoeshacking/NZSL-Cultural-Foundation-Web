@@ -39,6 +39,8 @@
           <li><a href="/about" class="nav-link">About</a></li>
           <li><a href="/events" class="nav-link">Events</a></li>
           <li><a href="/gallery" class="nav-link">Gallery</a></li>
+          <li><a href="/#videos" class="nav-link">Videos</a></li>
+          <li><a href="/membership" class="nav-link">Membership</a></li>
         </ul>
         <a href="/contact" class="nav-cta-btn">Get In Touch</a>
         <div class="nav-mobile-toggle" id="mobileToggle" onclick="toggleMobileNav()">
@@ -111,6 +113,36 @@
         <!-- duplicated for seamless loop — JS fills this -->
       </div>
     </div>
+
+    <!-- Calendar -->
+    <section class="section" id="calendar">
+      <div class="container">
+        <div class="section-header reveal">
+          <div>
+            <div class="section-label">Plan Your Visit</div>
+            <h2 class="heading-lg section-title">Event Calendar</h2>
+            <p class="section-subtitle">Browse every cultural event by date. Click a highlighted day to see what's on.</p>
+          </div>
+        </div>
+        <div class="calendar-card reveal">
+          <div class="calendar-nav">
+            <button class="calendar-nav-btn" id="calendarPrev" aria-label="Previous month">&#8249;</button>
+            <div class="calendar-nav-title" id="calendarTitle"></div>
+            <button class="calendar-nav-btn" id="calendarNext" aria-label="Next month">&#8250;</button>
+          </div>
+          <div class="calendar-weekdays">
+            <div class="calendar-weekday">Sun</div>
+            <div class="calendar-weekday">Mon</div>
+            <div class="calendar-weekday">Tue</div>
+            <div class="calendar-weekday">Wed</div>
+            <div class="calendar-weekday">Thu</div>
+            <div class="calendar-weekday">Fri</div>
+            <div class="calendar-weekday">Sat</div>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+      </div>
+    </section>
 
     <!-- Cinematic Flag Reveal -->
     <section class="flags-cinema" id="flagsCinema" aria-label="Flags of Aotearoa New Zealand and Sri Lanka">
@@ -426,6 +458,25 @@
     </section>
 
 
+    <!-- Video Gallery -->
+    <section class="section" id="videos">
+      <div class="container">
+        <div class="section-header reveal">
+          <div>
+            <div class="section-label">Watch &amp; Experience</div>
+            <h2 class="heading-lg section-title">Video Gallery</h2>
+            <p class="section-subtitle">Performances, festivals and community moments captured on film.</p>
+          </div>
+        </div>
+        <div class="video-grid" id="videoGrid">
+          <div class="loading-state" id="videosLoading">
+            <div class="loader"></div>
+            <span>Loading videos...</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Community News Section -->
     <section class="community-section" id="community-news">
       <div class="container">
@@ -485,6 +536,7 @@
               <li><a href="/about">About Us</a></li>
               <li><a href="/events">Events</a></li>
               <li><a href="/gallery">Gallery</a></li>
+              <li><a href="/membership">Membership</a></li>
             </ul>
           </div>
           <div>
@@ -523,6 +575,23 @@
           <span class="lightbox-caption-photographer" id="lightboxPhotographer"></span>
         </figcaption>
       </figure>
+    </div>
+
+    <!-- Calendar Day Modal -->
+    <div class="calendar-modal-overlay" id="calendarModalOverlay" onclick="closeCalendarModal(event)" role="dialog" aria-modal="true">
+      <div class="calendar-modal" onclick="event.stopPropagation()">
+        <button class="calendar-modal-close" onclick="closeCalendarModal()" aria-label="Close">&times;</button>
+        <h3 id="calendarModalTitle"></h3>
+        <div id="calendarModalBody"></div>
+      </div>
+    </div>
+
+    <!-- Video Playback Modal -->
+    <div class="video-modal-overlay" id="videoModalOverlay" onclick="closeVideoModal(event)" role="dialog" aria-modal="true">
+      <div class="video-modal" onclick="event.stopPropagation()">
+        <button class="video-modal-close" onclick="closeVideoModal()" aria-label="Close">&times;</button>
+        <div class="video-modal-player" id="videoModalPlayer"></div>
+      </div>
     </div>
 
     <script src="/js/app.js"></script>

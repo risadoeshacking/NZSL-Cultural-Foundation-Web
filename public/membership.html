@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Membership — NZSL Cultural Foundation</title>
+    <meta
+      name="description"
+      content="Register for Dancing, Vocals, or both programs with the New Zealand Sri Lanka Cultural Foundation."
+    />
+    <meta name="theme-color" content="#1a1a1a" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <nav class="nav scrolled" id="mainNav">
+      <div class="nav-inner">
+        <a href="/" class="nav-logo">
+          <img
+            src="/logo.png"
+            class="nav-logo-icon"
+            alt="NZSL Cultural Foundation"
+          />
+          <span class="nav-logo-text">NZSL Foundation</span>
+        </a>
+        <ul class="nav-links" id="navLinks">
+          <li><a href="/about" class="nav-link">About</a></li>
+          <li><a href="/events" class="nav-link">Events</a></li>
+          <li><a href="/gallery" class="nav-link">Gallery</a></li>
+          <li><a href="/leadership" class="nav-link">Leadership</a></li>
+          <li><a href="/#stories" class="nav-link">Stories</a></li>
+          <li><a href="/#videos" class="nav-link">Videos</a></li>
+          <li><a href="/membership" class="nav-link active">Membership</a></li>
+        </ul>
+        <a href="/contact" class="nav-cta-btn">Get In Touch</a>
+        <div
+          class="nav-mobile-toggle"
+          id="mobileToggle"
+          onclick="toggleMobileNav()"
+        >
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="page-header">
+      <div class="container">
+        <h1 class="page-header-title">Membership</h1>
+        <p class="page-header-subtitle">
+          Join our Dancing and Vocals programs and be part of the cultural
+          community.
+        </p>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="container">
+        <div class="membership-form-card reveal">
+          <form id="membershipForm">
+            <div class="form-group">
+              <label class="form-label" for="mFullName">Full Name</label>
+              <input class="form-input" id="mFullName" name="fullName" type="text" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="mEmail">Email</label>
+              <input class="form-input" id="mEmail" name="email" type="email" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="mPhone">Phone Number</label>
+              <input class="form-input" id="mPhone" name="phone" type="tel" required />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Age Group</label>
+              <div class="form-radio-group" id="ageGroupOptions">
+                <label class="form-radio-option">
+                  <input type="radio" name="ageGroup" value="16_and_under" required />
+                  16 years and below
+                </label>
+                <label class="form-radio-option">
+                  <input type="radio" name="ageGroup" value="16_and_over" />
+                  16 years and over
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Program</label>
+              <div class="form-radio-group" id="programOptions">
+                <label class="form-radio-option">
+                  <input type="radio" name="program" value="dancing" required />
+                  Dancing
+                </label>
+                <label class="form-radio-option">
+                  <input type="radio" name="program" value="vocals" />
+                  Vocals
+                </label>
+                <label class="form-radio-option">
+                  <input type="radio" name="program" value="both" />
+                  Both
+                </label>
+              </div>
+            </div>
+
+            <button class="btn btn-primary btn-full" type="submit" id="membershipBtn">
+              Register
+            </button>
+            <div id="membershipError" class="form-error" style="margin-top: 1rem"></div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <div id="paymentModalContainer"></div>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <div class="footer-brand-name">
+              <img src="/logo.png" alt="" class="footer-logo" />
+              NZSL Cultural Foundation
+            </div>
+            <p>
+              Dedicated to preserving, showcasing, and celebrating Sri Lankan
+              culture in Aotearoa New Zealand.
+            </p>
+            <div class="footer-social" id="footerSocial"></div>
+          </div>
+          <div>
+            <div class="footer-heading">Navigate</div>
+            <ul class="footer-links">
+              <li><a href="/about">About Us</a></li>
+              <li><a href="/events">Events</a></li>
+              <li><a href="/gallery">Gallery</a></li>
+              <li><a href="/leadership">Leadership</a></li>
+              <li><a href="/membership">Membership</a></li>
+            </ul>
+          </div>
+          <div>
+            <div class="footer-heading">Heritage</div>
+            <ul class="footer-links">
+              <li><a href="/gallery">Cultural Gallery</a></li>
+              <li><a href="/#stories">Stories</a></li>
+              <li><a href="/events">Festivals</a></li>
+              <li><a href="/events">Workshops</a></li>
+            </ul>
+          </div>
+          <div>
+            <div class="footer-heading">Contact</div>
+            <ul class="footer-links">
+              <li>
+                <a href="mailto:info@nzslfoundation.org.nz"
+                  >info@nzslfoundation.org.nz</a
+                >
+              </li>
+              <li><a href="tel:+6445678901">+64 4 567 8901</a></li>
+              <li>
+                <span style="color: var(--text-muted)"
+                  >Wellington, New Zealand</span
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>© 2026 NZSL Cultural Foundation. All rights reserved.</span>
+          <span>Preserving Sri Lankan heritage in Aotearoa</span>
+        </div>
+      </div>
+    </footer>
+
+    <script src="/js/app.js"></script>
+    <script>
+      // Highlight the selected radio option
+      document.querySelectorAll(".form-radio-group").forEach((group) => {
+        group.addEventListener("change", () => {
+          group.querySelectorAll(".form-radio-option").forEach((opt) => {
+            opt.classList.toggle("checked", opt.querySelector("input").checked);
+          });
+        });
+      });
+
+      async function showPaymentModal() {
+        let bankSettings = [];
+        try {
+          const data = await apiFetch("/settings");
+          bankSettings = (data?.settings || []).filter((s) => s.category === "payment");
+        } catch (_) {}
+
+        const get = (key) => bankSettings.find((s) => s.key === key)?.value || "";
+        const accountName = get("bank_account_name") || "NZSL Cultural Foundation";
+        const accountNumber = get("bank_account_number") || "Contact us for details";
+        const bankName = get("bank_name") || "";
+        const reference = get("payment_reference") || "Your full name";
+        const copyText = `${accountName} — ${accountNumber}${bankName ? " (" + bankName + ")" : ""} — Reference: ${reference}`;
+
+        const html = `
+          <div class="payment-modal-overlay" onclick="closePaymentModal(event)">
+            <div class="payment-modal" onclick="event.stopPropagation()">
+              <h3>Registration Received!</h3>
+              <p>Please complete payment to activate your membership.</p>
+              <div class="bank-details-box">
+                <div class="bank-details-row">
+                  <span class="bank-details-label">Account Name</span>
+                  <span class="bank-details-value">${accountName}</span>
+                </div>
+                <div class="bank-details-row">
+                  <span class="bank-details-label">Account Number</span>
+                  <span class="bank-details-value">${accountNumber}</span>
+                </div>
+                ${bankName ? `<div class="bank-details-row"><span class="bank-details-label">Bank</span><span class="bank-details-value">${bankName}</span></div>` : ""}
+                <div class="bank-details-row">
+                  <span class="bank-details-label">Reference</span>
+                  <span class="bank-details-value">${reference}</span>
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary btn-full" onclick="copyAccountDetails()">Copy Account Details</button>
+              <div class="copy-feedback" id="copyFeedback"></div>
+              <button type="button" class="btn btn-ghost btn-full" style="margin-top:0.75rem" onclick="closePaymentModal()">Close</button>
+            </div>
+          </div>`;
+        document.getElementById("paymentModalContainer").innerHTML = html;
+        window.__membershipCopyText = copyText;
+      }
+
+      function closePaymentModal() {
+        document.getElementById("paymentModalContainer").innerHTML = "";
+      }
+
+      async function copyAccountDetails() {
+        const feedback = document.getElementById("copyFeedback");
+        try {
+          await navigator.clipboard.writeText(window.__membershipCopyText || "");
+          if (feedback) feedback.textContent = "Copied to clipboard!";
+        } catch (_) {
+          if (feedback) feedback.textContent = "Could not copy — please copy manually.";
+        }
+      }
+
+      document.getElementById("membershipForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const errorEl = document.getElementById("membershipError");
+        const btn = document.getElementById("membershipBtn");
+        errorEl.style.display = "none";
+
+        const form = new FormData(e.target);
+        const body = Object.fromEntries(form.entries());
+
+        if (!body.ageGroup || !body.program) {
+          errorEl.textContent = "Please select an age group and a program.";
+          errorEl.style.display = "block";
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "Registering...";
+
+        try {
+          const res = await fetch("/api/membership/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || "Registration failed. Please try again.");
+          e.target.reset();
+          document.querySelectorAll(".form-radio-option.checked").forEach((el) => el.classList.remove("checked"));
+          showPaymentModal();
+        } catch (err) {
+          errorEl.textContent = err.message || "Registration failed. Please try again.";
+          errorEl.style.display = "block";
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Register";
+        }
+      });
+
+      (async function () {
+        try {
+          const data = await apiFetch("/settings");
+          const social = (data?.settings || []).filter(s => s.category === "social" && s.value);
+          const labels = { facebook_url: "Facebook", instagram_url: "Instagram", youtube_url: "YouTube", twitter_url: "X (Twitter)", linkedin_url: "LinkedIn" };
+          const el = document.getElementById("footerSocial");
+          if (el && social.length > 0) {
+            el.innerHTML = social.map(s =>
+              `<a href="${s.value}" target="_blank" rel="noopener noreferrer" class="footer-social-link">${labels[s.key] || s.key.replace(/_url$/, "")}</a>`
+            ).join("");
+          }
+        } catch (_) {}
+      })();
+    </script>
+  </body>
+</html>

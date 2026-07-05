@@ -1313,6 +1313,173 @@ async function loadCommunityFeed() {
 }
 
 // ========================================
+// CALENDAR
+// ========================================
+let calendarEvents = [];
+let calendarViewDate = new Date();
+
+async function initCalendar() {
+  const grid = document.getElementById('calendarGrid');
+  if (!grid) return;
+
+  const data = await apiFetch('/events?limit=200');
+  calendarEvents = (data && data.events) || [];
+
+  const prevBtn = document.getElementById('calendarPrev');
+  const nextBtn = document.getElementById('calendarNext');
+  if (prevBtn) prevBtn.addEventListener('click', () => {
+    calendarViewDate.setMonth(calendarViewDate.getMonth() - 1);
+    renderCalendar();
+  });
+  if (nextBtn) nextBtn.addEventListener('click', () => {
+    calendarViewDate.setMonth(calendarViewDate.getMonth() + 1);
+    renderCalendar();
+  });
+
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calendarGrid');
+  const title = document.getElementById('calendarTitle');
+  if (!grid || !title) return;
+
+  const year = calendarViewDate.getFullYear();
+  const month = calendarViewDate.getMonth();
+  title.textContent = calendarViewDate.toLocaleDateString('en-NZ', { month: 'long', year: 'numeric' });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = new Date();
+
+  const eventsByDay = {};
+  calendarEvents.forEach(ev => {
+    const d = new Date(ev.date);
+    if (d.getFullYear() === year && d.getMonth() === month) {
+      const day = d.getDate();
+      (eventsByDay[day] = eventsByDay[day] || []).push(ev);
+    }
+  });
+
+  let html = '';
+  for (let i = 0; i < firstDay; i++) {
+    html += '<div class="calendar-day is-blank"></div>';
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dayEvents = eventsByDay[day] || [];
+    const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+    const classes = ['calendar-day'];
+    if (isToday) classes.push('today');
+    if (dayEvents.length) classes.push('has-events');
+    const dots = dayEvents.slice(0, 4).map(ev =>
+      `<span class="calendar-day-dot" style="background:${getCategoryColor(ev.category)}"></span>`
+    ).join('');
+    html += `<div class="${classes.join(' ')}"${dayEvents.length ? ` onclick="showCalendarDay(${year},${month},${day})"` : ''}>
+      <span class="calendar-day-num">${day}</span>
+      <div class="calendar-day-dots">${dots}</div>
+    </div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function showCalendarDay(year, month, day) {
+  const dayEvents = calendarEvents.filter(ev => {
+    const d = new Date(ev.date);
+    return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
+  });
+  if (!dayEvents.length) return;
+
+  const dateLabel = new Date(year, month, day)
+    .toLocaleDateString('en-NZ', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  const overlay = document.getElementById('calendarModalOverlay');
+  const title = document.getElementById('calendarModalTitle');
+  const body = document.getElementById('calendarModalBody');
+  if (!overlay || !title || !body) return;
+
+  title.textContent = dateLabel;
+  body.innerHTML = dayEvents.map(ev => `
+    <div class="calendar-modal-event">
+      ${ev.cover_image ? `<img class="calendar-modal-event-image" src="${ev.cover_image}" alt="${ev.title}" loading="lazy" />` : ''}
+      <div class="calendar-modal-event-title">${ev.title}</div>
+      <div class="calendar-modal-event-meta">${ev.time_start || ''}${ev.time_end ? ' – ' + ev.time_end : ''}${ev.location ? ' · ' + ev.location : ''}</div>
+      <div class="calendar-modal-event-desc">${ev.description || ''}</div>
+    </div>
+  `).join('');
+
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCalendarModal() {
+  const overlay = document.getElementById('calendarModalOverlay');
+  if (overlay) overlay.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// ========================================
+// VIDEO GALLERY
+// ========================================
+async function loadVideos() {
+  const grid = document.getElementById('videoGrid');
+  if (!grid) return;
+
+  const data = await apiFetch('/videos');
+  const videos = (data && data.videos) || [];
+
+  if (!videos.length) {
+    grid.innerHTML = `
+      <div class="loading-state" style="grid-column:1/-1;opacity:.5">
+        <span>No videos yet — check back soon.</span>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = videos.map((v, i) => `
+    <div class="video-card reveal reveal-delay-${(i % 3) + 1}">
+      <div class="video-embed-wrap" onclick="openVideoModal('${v.video_id}', '${(v.title || '').replace(/'/g, "\\'")}')">
+        <img class="video-thumb" src="https://img.youtube.com/vi/${v.video_id}/hqdefault.jpg" alt="${v.title}" loading="lazy" />
+        <button class="video-play-btn" aria-label="Play ${v.title}" type="button">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+      </div>
+      <div class="video-card-title">${v.title}</div>
+    </div>
+  `).join('');
+
+  initScrollReveal();
+}
+
+function openVideoModal(videoId, title) {
+  const overlay = document.getElementById('videoModalOverlay');
+  const player = document.getElementById('videoModalPlayer');
+  if (!overlay || !player) return;
+
+  // origin= tells YouTube's player which site is embedding it — recommended
+  // by Google's IFrame API docs to avoid postMessage/config validation errors.
+  // referrerpolicy is required here too: the site sends a page-wide
+  // "Referrer-Policy: no-referrer" header, which would otherwise suppress
+  // the referrer on this iframe's request and can surface as YouTube's
+  // "Error 153 — video player configuration error".
+  const origin = encodeURIComponent(window.location.origin);
+  player.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&origin=${origin}" title="${title || 'YouTube video'}" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeVideoModal() {
+  const overlay = document.getElementById('videoModalOverlay');
+  const player = document.getElementById('videoModalPlayer');
+  if (overlay) overlay.classList.remove('active');
+  document.body.style.overflow = '';
+  // Remove the iframe entirely so playback actually stops (hiding it alone
+  // would leave the video/audio running in the background).
+  if (player) player.innerHTML = '';
+}
+
+// ========================================
 // SECTION GLOW LINES — inject into headings
 // ========================================
 function initSectionGlowLines() {
@@ -1349,6 +1516,8 @@ function initApp() {
   loadEvents();
   loadGallery();
   loadCommunityFeed();
+  initCalendar();
+  loadVideos();
 
   const lightbox = document.getElementById('lightbox');
   if (lightbox) {
