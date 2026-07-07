@@ -176,12 +176,18 @@ def create_app():
         every restart/redeploy); otherwise falls back to local disk so local
         development keeps working with zero extra setup."""
         if cloudinary_url:
-            result = cloudinary.uploader.upload(
-                file_storage.stream,
-                folder=f"nzsl/{subfolder}",
-                public_id=uuid.uuid4().hex,
-                resource_type="image",
-            )
+            try:
+                result = cloudinary.uploader.upload(
+                    file_storage.stream,
+                    folder=f"nzsl/{subfolder}",
+                    public_id=uuid.uuid4().hex,
+                    resource_type="image",
+                )
+            except Exception as e:
+                raise RuntimeError(
+                    f"Could not reach Cloudinary to store the image ({e}). "
+                    "Check that CLOUDINARY_URL is set correctly."
+                ) from e
             return result["secure_url"]
 
         dest_dir = os.path.join(uploads_dir, subfolder)
@@ -713,7 +719,10 @@ def create_app():
             return jsonify({"error": msg}), (413 if "too large" in msg.lower() else 400)
 
         ext = os.path.splitext(file.filename.lower())[1]
-        thumbnail_url = store_uploaded_file(file, ext, "posts")
+        try:
+            thumbnail_url = store_uploaded_file(file, ext, "posts")
+        except RuntimeError as e:
+            return jsonify({"error": str(e)}), 502
         return jsonify({"thumbnail": thumbnail_url}), 201
 
     # Stories
@@ -926,7 +935,10 @@ def create_app():
             return jsonify({"error": msg}), 400
 
         ext = os.path.splitext(file.filename.lower())[1]
-        image_url = store_uploaded_file(file, ext, "gallery")
+        try:
+            image_url = store_uploaded_file(file, ext, "gallery")
+        except RuntimeError as e:
+            return jsonify({"error": str(e)}), 502
         data = request.form.to_dict(flat=True)
         title = data.get("title")
         description = data.get("description")
@@ -1119,7 +1131,10 @@ def create_app():
             return jsonify({"error": msg}), 400
 
         ext = os.path.splitext(file.filename.lower())[1]
-        photo_url = store_uploaded_file(file, ext, "people")
+        try:
+            photo_url = store_uploaded_file(file, ext, "people")
+        except RuntimeError as e:
+            return jsonify({"error": str(e)}), 502
         return jsonify({"photo_url": photo_url}), 201
 
     # Site Settings
@@ -1658,7 +1673,10 @@ def create_app():
             return jsonify({"error": msg}), 400
 
         ext = os.path.splitext(file.filename.lower())[1]
-        cover_image = store_uploaded_file(file, ext, "productions")
+        try:
+            cover_image = store_uploaded_file(file, ext, "productions")
+        except RuntimeError as e:
+            return jsonify({"error": str(e)}), 502
         return jsonify({"cover_image": cover_image}), 201
 
     # Tutors
@@ -1761,7 +1779,10 @@ def create_app():
             return jsonify({"error": msg}), 400
 
         ext = os.path.splitext(file.filename.lower())[1]
-        photo_url = store_uploaded_file(file, ext, "tutors")
+        try:
+            photo_url = store_uploaded_file(file, ext, "tutors")
+        except RuntimeError as e:
+            return jsonify({"error": str(e)}), 502
         return jsonify({"photo_url": photo_url}), 201
 
     # Partners & Sponsors
@@ -1864,7 +1885,10 @@ def create_app():
             return jsonify({"error": msg}), 400
 
         ext = os.path.splitext(file.filename.lower())[1]
-        logo_url = store_uploaded_file(file, ext, "sponsors")
+        try:
+            logo_url = store_uploaded_file(file, ext, "sponsors")
+        except RuntimeError as e:
+            return jsonify({"error": str(e)}), 502
         return jsonify({"logo_url": logo_url}), 201
 
     # Programmes (Learn to Dance, Learn to Sing)
@@ -2016,7 +2040,10 @@ def create_app():
             return jsonify({"error": msg}), 400
 
         ext = os.path.splitext(file.filename.lower())[1]
-        cover_image = store_uploaded_file(file, ext, "programmes")
+        try:
+            cover_image = store_uploaded_file(file, ext, "programmes")
+        except RuntimeError as e:
+            return jsonify({"error": str(e)}), 502
         return jsonify({"cover_image": cover_image}), 201
 
     # Programme classes (age group / level / timetable / fee within a programme)

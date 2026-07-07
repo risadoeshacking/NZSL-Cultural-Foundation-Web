@@ -524,7 +524,10 @@ async function savePost(e, id) {
         headers: { Authorization: `Bearer ${currentToken}` },
         body: fd,
       });
-      if (!res.ok) throw new Error("Image upload failed");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Image upload failed");
+      }
       const uploadData = await res.json();
       thumbnail = uploadData.thumbnail;
     }
