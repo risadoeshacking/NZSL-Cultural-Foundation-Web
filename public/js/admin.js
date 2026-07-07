@@ -364,7 +364,10 @@ async function saveProduction(e, id) {
         headers: { Authorization: `Bearer ${currentToken}` },
         body: fd,
       });
-      if (!res.ok) throw new Error("Cover image upload failed");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Cover image upload failed");
+      }
       const uploadData = await res.json();
       cover_image = uploadData.cover_image;
     }
@@ -630,7 +633,10 @@ async function uploadGalleryImage(e) {
       headers: { Authorization: `Bearer ${currentToken}` },
       body: form,
     });
-    if (!res.ok) throw new Error("Upload failed");
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || "Upload failed");
+    }
     closeModal();
     loadGalleryTable();
   } catch (err) {
@@ -899,7 +905,10 @@ async function saveLeader(e, id) {
         headers: { Authorization: `Bearer ${currentToken}` },
         body: fd,
       });
-      if (!res.ok) throw new Error("Photo upload failed");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Photo upload failed");
+      }
       const uploadData = await res.json();
       photo_url = uploadData.photo_url;
     }
@@ -1050,7 +1059,10 @@ async function saveSponsor(e, id) {
         headers: { Authorization: `Bearer ${currentToken}` },
         body: fd,
       });
-      if (!res.ok) throw new Error("Logo upload failed");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Logo upload failed");
+      }
       const uploadData = await res.json();
       logo_url = uploadData.logo_url;
     }
@@ -1197,7 +1209,10 @@ async function saveProgramme(e, id) {
         headers: { Authorization: `Bearer ${currentToken}` },
         body: fd,
       });
-      if (!res.ok) throw new Error("Cover image upload failed");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Cover image upload failed");
+      }
       const uploadData = await res.json();
       cover_image = uploadData.cover_image;
     }
@@ -1354,7 +1369,10 @@ async function saveTutor(e, id) {
         headers: { Authorization: `Bearer ${currentToken}` },
         body: fd,
       });
-      if (!res.ok) throw new Error("Photo upload failed");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Photo upload failed");
+      }
       const uploadData = await res.json();
       photo_url = uploadData.photo_url;
     }
