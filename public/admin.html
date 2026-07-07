@@ -72,16 +72,24 @@
           </li>
           <li class="admin-sidebar-section">Content</li>
           <li><a href="#" data-section="events">Events</a></li>
+          <li><a href="#" data-section="productions">Productions</a></li>
           <li><a href="#" data-section="posts">Posts</a></li>
           <li><a href="#" data-section="gallery">Gallery</a></li>
           <li><a href="#" data-section="stories">Stories</a></li>
           <li class="admin-sidebar-section">People</li>
           <li><a href="#" data-section="leadership">About — People</a></li>
+          <li><a href="#" data-section="sponsors">Partners &amp; Sponsors</a></li>
+          <li class="admin-sidebar-section">Programmes</li>
+          <li><a href="#" data-section="programmes">Programmes</a></li>
+          <li><a href="#" data-section="classes">Classes</a></li>
+          <li><a href="#" data-section="tutors">Tutors</a></li>
           <li class="admin-sidebar-section">Community</li>
           <li><a href="#" data-section="membership">Membership</a></li>
           <li><a href="#" data-section="videos">Videos</a></li>
+          <li><a href="#" data-section="enquiries">Enquiries</a></li>
           <li class="admin-sidebar-section">Settings</li>
           <li><a href="#" data-section="settings">Social Media &amp; Settings</a></li>
+          <li><a href="#" data-section="adminusers">Admin Users</a></li>
           <li><a href="#" data-section="account">My Account</a></li>
         </ul>
         <div
@@ -170,6 +178,32 @@
                 </tr>
               </thead>
               <tbody id="eventsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Productions Section -->
+        <div id="section-productions" class="admin-section" style="display: none">
+          <div class="admin-header">
+            <h1>Productions</h1>
+            <div class="admin-header-actions">
+              <button class="btn btn-primary btn-sm" onclick="showProductionModal()">
+                + Add Production
+              </button>
+            </div>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Cover</th>
+                  <th>Title</th>
+                  <th>Status</th>
+                  <th>Order</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="productionsTableBody"></tbody>
             </table>
           </div>
         </div>
@@ -277,12 +311,118 @@
                 <tr>
                   <th>Name</th>
                   <th>Role</th>
+                  <th>Category</th>
                   <th>Status</th>
                   <th>Order</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="leadershipTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Partners & Sponsors Section -->
+        <div id="section-sponsors" class="admin-section" style="display: none">
+          <div class="admin-header">
+            <h1>Partners &amp; Sponsors</h1>
+            <div class="admin-header-actions">
+              <button class="btn btn-primary btn-sm" onclick="showSponsorModal()">
+                + Add Sponsor
+              </button>
+            </div>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Logo</th>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Order</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="sponsorsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Programmes Section -->
+        <div id="section-programmes" class="admin-section" style="display: none">
+          <div class="admin-header">
+            <h1>Programmes</h1>
+            <div class="admin-header-actions">
+              <button class="btn btn-primary btn-sm" onclick="showProgrammeModal()">
+                + Add Programme
+              </button>
+            </div>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Cover</th>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Order</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="programmesTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Classes Section -->
+        <div id="section-classes" class="admin-section" style="display: none">
+          <div class="admin-header">
+            <h1>Classes</h1>
+            <div class="admin-header-actions">
+              <button class="btn btn-primary btn-sm" onclick="showClassModal()">
+                + Add Class
+              </button>
+            </div>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Programme</th>
+                  <th>Level</th>
+                  <th>Age Group</th>
+                  <th>Schedule</th>
+                  <th>Fee</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="classesTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tutors Section -->
+        <div id="section-tutors" class="admin-section" style="display: none">
+          <div class="admin-header">
+            <h1>Tutors</h1>
+            <div class="admin-header-actions">
+              <button class="btn btn-primary btn-sm" onclick="showTutorModal()">
+                + Add Tutor
+              </button>
+            </div>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Photo</th>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Order</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tutorsTableBody"></tbody>
             </table>
           </div>
         </div>
@@ -294,7 +434,15 @@
           style="display: none"
         >
           <div class="admin-header">
-            <h1>Membership</h1>
+            <h1>Enrolments &amp; Students</h1>
+          </div>
+          <div class="gallery-filters" id="membershipFilters" style="margin-bottom: 1rem">
+            <button class="gallery-filter active" data-status="all">All</button>
+            <button class="gallery-filter" data-status="pending">Pending</button>
+            <button class="gallery-filter" data-status="active">Active</button>
+            <button class="gallery-filter" data-status="waitlisted">Waitlisted</button>
+            <button class="gallery-filter" data-status="rejected">Rejected</button>
+            <button class="gallery-filter" data-status="expired">Expired</button>
           </div>
           <div class="admin-table-container">
             <table class="admin-table">
@@ -338,6 +486,27 @@
           </div>
         </div>
 
+        <!-- Enquiries Section -->
+        <div id="section-enquiries" class="admin-section" style="display: none">
+          <div class="admin-header">
+            <h1>Enquiries</h1>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Subject</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="enquiriesTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- Settings Section -->
         <div id="section-settings" class="admin-section" style="display: none">
           <div class="admin-header">
@@ -349,6 +518,31 @@
             </div>
           </div>
           <div id="settingsForm"></div>
+        </div>
+
+        <!-- Admin Users Section -->
+        <div id="section-adminusers" class="admin-section" style="display: none">
+          <div class="admin-header">
+            <h1>Admin Users</h1>
+            <div class="admin-header-actions">
+              <button class="btn btn-primary btn-sm" onclick="showAdminUserModal()">
+                + Add Admin
+              </button>
+            </div>
+          </div>
+          <div class="admin-table-container">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Added</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminUsersTableBody"></tbody>
+            </table>
+          </div>
         </div>
 
         <!-- My Account Section -->

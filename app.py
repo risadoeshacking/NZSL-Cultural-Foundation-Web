@@ -2,6 +2,7 @@ import os
 import re
 import uuid
 import calendar
+import unicodedata
 from datetime import datetime, date
 
 from dotenv import load_dotenv
@@ -68,6 +69,15 @@ def sanitize_text(s: str | None) -> str | None:
     # escape angle brackets
     s = s.replace("<", "<").replace(">", ">")
     return s
+
+
+def slugify(text: str) -> str:
+    # Strip diacritics (e.g. "Nādanū Pā" -> "Nadanu Pa") before reducing to
+    # a-z0-9, so macron'd/accented titles don't collapse into stray hyphens.
+    normalized = unicodedata.normalize("NFKD", text)
+    ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_text.strip().lower())
+    return slug.strip("-")
 
 
 class DB:
@@ -376,6 +386,59 @@ def create_app():
             [sanitize_text(name), admin["id"]],
         )
         return jsonify({"admin": rows[0]})
+
+    # Admin Users
+    @app.get("/api/admins/admin/all")
+    def admin_all_admins():
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query(
+            "SELECT id::text, email, name, role, created_at FROM admins ORDER BY created_at ASC")
+        return jsonify({"admins": rows})
+
+    @app.post("/api/admins/admin")
+    def admin_create_admin():
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        name = (data.get("name") or "").strip()
+        email = (data.get("email") or "").strip().lower()
+        password = data.get("password") or ""
+        if not name or not email or not password:
+            return jsonify({"error": "Name, email, and password are required"}), 400
+        if not EMAIL_RE.match(email):
+            return jsonify({"error": "Please enter a valid email address"}), 400
+        if len(password) < 8:
+            return jsonify({"error": "Password must be at least 8 characters"}), 400
+
+        password_hash = bcrypt.hashpw(
+            password.encode("utf-8"), bcrypt.gensalt(rounds=12)).decode("utf-8")
+        try:
+            rows = db.query(
+                "INSERT INTO admins (email, name, password_hash, role) VALUES (%s,%s,%s,%s) "
+                "RETURNING id::text, email, name, role, created_at",
+                [email, sanitize_text(name), password_hash, "admin"],
+            )
+        except UniqueViolation:
+            return jsonify({"error": "An admin with that email already exists"}), 409
+        return jsonify({"admin": rows[0]}), 201
+
+    @app.delete("/api/admins/admin/<id>")
+    def admin_delete_admin(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        if admin["id"] == id:
+            return jsonify({"error": "You can't delete your own account"}), 400
+        count_rows = db.query("SELECT COUNT(*) AS count FROM admins")
+        if int(count_rows[0]["count"]) <= 1:
+            return jsonify({"error": "Can't delete the last remaining admin"}), 400
+        rows = db.query("DELETE FROM admins WHERE id = %s RETURNING id", [id])
+        if not rows:
+            return jsonify({"error": "Admin not found"}), 404
+        return jsonify({"message": "Admin deleted successfully"})
 
     # Events
     @app.get("/api/events")
@@ -773,14 +836,27 @@ def create_app():
     @app.get("/api/gallery")
     def get_gallery():
         category = request.args.get("category")
+        production_id = request.args.get("production_id")
+        year = request.args.get("year")
         limit = request.args.get("limit", "50")
         offset = request.args.get("offset", "0")
 
         query = "SELECT * FROM gallery"
+        conditions = []
         params = []
         if category:
-            query += " WHERE category = %s"
+            conditions.append("category = %s")
             params.append(category)
+        if production_id == "any":
+            conditions.append("production_id IS NOT NULL")
+        elif production_id:
+            conditions.append("production_id = %s")
+            params.append(production_id)
+        if year:
+            conditions.append("EXTRACT(YEAR FROM created_at)::int = %s")
+            params.append(int(year))
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
 
         query += " ORDER BY sort_order ASC, created_at DESC"
         if limit is not None:
@@ -792,6 +868,12 @@ def create_app():
 
         rows = db.query(query, params)
         return jsonify({"images": rows})
+
+    @app.get("/api/gallery/years")
+    def get_gallery_years():
+        rows = db.query(
+            "SELECT DISTINCT EXTRACT(YEAR FROM created_at)::int AS year FROM gallery ORDER BY year DESC")
+        return jsonify({"years": [r["year"] for r in rows]})
 
     @app.get("/api/gallery/admin/all")
     def admin_all_gallery():
@@ -850,10 +932,11 @@ def create_app():
         description = data.get("description")
         category = data.get("category")
         photographer = data.get("photographer")
+        production_id = data.get("production_id") or None
 
         sql = (
-            "INSERT INTO gallery (title, description, image_url, category, photographer, created_by) "
-            "VALUES (%s,%s,%s,%s,%s,%s) RETURNING *"
+            "INSERT INTO gallery (title, description, image_url, category, photographer, production_id, created_by) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING *"
         )
         params = [
             sanitize_text(title) or "Untitled",
@@ -861,6 +944,7 @@ def create_app():
             image_url,
             category or "general",
             sanitize_text(photographer) or None,
+            production_id,
             admin["id"],
         ]
         rows = db.query(sql, params)
@@ -879,6 +963,7 @@ def create_app():
             "description = COALESCE(%s, description), "
             "category = COALESCE(%s, category), "
             "photographer = COALESCE(%s, photographer), "
+            "production_id = COALESCE(%s, production_id), "
             "sort_order = COALESCE(%s, sort_order), "
             "featured = COALESCE(%s, featured), "
             "updated_at = NOW() "
@@ -891,6 +976,7 @@ def create_app():
             data.get("category") or None,
             sanitize_text(data["photographer"]) if data.get(
                 "photographer") else None,
+            (data.get("production_id") or None) if "production_id" in data else None,
             data.get("sort_order") if "sort_order" in data else None,
             data.get("featured") if "featured" in data else None,
             id,
@@ -913,10 +999,14 @@ def create_app():
     # Leadership
     @app.get("/api/leadership")
     def get_leadership():
-        rows = db.query(
-            "SELECT * FROM leadership WHERE status = %s ORDER BY sort_order ASC, created_at ASC",
-            ["active"],
-        )
+        category = request.args.get("category")
+        query = "SELECT * FROM leadership WHERE status = %s"
+        params = ["active"]
+        if category:
+            query += " AND category = %s"
+            params.append(category)
+        query += " ORDER BY sort_order ASC, created_at ASC"
+        rows = db.query(query, params)
         return jsonify({"leaders": rows})
 
     @app.get("/api/leadership/admin/all")
@@ -938,9 +1028,13 @@ def create_app():
         if not name or not role:
             return jsonify({"error": "Name and role are required"}), 400
 
+        category = data.get("category") or "team"
+        if category not in ("director", "team"):
+            return jsonify({"error": "Invalid category"}), 400
+
         sql = (
-            "INSERT INTO leadership (name, role, bio, contribution, photo_url, sort_order, status, created_by) "
-            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *"
+            "INSERT INTO leadership (name, role, bio, contribution, photo_url, category, sort_order, status, created_by) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *"
         )
         params = [
             sanitize_text(name),
@@ -948,6 +1042,7 @@ def create_app():
             sanitize_text(data.get("bio")),
             sanitize_text(data.get("contribution")),
             data.get("photo_url") or None,
+            category,
             int(data.get("sort_order") or 0),
             data.get("status") or "active",
             admin["id"],
@@ -961,6 +1056,8 @@ def create_app():
         if err:
             return err
         data = request.get_json(silent=True) or {}
+        if data.get("category") and data["category"] not in ("director", "team"):
+            return jsonify({"error": "Invalid category"}), 400
 
         sql = (
             "UPDATE leadership SET "
@@ -969,6 +1066,7 @@ def create_app():
             "bio = COALESCE(%s, bio), "
             "contribution = COALESCE(%s, contribution), "
             "photo_url = COALESCE(%s, photo_url), "
+            "category = COALESCE(%s, category), "
             "sort_order = COALESCE(%s, sort_order), "
             "status = COALESCE(%s, status), "
             "updated_at = NOW() "
@@ -980,6 +1078,7 @@ def create_app():
             sanitize_text(data["bio"]) if "bio" in data else None,
             sanitize_text(data["contribution"]) if "contribution" in data else None,
             data.get("photo_url") or None,
+            data.get("category") or None,
             int(data["sort_order"]) if "sort_order" in data else None,
             data.get("status") or None,
             id,
@@ -1079,6 +1178,10 @@ def create_app():
         phone = (data.get("phone") or "").strip()
         age_group = data.get("ageGroup") or data.get("age_group")
         program = data.get("program")
+        guardian_name = (data.get("guardianName") or data.get("guardian_name") or "").strip()
+        guardian_phone = (data.get("guardianPhone") or data.get("guardian_phone") or "").strip()
+        medical_notes = data.get("medicalNotes") or data.get("medical_notes")
+        consent_given = parse_bool(data.get("consentGiven") if "consentGiven" in data else data.get("consent_given")) or False
 
         if not full_name or not email or not phone or not age_group or not program:
             return jsonify({"error": "All fields are required"}), 400
@@ -1088,12 +1191,24 @@ def create_app():
             return jsonify({"error": "Invalid age group"}), 400
         if program not in ("dancing", "vocals", "both"):
             return jsonify({"error": "Invalid program selection"}), 400
+        if age_group == "16_and_under" and (not guardian_name or not guardian_phone):
+            return jsonify({"error": "Guardian name and phone are required for members 16 and under"}), 400
 
         try:
             rows = db.query(
-                "INSERT INTO memberships (full_name, email, phone, age_group, program) "
-                "VALUES (%s,%s,%s,%s,%s) RETURNING *",
-                [sanitize_text(full_name), email, sanitize_text(phone), age_group, program],
+                "INSERT INTO memberships (full_name, email, phone, age_group, program, guardian_name, guardian_phone, medical_notes, consent_given) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *",
+                [
+                    sanitize_text(full_name),
+                    email,
+                    sanitize_text(phone),
+                    age_group,
+                    program,
+                    sanitize_text(guardian_name) or None,
+                    sanitize_text(guardian_phone) or None,
+                    sanitize_text(medical_notes) if medical_notes else None,
+                    consent_given,
+                ],
             )
         except UniqueViolation:
             return jsonify(
@@ -1118,6 +1233,7 @@ def create_app():
         if not rows:
             return jsonify({"error": "Membership not found"}), 404
         m = rows[0]
+        data = request.get_json(silent=True) or {}
         if m["status"] == "active":
             today = date.today()
             base = m["next_due_date"] if m["next_due_date"] and m["next_due_date"] >= today else today
@@ -1132,7 +1248,22 @@ def create_app():
                 "UPDATE memberships SET payment_status = 'paid', updated_at = NOW() WHERE id = %s RETURNING *",
                 [id],
             )
+        db.execute(
+            "INSERT INTO membership_payments (membership_id, amount, note) VALUES (%s,%s,%s)",
+            [id, data.get("amount") or None, sanitize_text(data.get("note")) if data.get("note") else None],
+        )
         return jsonify({"membership": _membership_with_status(rows[0])})
+
+    @app.get("/api/membership/admin/<id>/payments")
+    def admin_membership_payments(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query(
+            "SELECT * FROM membership_payments WHERE membership_id = %s ORDER BY paid_at DESC, created_at DESC",
+            [id],
+        )
+        return jsonify({"payments": rows})
 
     @app.put("/api/membership/admin/<id>/activate")
     def admin_activate_membership(id):
@@ -1149,6 +1280,32 @@ def create_app():
             "WHERE id = %s RETURNING *",
             [next_due, id],
         )
+        return jsonify({"membership": _membership_with_status(rows[0])})
+
+    @app.put("/api/membership/admin/<id>/reject")
+    def admin_reject_membership(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query(
+            "UPDATE memberships SET status = 'rejected', updated_at = NOW() WHERE id = %s RETURNING *",
+            [id],
+        )
+        if not rows:
+            return jsonify({"error": "Membership not found"}), 404
+        return jsonify({"membership": _membership_with_status(rows[0])})
+
+    @app.put("/api/membership/admin/<id>/waitlist")
+    def admin_waitlist_membership(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query(
+            "UPDATE memberships SET status = 'waitlisted', updated_at = NOW() WHERE id = %s RETURNING *",
+            [id],
+        )
+        if not rows:
+            return jsonify({"error": "Membership not found"}), 404
         return jsonify({"membership": _membership_with_status(rows[0])})
 
     @app.delete("/api/membership/admin/<id>")
@@ -1190,8 +1347,36 @@ def create_app():
 
     @app.get("/api/videos")
     def get_videos():
-        rows = db.query("SELECT * FROM videos ORDER BY sort_order ASC, created_at DESC")
+        production_id = request.args.get("production_id")
+        category = request.args.get("category")
+        year = request.args.get("year")
+
+        query = "SELECT * FROM videos"
+        conditions = []
+        params = []
+        if production_id == "any":
+            conditions.append("production_id IS NOT NULL")
+        elif production_id:
+            conditions.append("production_id = %s")
+            params.append(production_id)
+        if category:
+            conditions.append("category = %s")
+            params.append(category)
+        if year:
+            conditions.append("EXTRACT(YEAR FROM created_at)::int = %s")
+            params.append(int(year))
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        query += " ORDER BY sort_order ASC, created_at DESC"
+
+        rows = db.query(query, params)
         return jsonify({"videos": rows})
+
+    @app.get("/api/videos/years")
+    def get_videos_years():
+        rows = db.query(
+            "SELECT DISTINCT EXTRACT(YEAR FROM created_at)::int AS year FROM videos ORDER BY year DESC")
+        return jsonify({"years": [r["year"] for r in rows]})
 
     @app.get("/api/videos/admin/all")
     def admin_all_videos():
@@ -1220,9 +1405,17 @@ def create_app():
                          "so it can't be embedded here (YouTube 'Error 153'). Please choose a different video."
             }), 400
         rows = db.query(
-            "INSERT INTO videos (title, youtube_url, video_id, sort_order, created_by) "
-            "VALUES (%s,%s,%s,%s,%s) RETURNING *",
-            [sanitize_text(title), youtube_url.strip(), video_id, int(data.get("sort_order") or 0), admin["id"]],
+            "INSERT INTO videos (title, youtube_url, video_id, sort_order, production_id, category, created_by) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING *",
+            [
+                sanitize_text(title),
+                youtube_url.strip(),
+                video_id,
+                int(data.get("sort_order") or 0),
+                data.get("production_id") or None,
+                data.get("category") or None,
+                admin["id"],
+            ],
         )
         return jsonify({"video": rows[0]}), 201
 
@@ -1248,6 +1441,8 @@ def create_app():
             "youtube_url = COALESCE(%s, youtube_url), "
             "video_id = COALESCE(%s, video_id), "
             "sort_order = COALESCE(%s, sort_order), "
+            "production_id = COALESCE(%s, production_id), "
+            "category = COALESCE(%s, category), "
             "updated_at = NOW() "
             "WHERE id = %s RETURNING *",
             [
@@ -1255,6 +1450,8 @@ def create_app():
                 data.get("youtube_url") or None,
                 video_id,
                 int(data["sort_order"]) if "sort_order" in data else None,
+                (data.get("production_id") or None) if "production_id" in data else None,
+                (data.get("category") or None) if "category" in data else None,
                 id,
             ],
         )
@@ -1271,6 +1468,653 @@ def create_app():
         if not rows:
             return jsonify({"error": "Video not found"}), 404
         return jsonify({"message": "Video deleted successfully"})
+
+    # Contact form enquiries
+    @app.post("/api/contact")
+    def submit_contact():
+        data = request.get_json(silent=True) or {}
+        name = (data.get("name") or "").strip()
+        email = (data.get("email") or "").strip().lower()
+        subject = (data.get("subject") or "").strip()
+        message = (data.get("message") or "").strip()
+
+        if not name or not email or not message:
+            return jsonify({"error": "Name, email, and message are required"}), 400
+        if not EMAIL_RE.match(email):
+            return jsonify({"error": "Please enter a valid email address"}), 400
+
+        rows = db.query(
+            "INSERT INTO contact_enquiries (name, email, subject, message) "
+            "VALUES (%s,%s,%s,%s) RETURNING *",
+            [sanitize_text(name), email, sanitize_text(subject), sanitize_text(message)],
+        )
+        return jsonify({"enquiry": rows[0]}), 201
+
+    @app.get("/api/contact/admin/all")
+    def admin_all_enquiries():
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("SELECT * FROM contact_enquiries ORDER BY created_at DESC")
+        return jsonify({"enquiries": rows})
+
+    @app.put("/api/contact/admin/<id>")
+    def admin_update_enquiry(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        status = data.get("status")
+        if status not in ("new", "read", "completed"):
+            return jsonify({"error": "Invalid status"}), 400
+        rows = db.query(
+            "UPDATE contact_enquiries SET status = %s, updated_at = NOW() WHERE id = %s RETURNING *",
+            [status, id],
+        )
+        if not rows:
+            return jsonify({"error": "Enquiry not found"}), 404
+        return jsonify({"enquiry": rows[0]})
+
+    @app.delete("/api/contact/admin/<id>")
+    def admin_delete_enquiry(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("DELETE FROM contact_enquiries WHERE id = %s RETURNING id", [id])
+        if not rows:
+            return jsonify({"error": "Enquiry not found"}), 404
+        return jsonify({"message": "Enquiry deleted successfully"})
+
+    # Productions (festival hub pages: Nadanu Pa, Pada Padma, World Drumming Festival, etc.)
+    @app.get("/api/productions")
+    def get_productions():
+        rows = db.query(
+            "SELECT * FROM productions WHERE status = %s ORDER BY sort_order ASC, created_at ASC",
+            ["published"],
+        )
+        return jsonify({"productions": rows})
+
+    @app.get("/api/productions/<slug>")
+    def get_production(slug):
+        rows = db.query(
+            "SELECT * FROM productions WHERE slug = %s AND status = %s", [slug, "published"])
+        if not rows:
+            return jsonify({"error": "Production not found"}), 404
+        return jsonify({"production": rows[0]})
+
+    @app.get("/api/productions/admin/all")
+    def admin_all_productions():
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("SELECT * FROM productions ORDER BY sort_order ASC, created_at ASC")
+        return jsonify({"productions": rows})
+
+    @app.post("/api/productions/admin")
+    def admin_create_production():
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        title = data.get("title")
+        if not title:
+            return jsonify({"error": "Title is required"}), 400
+        slug = slugify(data.get("slug") or title)
+        if not slug:
+            return jsonify({"error": "Could not derive a slug from the title"}), 400
+
+        sql = (
+            "INSERT INTO productions (title, slug, tagline, description, full_description, cover_image, location, sort_order, status, created_by) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *"
+        )
+        params = [
+            sanitize_text(title),
+            slug,
+            sanitize_text(data.get("tagline")),
+            sanitize_text(data.get("description")),
+            sanitize_text(data.get("full_description")),
+            data.get("cover_image") or None,
+            sanitize_text(data.get("location")),
+            int(data.get("sort_order") or 0),
+            data.get("status") or "published",
+            admin["id"],
+        ]
+        try:
+            rows = db.query(sql, params)
+        except UniqueViolation:
+            return jsonify({"error": "A production with that slug already exists"}), 409
+        return jsonify({"production": rows[0]}), 201
+
+    @app.put("/api/productions/admin/<id>")
+    def admin_update_production(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        slug = slugify(data["slug"]) if data.get("slug") else None
+
+        sql = (
+            "UPDATE productions SET "
+            "title = COALESCE(%s, title), "
+            "slug = COALESCE(%s, slug), "
+            "tagline = COALESCE(%s, tagline), "
+            "description = COALESCE(%s, description), "
+            "full_description = COALESCE(%s, full_description), "
+            "cover_image = COALESCE(%s, cover_image), "
+            "location = COALESCE(%s, location), "
+            "sort_order = COALESCE(%s, sort_order), "
+            "status = COALESCE(%s, status), "
+            "updated_at = NOW() "
+            "WHERE id = %s RETURNING *"
+        )
+        params = [
+            sanitize_text(data["title"]) if data.get("title") else None,
+            slug,
+            sanitize_text(data["tagline"]) if "tagline" in data else None,
+            sanitize_text(data["description"]) if "description" in data else None,
+            sanitize_text(data["full_description"]) if "full_description" in data else None,
+            data.get("cover_image") or None,
+            sanitize_text(data["location"]) if "location" in data else None,
+            int(data["sort_order"]) if "sort_order" in data else None,
+            data.get("status") or None,
+            id,
+        ]
+        try:
+            rows = db.query(sql, params)
+        except UniqueViolation:
+            return jsonify({"error": "A production with that slug already exists"}), 409
+        if not rows:
+            return jsonify({"error": "Production not found"}), 404
+        return jsonify({"production": rows[0]})
+
+    @app.delete("/api/productions/admin/<id>")
+    def admin_delete_production(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("DELETE FROM productions WHERE id = %s RETURNING id", [id])
+        if not rows:
+            return jsonify({"error": "Production not found"}), 404
+        return jsonify({"message": "Production deleted successfully"})
+
+    @app.post("/api/productions/admin/cover")
+    def admin_upload_production_cover():
+        admin, err = require_admin()
+        if err:
+            return err
+
+        if "cover" not in request.files:
+            return jsonify({"error": "No cover image file provided"}), 400
+        file = request.files["cover"]
+        if not file or file.filename == "":
+            return jsonify({"error": "No cover image file provided"}), 400
+
+        try:
+            validate_image(file)
+        except ValueError as e:
+            msg = str(e)
+            if "File too large" in msg:
+                return jsonify({"error": msg}), 413
+            return jsonify({"error": msg}), 400
+
+        ext = os.path.splitext(file.filename.lower())[1]
+        cover_image = store_uploaded_file(file, ext, "productions")
+        return jsonify({"cover_image": cover_image}), 201
+
+    # Tutors
+    @app.get("/api/tutors")
+    def get_tutors():
+        rows = db.query(
+            "SELECT * FROM tutors WHERE status = %s ORDER BY sort_order ASC, created_at ASC",
+            ["active"],
+        )
+        return jsonify({"tutors": rows})
+
+    @app.get("/api/tutors/admin/all")
+    def admin_all_tutors():
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("SELECT * FROM tutors ORDER BY sort_order ASC, created_at ASC")
+        return jsonify({"tutors": rows})
+
+    @app.post("/api/tutors/admin")
+    def admin_create_tutor():
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        name = data.get("name")
+        if not name:
+            return jsonify({"error": "Name is required"}), 400
+
+        rows = db.query(
+            "INSERT INTO tutors (name, bio, photo_url, sort_order, status, created_by) "
+            "VALUES (%s,%s,%s,%s,%s,%s) RETURNING *",
+            [
+                sanitize_text(name),
+                sanitize_text(data.get("bio")),
+                data.get("photo_url") or None,
+                int(data.get("sort_order") or 0),
+                data.get("status") or "active",
+                admin["id"],
+            ],
+        )
+        return jsonify({"tutor": rows[0]}), 201
+
+    @app.put("/api/tutors/admin/<id>")
+    def admin_update_tutor(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        rows = db.query(
+            "UPDATE tutors SET "
+            "name = COALESCE(%s, name), "
+            "bio = COALESCE(%s, bio), "
+            "photo_url = COALESCE(%s, photo_url), "
+            "sort_order = COALESCE(%s, sort_order), "
+            "status = COALESCE(%s, status), "
+            "updated_at = NOW() "
+            "WHERE id = %s RETURNING *",
+            [
+                sanitize_text(data["name"]) if data.get("name") else None,
+                sanitize_text(data["bio"]) if "bio" in data else None,
+                data.get("photo_url") or None,
+                int(data["sort_order"]) if "sort_order" in data else None,
+                data.get("status") or None,
+                id,
+            ],
+        )
+        if not rows:
+            return jsonify({"error": "Tutor not found"}), 404
+        return jsonify({"tutor": rows[0]})
+
+    @app.delete("/api/tutors/admin/<id>")
+    def admin_delete_tutor(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("DELETE FROM tutors WHERE id = %s RETURNING id", [id])
+        if not rows:
+            return jsonify({"error": "Tutor not found"}), 404
+        return jsonify({"message": "Tutor deleted successfully"})
+
+    @app.post("/api/tutors/admin/photo")
+    def admin_upload_tutor_photo():
+        admin, err = require_admin()
+        if err:
+            return err
+
+        if "photo" not in request.files:
+            return jsonify({"error": "No photo file provided"}), 400
+        file = request.files["photo"]
+        if not file or file.filename == "":
+            return jsonify({"error": "No photo file provided"}), 400
+
+        try:
+            validate_image(file)
+        except ValueError as e:
+            msg = str(e)
+            if "File too large" in msg:
+                return jsonify({"error": msg}), 413
+            return jsonify({"error": msg}), 400
+
+        ext = os.path.splitext(file.filename.lower())[1]
+        photo_url = store_uploaded_file(file, ext, "tutors")
+        return jsonify({"photo_url": photo_url}), 201
+
+    # Partners & Sponsors
+    @app.get("/api/sponsors")
+    def get_sponsors():
+        rows = db.query(
+            "SELECT * FROM sponsors WHERE status = %s ORDER BY sort_order ASC, created_at ASC",
+            ["active"],
+        )
+        return jsonify({"sponsors": rows})
+
+    @app.get("/api/sponsors/admin/all")
+    def admin_all_sponsors():
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("SELECT * FROM sponsors ORDER BY sort_order ASC, created_at ASC")
+        return jsonify({"sponsors": rows})
+
+    @app.post("/api/sponsors/admin")
+    def admin_create_sponsor():
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        name = data.get("name")
+        if not name:
+            return jsonify({"error": "Name is required"}), 400
+
+        rows = db.query(
+            "INSERT INTO sponsors (name, logo_url, website_url, sort_order, status, created_by) "
+            "VALUES (%s,%s,%s,%s,%s,%s) RETURNING *",
+            [
+                sanitize_text(name),
+                data.get("logo_url") or None,
+                data.get("website_url") or None,
+                int(data.get("sort_order") or 0),
+                data.get("status") or "active",
+                admin["id"],
+            ],
+        )
+        return jsonify({"sponsor": rows[0]}), 201
+
+    @app.put("/api/sponsors/admin/<id>")
+    def admin_update_sponsor(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        rows = db.query(
+            "UPDATE sponsors SET "
+            "name = COALESCE(%s, name), "
+            "logo_url = COALESCE(%s, logo_url), "
+            "website_url = COALESCE(%s, website_url), "
+            "sort_order = COALESCE(%s, sort_order), "
+            "status = COALESCE(%s, status), "
+            "updated_at = NOW() "
+            "WHERE id = %s RETURNING *",
+            [
+                sanitize_text(data["name"]) if data.get("name") else None,
+                data.get("logo_url") or None,
+                data.get("website_url") or None,
+                int(data["sort_order"]) if "sort_order" in data else None,
+                data.get("status") or None,
+                id,
+            ],
+        )
+        if not rows:
+            return jsonify({"error": "Sponsor not found"}), 404
+        return jsonify({"sponsor": rows[0]})
+
+    @app.delete("/api/sponsors/admin/<id>")
+    def admin_delete_sponsor(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("DELETE FROM sponsors WHERE id = %s RETURNING id", [id])
+        if not rows:
+            return jsonify({"error": "Sponsor not found"}), 404
+        return jsonify({"message": "Sponsor deleted successfully"})
+
+    @app.post("/api/sponsors/admin/logo")
+    def admin_upload_sponsor_logo():
+        admin, err = require_admin()
+        if err:
+            return err
+
+        if "logo" not in request.files:
+            return jsonify({"error": "No logo file provided"}), 400
+        file = request.files["logo"]
+        if not file or file.filename == "":
+            return jsonify({"error": "No logo file provided"}), 400
+
+        try:
+            validate_image(file)
+        except ValueError as e:
+            msg = str(e)
+            if "File too large" in msg:
+                return jsonify({"error": msg}), 413
+            return jsonify({"error": msg}), 400
+
+        ext = os.path.splitext(file.filename.lower())[1]
+        logo_url = store_uploaded_file(file, ext, "sponsors")
+        return jsonify({"logo_url": logo_url}), 201
+
+    # Programmes (Learn to Dance, Learn to Sing)
+    def _class_tutors(class_id):
+        return db.query(
+            "SELECT t.id, t.name FROM class_tutors ct JOIN tutors t ON t.id = ct.tutor_id "
+            "WHERE ct.class_id = %s ORDER BY t.sort_order ASC",
+            [class_id],
+        )
+
+    def _set_class_tutors(class_id, tutor_ids):
+        db.execute("DELETE FROM class_tutors WHERE class_id = %s", [class_id])
+        for tutor_id in tutor_ids or []:
+            db.execute(
+                "INSERT INTO class_tutors (class_id, tutor_id) VALUES (%s,%s)",
+                [class_id, tutor_id],
+            )
+
+    @app.get("/api/programmes")
+    def get_programmes():
+        rows = db.query(
+            "SELECT * FROM programmes WHERE status = %s ORDER BY sort_order ASC, created_at ASC",
+            ["active"],
+        )
+        return jsonify({"programmes": rows})
+
+    @app.get("/api/programmes/<slug>")
+    def get_programme(slug):
+        rows = db.query(
+            "SELECT * FROM programmes WHERE slug = %s AND status = %s", [slug, "active"])
+        if not rows:
+            return jsonify({"error": "Programme not found"}), 404
+        programme = rows[0]
+
+        classes = db.query(
+            "SELECT * FROM programme_classes WHERE programme_id = %s AND status = %s "
+            "ORDER BY sort_order ASC, created_at ASC",
+            [programme["id"], "active"],
+        )
+        for c in classes:
+            c["tutors"] = _class_tutors(c["id"])
+        programme["classes"] = classes
+        return jsonify({"programme": programme})
+
+    @app.get("/api/programmes/admin/all")
+    def admin_all_programmes():
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("SELECT * FROM programmes ORDER BY sort_order ASC, created_at ASC")
+        return jsonify({"programmes": rows})
+
+    @app.post("/api/programmes/admin")
+    def admin_create_programme():
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        name = data.get("name")
+        if not name:
+            return jsonify({"error": "Name is required"}), 400
+        slug = slugify(data.get("slug") or name)
+        if not slug:
+            return jsonify({"error": "Could not derive a slug from the name"}), 400
+
+        sql = (
+            "INSERT INTO programmes (name, slug, description, cover_image, sort_order, status, created_by) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING *"
+        )
+        params = [
+            sanitize_text(name),
+            slug,
+            sanitize_text(data.get("description")),
+            data.get("cover_image") or None,
+            int(data.get("sort_order") or 0),
+            data.get("status") or "active",
+            admin["id"],
+        ]
+        try:
+            rows = db.query(sql, params)
+        except UniqueViolation:
+            return jsonify({"error": "A programme with that slug already exists"}), 409
+        return jsonify({"programme": rows[0]}), 201
+
+    @app.put("/api/programmes/admin/<id>")
+    def admin_update_programme(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        slug = slugify(data["slug"]) if data.get("slug") else None
+
+        sql = (
+            "UPDATE programmes SET "
+            "name = COALESCE(%s, name), "
+            "slug = COALESCE(%s, slug), "
+            "description = COALESCE(%s, description), "
+            "cover_image = COALESCE(%s, cover_image), "
+            "sort_order = COALESCE(%s, sort_order), "
+            "status = COALESCE(%s, status), "
+            "updated_at = NOW() "
+            "WHERE id = %s RETURNING *"
+        )
+        params = [
+            sanitize_text(data["name"]) if data.get("name") else None,
+            slug,
+            sanitize_text(data["description"]) if "description" in data else None,
+            data.get("cover_image") or None,
+            int(data["sort_order"]) if "sort_order" in data else None,
+            data.get("status") or None,
+            id,
+        ]
+        try:
+            rows = db.query(sql, params)
+        except UniqueViolation:
+            return jsonify({"error": "A programme with that slug already exists"}), 409
+        if not rows:
+            return jsonify({"error": "Programme not found"}), 404
+        return jsonify({"programme": rows[0]})
+
+    @app.delete("/api/programmes/admin/<id>")
+    def admin_delete_programme(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("DELETE FROM programmes WHERE id = %s RETURNING id", [id])
+        if not rows:
+            return jsonify({"error": "Programme not found"}), 404
+        return jsonify({"message": "Programme deleted successfully"})
+
+    @app.post("/api/programmes/admin/cover")
+    def admin_upload_programme_cover():
+        admin, err = require_admin()
+        if err:
+            return err
+
+        if "cover" not in request.files:
+            return jsonify({"error": "No cover image file provided"}), 400
+        file = request.files["cover"]
+        if not file or file.filename == "":
+            return jsonify({"error": "No cover image file provided"}), 400
+
+        try:
+            validate_image(file)
+        except ValueError as e:
+            msg = str(e)
+            if "File too large" in msg:
+                return jsonify({"error": msg}), 413
+            return jsonify({"error": msg}), 400
+
+        ext = os.path.splitext(file.filename.lower())[1]
+        cover_image = store_uploaded_file(file, ext, "programmes")
+        return jsonify({"cover_image": cover_image}), 201
+
+    # Programme classes (age group / level / timetable / fee within a programme)
+    @app.get("/api/programme-classes/admin/all")
+    def admin_all_programme_classes():
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query(
+            "SELECT pc.*, p.name AS programme_name FROM programme_classes pc "
+            "JOIN programmes p ON p.id = pc.programme_id "
+            "ORDER BY p.sort_order ASC, pc.sort_order ASC, pc.created_at ASC"
+        )
+        for c in rows:
+            c["tutor_ids"] = [t["id"] for t in _class_tutors(c["id"])]
+        return jsonify({"classes": rows})
+
+    @app.post("/api/programme-classes/admin")
+    def admin_create_programme_class():
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+        programme_id = data.get("programme_id")
+        name = data.get("name")
+        if not programme_id or not name:
+            return jsonify({"error": "Programme and level name are required"}), 400
+
+        rows = db.query(
+            "INSERT INTO programme_classes (programme_id, name, age_group, schedule, location, fee_amount, fee_period, sort_order, status) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *",
+            [
+                programme_id,
+                sanitize_text(name),
+                sanitize_text(data.get("age_group")),
+                sanitize_text(data.get("schedule")),
+                sanitize_text(data.get("location")),
+                data.get("fee_amount") or None,
+                data.get("fee_period") or "term",
+                int(data.get("sort_order") or 0),
+                data.get("status") or "active",
+            ],
+        )
+        cls = rows[0]
+        _set_class_tutors(cls["id"], data.get("tutor_ids"))
+        cls["tutors"] = _class_tutors(cls["id"])
+        return jsonify({"class": cls}), 201
+
+    @app.put("/api/programme-classes/admin/<id>")
+    def admin_update_programme_class(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        data = request.get_json(silent=True) or {}
+
+        rows = db.query(
+            "UPDATE programme_classes SET "
+            "programme_id = COALESCE(%s, programme_id), "
+            "name = COALESCE(%s, name), "
+            "age_group = COALESCE(%s, age_group), "
+            "schedule = COALESCE(%s, schedule), "
+            "location = COALESCE(%s, location), "
+            "fee_amount = COALESCE(%s, fee_amount), "
+            "fee_period = COALESCE(%s, fee_period), "
+            "sort_order = COALESCE(%s, sort_order), "
+            "status = COALESCE(%s, status), "
+            "updated_at = NOW() "
+            "WHERE id = %s RETURNING *",
+            [
+                data.get("programme_id") or None,
+                sanitize_text(data["name"]) if data.get("name") else None,
+                sanitize_text(data["age_group"]) if "age_group" in data else None,
+                sanitize_text(data["schedule"]) if "schedule" in data else None,
+                sanitize_text(data["location"]) if "location" in data else None,
+                data.get("fee_amount") if "fee_amount" in data else None,
+                data.get("fee_period") or None,
+                int(data["sort_order"]) if "sort_order" in data else None,
+                data.get("status") or None,
+                id,
+            ],
+        )
+        if not rows:
+            return jsonify({"error": "Class not found"}), 404
+        cls = rows[0]
+        if "tutor_ids" in data:
+            _set_class_tutors(id, data.get("tutor_ids"))
+        cls["tutors"] = _class_tutors(id)
+        return jsonify({"class": cls})
+
+    @app.delete("/api/programme-classes/admin/<id>")
+    def admin_delete_programme_class(id):
+        admin, err = require_admin()
+        if err:
+            return err
+        rows = db.query("DELETE FROM programme_classes WHERE id = %s RETURNING id", [id])
+        if not rows:
+            return jsonify({"error": "Class not found"}), 404
+        return jsonify({"message": "Class deleted successfully"})
 
     # Dashboard stats
     @app.get("/api/dashboard/stats")
@@ -1312,7 +2156,7 @@ def create_app():
 
     # Explicit page routes — must be defined before the catch-all so Flask
     # prefers these over the built-in static-file /<path:filename> handler.
-    _pages = ["about", "events", "gallery", "leadership", "admin", "contact", "membership"]
+    _pages = ["about", "events", "gallery", "leadership", "admin", "contact", "membership", "productions", "programmes", "directors", "partners"]
 
     def _make_page_view(filename):
         def view():
@@ -1325,6 +2169,14 @@ def create_app():
             endpoint=f"page_{_page}",
             view_func=_make_page_view(f"{_page}.html"),
         )
+
+    @app.get("/productions/<slug>")
+    def page_production_detail(slug):
+        return app.send_static_file("production.html")
+
+    @app.get("/programmes/<slug>")
+    def page_programme_detail(slug):
+        return app.send_static_file("programme.html")
 
     @app.get("/")
     def index_page():

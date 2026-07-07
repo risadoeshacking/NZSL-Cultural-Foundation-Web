@@ -3,11 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Leadership — NZSL Cultural Foundation</title>
-    <meta
-      name="description"
-      content="Meet the dedicated individuals who guide the New Zealand Sri Lanka Cultural Foundation's mission."
-    />
+    <title>Programme — NZSL Cultural Foundation</title>
     <meta name="theme-color" content="#1a1a1a" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -31,9 +27,9 @@
         <ul class="nav-links" id="navLinks">
           <li><a href="/about" class="nav-link">About</a></li>
           <li><a href="/events" class="nav-link">Events</a></li>
-          <li><a href="/programmes" class="nav-link">Programmes</a></li>
+          <li><a href="/programmes" class="nav-link active">Programmes</a></li>
           <li><a href="/gallery" class="nav-link">Gallery</a></li>
-          <li><a href="/leadership" class="nav-link active">Leadership</a></li>
+          <li><a href="/leadership" class="nav-link">Leadership</a></li>
           <li><a href="/#stories" class="nav-link">Stories</a></li>
           <li><a href="/#videos" class="nav-link">Videos</a></li>
           <li><a href="/membership" class="nav-link">Membership</a></li>
@@ -49,27 +45,34 @@
       </div>
     </nav>
 
-    <div class="page-header">
+    <div class="page-header" id="programmeHeader">
       <div class="container">
-        <h1 class="page-header-title">Our Leadership</h1>
-        <p class="page-header-subtitle">
-          Meet the dedicated individuals who guide our foundation's mission to
-          preserve and celebrate Sri Lankan culture in New Zealand.
-        </p>
-        <p style="margin-top: 12px">
-          <a href="/directors" style="color: var(--accent)">Meet Our Directors →</a>
+        <h1 class="page-header-title" id="programmeName">Loading...</h1>
+        <p class="page-header-subtitle" id="programmeDescription"></p>
+        <p style="margin-top: 20px">
+          <a href="#" id="programmeRegisterBtn" class="btn btn-primary">Register Now</a>
         </p>
       </div>
     </div>
 
-    <section class="section">
+    <section class="section" id="programmeNotFound" style="display: none">
+      <div class="container" style="text-align: center">
+        <p style="color: var(--text-muted)">
+          We couldn't find that programme.
+          <a href="/programmes">View all programmes →</a>
+        </p>
+      </div>
+    </section>
+
+    <section class="section" id="programmeClassesSection" style="display: none">
       <div class="container">
-        <div class="leadership-full-grid" id="leadershipGrid">
-          <div class="loading-state" id="leadershipLoading">
-            <div class="loader"></div>
-            <span>Loading leadership...</span>
+        <div class="section-header reveal">
+          <div>
+            <div class="section-label">Classes</div>
+            <h2 class="heading-lg section-title">Age Groups, Timetable &amp; Fees</h2>
           </div>
         </div>
+        <div class="highlights-grid" id="programmeClassesGrid"></div>
       </div>
     </section>
 
@@ -89,8 +92,8 @@
             <ul class="footer-links">
               <li><a href="/about">About Us</a></li>
               <li><a href="/events">Events</a></li>
+              <li><a href="/programmes">Programmes</a></li>
               <li><a href="/gallery">Gallery</a></li>
-              <li><a href="/leadership">Leadership</a></li>
               <li><a href="/membership">Membership</a></li>
             </ul>
           </div>
@@ -99,8 +102,8 @@
             <ul class="footer-links">
               <li><a href="/gallery">Cultural Gallery</a></li>
               <li><a href="/#stories">Stories</a></li>
-              <li><a href="/events">Festivals</a></li>
-              <li><a href="/events">Workshops</a></li>
+              <li><a href="/productions">Productions</a></li>
+              <li><a href="/events">Events</a></li>
             </ul>
           </div>
           <div>
@@ -130,45 +133,43 @@
     <script src="/js/app.js"></script>
     <script>
       (async function () {
-        const grid = document.getElementById("leadershipGrid");
-        const loading = document.getElementById("leadershipLoading");
-        if (!grid) return;
-        const data = await apiFetch("/leadership");
-        if (!data || !data.leaders) {
-          if (loading)
-            loading.innerHTML = "<span>Failed to load leadership</span>";
+        const slug = location.pathname.split("/").filter(Boolean).pop();
+        const data = await apiFetch(`/programmes/${slug}`);
+        if (!data || !data.programme) {
+          document.getElementById("programmeNotFound").style.display = "block";
+          document.getElementById("programmeHeader").style.display = "none";
           return;
         }
-        if (loading) loading.remove();
-        grid.innerHTML = data.leaders
-          .map((leader, i) => {
-            const initials = leader.name.split(" ").map(w => w[0]).slice(0,2).join("").toUpperCase();
-            return `
-          <div class="leader-full-card reveal reveal-delay-${(i % 4) + 1}">
-            <div class="leader-photo-wrap">
-              ${leader.photo_url
-                ? `<img class="leader-photo-img" src="${leader.photo_url}" alt="${leader.name}">`
-                : `<div class="leader-photo-placeholder"><span class="leader-photo-placeholder-initials">${initials}</span></div>`}
-              <div class="leader-photo-overlay"></div>
-              <div class="leader-photo-meta">
-                <div class="leader-full-role">${leader.role}${leader.category === "director" ? ' · <span style="color:var(--accent)">Director</span>' : ""}</div>
-                <h3 class="leader-full-name">${leader.name}</h3>
-              </div>
-            </div>
-            <div class="leader-full-info">
-              ${leader.bio ? `<p class="leader-full-bio">${leader.bio}</p>` : ""}
-              ${leader.contribution ? `<p class="leader-full-contribution">${leader.contribution}</p>` : ""}
-            </div>
-          </div>`;
-          })
-          .join("");
-        initScrollReveal();
-        initPremiumCardTilt();
+        const p = data.programme;
+        document.title = `${p.name} — NZSL Cultural Foundation`;
+        document.getElementById("programmeName").textContent = p.name;
+        document.getElementById("programmeDescription").textContent = p.description || "";
+        document.getElementById("programmeRegisterBtn").href = `/membership?program=${p.slug}`;
 
-        // Social media footer
+        const classes = p.classes || [];
+        if (classes.length > 0) {
+          document.getElementById("programmeClassesSection").style.display = "block";
+          document.getElementById("programmeClassesGrid").innerHTML = classes
+            .map(
+              (c, i) => `
+            <div class="highlight-card reveal reveal-delay-${(i % 4) + 1}">
+              <h3 class="highlight-title">${c.name}</h3>
+              ${c.age_group ? `<p class="highlight-desc"><strong>Age Group:</strong> ${c.age_group}</p>` : ""}
+              ${c.schedule ? `<p class="highlight-desc"><strong>Timetable:</strong> ${c.schedule}</p>` : ""}
+              ${c.location ? `<p class="highlight-desc"><strong>Location:</strong> ${c.location}</p>` : ""}
+              ${c.fee_amount != null ? `<p class="highlight-desc"><strong>Fee:</strong> $${c.fee_amount} / ${c.fee_period}</p>` : ""}
+              ${c.tutors && c.tutors.length > 0 ? `<p class="highlight-desc"><strong>Tutors:</strong> ${c.tutors.map((t) => t.name).join(", ")}</p>` : ""}
+            </div>`
+            )
+            .join("");
+          initScrollReveal();
+        }
+      })();
+
+      (async function () {
         try {
-          const settingsData = await apiFetch("/settings");
-          const social = (settingsData?.settings || []).filter(s => s.category === "social" && s.value);
+          const data = await apiFetch("/settings");
+          const social = (data?.settings || []).filter(s => s.category === "social" && s.value);
           const labels = { facebook_url: "Facebook", instagram_url: "Instagram", youtube_url: "YouTube", twitter_url: "X (Twitter)", linkedin_url: "LinkedIn" };
           const el = document.getElementById("footerSocial");
           if (el && social.length > 0) {

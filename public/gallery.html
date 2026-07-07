@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cultural Gallery — NZSL Cultural Foundation</title>
+    <title>Gallery — NZSL Cultural Foundation</title>
     <meta
       name="description"
-      content="Explore the visual heritage of Sri Lankan culture through the NZSL Foundation's curated gallery."
+      content="Browse photos and videos from the New Zealand Sri Lanka Cultural Foundation's productions, performances and classes."
     />
     <meta name="theme-color" content="#1a1a1a" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -31,6 +31,7 @@
         <ul class="nav-links" id="navLinks">
           <li><a href="/about" class="nav-link">About</a></li>
           <li><a href="/events" class="nav-link">Events</a></li>
+          <li><a href="/programmes" class="nav-link">Programmes</a></li>
           <li><a href="/gallery" class="nav-link active">Gallery</a></li>
           <li><a href="/leadership" class="nav-link">Leadership</a></li>
           <li><a href="/#stories" class="nav-link">Stories</a></li>
@@ -50,40 +51,49 @@
 
     <div class="page-header">
       <div class="container">
-        <h1 class="page-header-title">Cultural Gallery</h1>
+        <h1 class="page-header-title">Photos &amp; Videos</h1>
         <p class="page-header-subtitle">
-          A digital exhibition celebrating the beauty and heritage of Sri Lankan
-          culture.
+          A digital exhibition celebrating our productions, performances and
+          classes.
         </p>
+
         <div
           class="gallery-filters"
-          id="galleryFilters"
+          id="mediaTypeFilters"
           style="justify-content: center; margin-top: 24px"
         >
-          <button class="gallery-filter active" data-category="all">All</button>
-          <button class="gallery-filter" data-category="heritage">
-            Heritage
-          </button>
-          <button class="gallery-filter" data-category="performance">
-            Performance
-          </button>
-          <button class="gallery-filter" data-category="culture">
-            Culture
-          </button>
-          <button class="gallery-filter" data-category="events">Events</button>
-          <button class="gallery-filter" data-category="arts">Arts</button>
+          <button class="gallery-filter active" data-media="photos">Photos</button>
+          <button class="gallery-filter" data-media="videos">Videos</button>
+        </div>
+
+        <div
+          class="gallery-filters"
+          id="browseByFilters"
+          style="justify-content: center; margin-top: 12px"
+        >
+          <button class="gallery-filter active" data-browse="all">All</button>
+          <button class="gallery-filter" data-browse="productions">Productions</button>
+          <button class="gallery-filter" data-browse="performances">Performances</button>
+          <button class="gallery-filter" data-browse="classes">Classes</button>
+          <button class="gallery-filter" data-browse="year">By Year</button>
+        </div>
+
+        <div style="max-width: 280px; margin: 16px auto 0">
+          <select class="form-input" id="productionPicker" style="display: none"></select>
+          <select class="form-input" id="yearPicker" style="display: none"></select>
         </div>
       </div>
     </div>
 
     <section class="section">
       <div class="container">
-        <div class="gallery-masonry" id="galleryMasonry">
-          <div class="loading-state" id="galleryLoading">
+        <div class="gallery-masonry" id="galleryPageMasonry">
+          <div class="loading-state" id="galleryPageLoading">
             <div class="loader"></div>
             <span>Loading gallery...</span>
           </div>
         </div>
+        <div class="video-grid" id="galleryVideoGrid" style="display: none"></div>
       </div>
     </section>
 
@@ -121,6 +131,13 @@
       </figure>
     </div>
 
+    <div class="video-modal-overlay" id="videoModalOverlay" onclick="closeVideoModal(event)" role="dialog" aria-modal="true">
+      <div class="video-modal" onclick="event.stopPropagation()">
+        <button class="video-modal-close" onclick="closeVideoModal()" aria-label="Close">&times;</button>
+        <div class="video-modal-player" id="videoModalPlayer"></div>
+      </div>
+    </div>
+
     <footer class="site-footer">
       <div class="container">
         <div class="footer-grid">
@@ -129,10 +146,7 @@
               <img src="/logo.png" alt="" class="footer-logo" />
               NZSL Cultural Foundation
             </div>
-            <p>
-              Dedicated to preserving, showcasing, and celebrating Sri Lankan
-              culture in Aotearoa New Zealand.
-            </p>
+            <p id="footerTagline">Dedicated to preserving, showcasing, and celebrating Sri Lankan culture in Aotearoa New Zealand.</p>
             <div class="footer-social" id="footerSocial"></div>
           </div>
           <div>
@@ -150,21 +164,21 @@
             <ul class="footer-links">
               <li><a href="/gallery">Cultural Gallery</a></li>
               <li><a href="/#stories">Stories</a></li>
-              <li><a href="/events">Festivals</a></li>
-              <li><a href="/events">Workshops</a></li>
+              <li><a href="/productions">Productions</a></li>
+              <li><a href="/events">Events</a></li>
             </ul>
           </div>
           <div>
             <div class="footer-heading">Contact</div>
             <ul class="footer-links">
               <li>
-                <a href="mailto:info@nzslfoundation.org.nz"
+                <a id="footerEmail" href="mailto:info@nzslfoundation.org.nz"
                   >info@nzslfoundation.org.nz</a
                 >
               </li>
-              <li><a href="tel:+6445678901">+64 4 567 8901</a></li>
+              <li><a id="footerPhone" href="tel:+6445678901">+64 4 567 8901</a></li>
               <li>
-                <span style="color: var(--text-muted)"
+                <span id="footerAddress" style="color: var(--text-muted)"
                   >Wellington, New Zealand</span
                 >
               </li>
@@ -172,7 +186,7 @@
           </div>
         </div>
         <div class="footer-bottom">
-          <span>© 2026 NZSL Cultural Foundation. All rights reserved.</span>
+          <span id="footerCopyright">© 2026 NZSL Cultural Foundation. All rights reserved.</span>
           <span>Preserving Sri Lankan heritage in Aotearoa</span>
         </div>
       </div>
@@ -180,6 +194,147 @@
 
     <script src="/js/app.js"></script>
     <script>
+      let currentMedia = "photos";
+      let currentBrowse = "all";
+
+      function buildQuery() {
+        const params = new URLSearchParams();
+        params.set("limit", "100");
+        if (currentBrowse === "performances") params.set("category", "performances");
+        else if (currentBrowse === "classes") params.set("category", "classes");
+        else if (currentBrowse === "productions") {
+          const productionId = document.getElementById("productionPicker").value;
+          params.set("production_id", productionId || "any");
+        } else if (currentBrowse === "year") {
+          const year = document.getElementById("yearPicker").value;
+          if (year) params.set("year", year);
+        }
+        return params.toString();
+      }
+
+      async function loadGalleryPage() {
+        const photosGrid = document.getElementById("galleryPageMasonry");
+        const videosGrid = document.getElementById("galleryVideoGrid");
+        const loading = document.getElementById("galleryPageLoading");
+
+        if (currentMedia === "photos") {
+          videosGrid.style.display = "none";
+          photosGrid.style.display = "block";
+          photosGrid.innerHTML = '<div class="loading-state"><div class="loader"></div><span>Loading gallery...</span></div>';
+          const data = await apiFetch(`/gallery?${buildQuery()}`);
+          const images = (data && data.images) || [];
+          galleryImages = images;
+          if (images.length === 0) {
+            photosGrid.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem;grid-column:1/-1">No photos found for this filter.</p>';
+            return;
+          }
+          photosGrid.innerHTML = images
+            .map(
+              (img, i) => `
+            <div class="gallery-item reveal reveal-delay-${(i % 4) + 1}" onclick="openLightbox(${i})">
+              <img src="${img.image_url}" alt="${img.title || ""}" style="width:100%;height:${150 + (i % 3) * 60}px;object-fit:cover" />
+              <div class="gallery-item-overlay">
+                <div class="gallery-item-title">${img.title || "Untitled"}</div>
+                <div class="gallery-item-photographer">${img.photographer || ""}</div>
+              </div>
+            </div>`
+            )
+            .join("");
+          initScrollReveal();
+          initPremiumCardTilt();
+        } else {
+          photosGrid.style.display = "none";
+          videosGrid.style.display = "grid";
+          videosGrid.innerHTML = '<div class="loading-state"><div class="loader"></div><span>Loading videos...</span></div>';
+          const data = await apiFetch(`/videos?${buildQuery()}`);
+          const videos = (data && data.videos) || [];
+          if (videos.length === 0) {
+            videosGrid.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem;grid-column:1/-1">No videos found for this filter.</p>';
+            return;
+          }
+          videosGrid.innerHTML = videos
+            .map(
+              (v, i) => `
+            <div class="video-card reveal reveal-delay-${(i % 3) + 1}">
+              <div class="video-embed-wrap" onclick="openVideoModal('${v.video_id}', '${(v.title || "").replace(/'/g, "\\'")}')">
+                <img class="video-thumb" src="https://img.youtube.com/vi/${v.video_id}/hqdefault.jpg" alt="${v.title}" loading="lazy" />
+                <button class="video-play-btn" aria-label="Play ${v.title}" type="button">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+              </div>
+              <div class="video-card-title">${v.title}</div>
+            </div>`
+            )
+            .join("");
+          initScrollReveal();
+        }
+      }
+
+      async function populateProductionPicker() {
+        const picker = document.getElementById("productionPicker");
+        try {
+          const data = await apiFetch("/productions");
+          const options = (data?.productions || [])
+            .map((p) => `<option value="${p.id}">${p.title}</option>`)
+            .join("");
+          picker.innerHTML = `<option value="">All Productions</option>${options}`;
+        } catch (e) {
+          picker.innerHTML = `<option value="">All Productions</option>`;
+        }
+      }
+
+      async function populateYearPicker() {
+        const picker = document.getElementById("yearPicker");
+        try {
+          const endpoint = currentMedia === "photos" ? "/gallery/years" : "/videos/years";
+          const data = await apiFetch(endpoint);
+          const years = data?.years || [];
+          if (years.length === 0) {
+            picker.innerHTML = `<option value="">No years available</option>`;
+            return;
+          }
+          picker.innerHTML = years.map((y) => `<option value="${y}">${y}</option>`).join("");
+        } catch (e) {
+          picker.innerHTML = `<option value="">No years available</option>`;
+        }
+      }
+
+      document.querySelectorAll("#mediaTypeFilters .gallery-filter").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll("#mediaTypeFilters .gallery-filter").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          currentMedia = btn.dataset.media;
+          if (currentBrowse === "year") populateYearPicker();
+          loadGalleryPage();
+        });
+      });
+
+      document.querySelectorAll("#browseByFilters .gallery-filter").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll("#browseByFilters .gallery-filter").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          currentBrowse = btn.dataset.browse;
+
+          const productionPicker = document.getElementById("productionPicker");
+          const yearPicker = document.getElementById("yearPicker");
+          productionPicker.style.display = currentBrowse === "productions" ? "block" : "none";
+          yearPicker.style.display = currentBrowse === "year" ? "block" : "none";
+
+          if (currentBrowse === "productions" && !productionPicker.dataset.loaded) {
+            productionPicker.dataset.loaded = "true";
+            populateProductionPicker();
+          }
+          if (currentBrowse === "year") populateYearPicker();
+
+          loadGalleryPage();
+        });
+      });
+
+      document.getElementById("productionPicker").addEventListener("change", loadGalleryPage);
+      document.getElementById("yearPicker").addEventListener("change", loadGalleryPage);
+
+      loadGalleryPage();
+
       (async function () {
         try {
           const data = await apiFetch("/settings");
@@ -192,6 +347,31 @@
             ).join("");
           }
         } catch (_) {}
+      })();
+    </script>
+  
+    <script>
+      (function () {
+        function applySiteContent(settings) {
+          const get = (key) => (settings || []).find((s) => s.key === key)?.value;
+          const email = get("contact_email");
+          const phone = get("contact_phone");
+          const address = get("contact_address");
+          const tagline = get("footer_tagline");
+          const copyright = get("footer_copyright");
+
+          const emailEl = document.getElementById("footerEmail");
+          if (emailEl && email) { emailEl.textContent = email; emailEl.href = "mailto:" + email; }
+          const phoneEl = document.getElementById("footerPhone");
+          if (phoneEl && phone) { phoneEl.textContent = phone; phoneEl.href = "tel:" + phone.replace(/[^\d+]/g, ""); }
+          const addressEl = document.getElementById("footerAddress");
+          if (addressEl && address) addressEl.textContent = address;
+          const taglineEl = document.getElementById("footerTagline");
+          if (taglineEl && tagline) taglineEl.textContent = tagline;
+          const copyrightEl = document.getElementById("footerCopyright");
+          if (copyrightEl && copyright) copyrightEl.textContent = copyright;
+        }
+        apiFetch("/settings").then((data) => applySiteContent(data?.settings)).catch(() => {});
       })();
     </script>
   </body>

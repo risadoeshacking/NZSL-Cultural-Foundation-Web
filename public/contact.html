@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contact Us — NZSL Cultural Foundation</title>
+    <meta
+      name="description"
+      content="Get in touch with the New Zealand Sri Lanka Cultural Foundation — send us a message or find our contact details and social media."
+    />
+    <meta name="theme-color" content="#1a1a1a" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <nav class="nav scrolled" id="mainNav">
+      <div class="nav-inner">
+        <a href="/" class="nav-logo">
+          <img
+            src="/logo.png"
+            class="nav-logo-icon"
+            alt="NZSL Cultural Foundation"
+          />
+          <span class="nav-logo-text">NZSL Foundation</span>
+        </a>
+        <ul class="nav-links" id="navLinks">
+          <li><a href="/about" class="nav-link">About</a></li>
+          <li><a href="/events" class="nav-link">Events</a></li>
+          <li><a href="/programmes" class="nav-link">Programmes</a></li>
+          <li><a href="/gallery" class="nav-link">Gallery</a></li>
+          <li><a href="/leadership" class="nav-link">Leadership</a></li>
+          <li><a href="/#stories" class="nav-link">Stories</a></li>
+          <li><a href="/#videos" class="nav-link">Videos</a></li>
+          <li><a href="/membership" class="nav-link">Membership</a></li>
+        </ul>
+        <a href="/contact" class="nav-cta-btn">Get In Touch</a>
+        <div
+          class="nav-mobile-toggle"
+          id="mobileToggle"
+          onclick="toggleMobileNav()"
+        >
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="page-header">
+      <div class="container">
+        <h1 class="page-header-title">Get In Touch</h1>
+        <p class="page-header-subtitle">
+          Questions about our programs, events, or membership? Send us a
+          message and we'll get back to you.
+        </p>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="container">
+        <div class="about-mission">
+          <div class="membership-form-card reveal" style="margin: 0">
+            <form id="contactForm">
+              <div class="form-group">
+                <label class="form-label" for="cName">Name</label>
+                <input class="form-input" id="cName" name="name" type="text" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cEmail">Email</label>
+                <input class="form-input" id="cEmail" name="email" type="email" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cSubject">Subject</label>
+                <input class="form-input" id="cSubject" name="subject" type="text" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cMessage">Message</label>
+                <textarea class="form-input" id="cMessage" name="message" rows="5" required></textarea>
+              </div>
+
+              <button class="btn btn-primary btn-full" type="submit" id="contactBtn">
+                Send Message
+              </button>
+              <div id="contactError" class="form-error" style="margin-top: 1rem; display: none"></div>
+              <div id="contactSuccess" class="form-error" style="margin-top: 1rem; display: none; background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.2); color: #22c55e"></div>
+            </form>
+          </div>
+
+          <div class="about-card reveal reveal-delay-1">
+            <div class="about-card-label">Contact Information</div>
+            <h3 class="about-card-title">Reach Us Directly</h3>
+            <p class="about-card-text" style="margin-bottom: 1.5rem">
+              Prefer to reach out directly? Here's how to find us.
+            </p>
+            <ul class="footer-links" style="display: flex; flex-direction: column; gap: 0.75rem">
+              <li>
+                <strong style="color: var(--text-primary)">Address</strong><br />
+                <span id="contactPageAddress" style="color: var(--text-muted)">Wellington, New Zealand</span>
+              </li>
+              <li>
+                <strong style="color: var(--text-primary)">Phone</strong><br />
+                <a id="contactPagePhone" href="tel:+6445678901">+64 4 567 8901</a>
+              </li>
+              <li>
+                <strong style="color: var(--text-primary)">Email</strong><br />
+                <a id="contactPageEmail" href="mailto:info@nzslfoundation.org.nz">info@nzslfoundation.org.nz</a>
+              </li>
+              <li>
+                <strong style="color: var(--text-primary)">Social Media</strong>
+                <div class="footer-social" id="contactSocial" style="margin-top: 0.5rem"></div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <div class="footer-brand-name">
+              <img src="/logo.png" alt="" class="footer-logo" />
+              NZSL Cultural Foundation
+            </div>
+            <p id="footerTagline">
+              Dedicated to preserving, showcasing, and celebrating Sri Lankan
+              culture in Aotearoa New Zealand.
+            </p>
+            <div class="footer-social" id="footerSocial"></div>
+          </div>
+          <div>
+            <div class="footer-heading">Navigate</div>
+            <ul class="footer-links">
+              <li><a href="/about">About Us</a></li>
+              <li><a href="/events">Events</a></li>
+              <li><a href="/gallery">Gallery</a></li>
+              <li><a href="/leadership">Leadership</a></li>
+              <li><a href="/membership">Membership</a></li>
+            </ul>
+          </div>
+          <div>
+            <div class="footer-heading">Heritage</div>
+            <ul class="footer-links">
+              <li><a href="/gallery">Cultural Gallery</a></li>
+              <li><a href="/#stories">Stories</a></li>
+              <li><a href="/events">Festivals</a></li>
+              <li><a href="/events">Workshops</a></li>
+            </ul>
+          </div>
+          <div>
+            <div class="footer-heading">Contact</div>
+            <ul class="footer-links">
+              <li>
+                <a id="footerEmail" href="mailto:info@nzslfoundation.org.nz"
+                  >info@nzslfoundation.org.nz</a
+                >
+              </li>
+              <li><a id="footerPhone" href="tel:+6445678901">+64 4 567 8901</a></li>
+              <li>
+                <span id="footerAddress" style="color: var(--text-muted)"
+                  >Wellington, New Zealand</span
+                >
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span id="footerCopyright">© 2026 NZSL Cultural Foundation. All rights reserved.</span>
+          <span>Preserving Sri Lankan heritage in Aotearoa</span>
+        </div>
+      </div>
+    </footer>
+
+    <script src="/js/app.js"></script>
+    <script>
+      document.getElementById("contactForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const errorEl = document.getElementById("contactError");
+        const successEl = document.getElementById("contactSuccess");
+        const btn = document.getElementById("contactBtn");
+        errorEl.style.display = "none";
+        successEl.style.display = "none";
+
+        const form = new FormData(e.target);
+        const body = Object.fromEntries(form.entries());
+
+        btn.disabled = true;
+        btn.textContent = "Sending...";
+
+        try {
+          const res = await fetch("/api/contact", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || "Could not send your message. Please try again.");
+          e.target.reset();
+          successEl.textContent = "Thanks for reaching out! We'll get back to you soon.";
+          successEl.style.display = "block";
+        } catch (err) {
+          errorEl.textContent = err.message || "Could not send your message. Please try again.";
+          errorEl.style.display = "block";
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Send Message";
+        }
+      });
+
+      (async function () {
+        try {
+          const data = await apiFetch("/settings");
+          const social = (data?.settings || []).filter(s => s.category === "social" && s.value);
+          const labels = { facebook_url: "Facebook", instagram_url: "Instagram", youtube_url: "YouTube", twitter_url: "X (Twitter)", linkedin_url: "LinkedIn" };
+          const html = social.length > 0
+            ? social.map(s =>
+                `<a href="${s.value}" target="_blank" rel="noopener noreferrer" class="footer-social-link">${labels[s.key] || s.key.replace(/_url$/, "")}</a>`
+              ).join("")
+            : "";
+          const footerEl = document.getElementById("footerSocial");
+          const contactEl = document.getElementById("contactSocial");
+          if (footerEl && html) footerEl.innerHTML = html;
+          if (contactEl) contactEl.innerHTML = html || '<span style="color:var(--text-muted);font-size:0.85rem">No social links yet.</span>';
+
+          const get = (key) => (data?.settings || []).find((s) => s.key === key)?.value;
+          const email = get("contact_email");
+          const phone = get("contact_phone");
+          const address = get("contact_address");
+          const tagline = get("footer_tagline");
+          const copyright = get("footer_copyright");
+
+          [document.getElementById("footerEmail"), document.getElementById("contactPageEmail")].forEach((el) => {
+            if (el && email) { el.textContent = email; el.href = "mailto:" + email; }
+          });
+          [document.getElementById("footerPhone"), document.getElementById("contactPagePhone")].forEach((el) => {
+            if (el && phone) { el.textContent = phone; el.href = "tel:" + phone.replace(/[^\d+]/g, ""); }
+          });
+          [document.getElementById("footerAddress"), document.getElementById("contactPageAddress")].forEach((el) => {
+            if (el && address) el.textContent = address;
+          });
+          const taglineEl = document.getElementById("footerTagline");
+          if (taglineEl && tagline) taglineEl.textContent = tagline;
+          const copyrightEl = document.getElementById("footerCopyright");
+          if (copyrightEl && copyright) copyrightEl.textContent = copyright;
+        } catch (_) {}
+      })();
+    </script>
+  </body>
+</html>

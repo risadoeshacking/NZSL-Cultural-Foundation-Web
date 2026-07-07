@@ -31,6 +31,7 @@
         <ul class="nav-links" id="navLinks">
           <li><a href="/about" class="nav-link">About</a></li>
           <li><a href="/events" class="nav-link active">Events</a></li>
+          <li><a href="/programmes" class="nav-link">Programmes</a></li>
           <li><a href="/gallery" class="nav-link">Gallery</a></li>
           <li><a href="/leadership" class="nav-link">Leadership</a></li>
           <li><a href="/#stories" class="nav-link">Stories</a></li>
@@ -55,13 +56,24 @@
           Experience the vibrant cultural celebrations, festivals, and workshops
           organised by the foundation.
         </p>
+        <p style="margin-top: 12px">
+          <a href="/productions" style="color: var(--accent)">Explore Our Major Productions →</a>
+        </p>
+        <div
+          class="gallery-filters"
+          id="eventsFilters"
+          style="justify-content: center; margin-top: 24px"
+        >
+          <button class="gallery-filter active" data-tab="upcoming">Upcoming Events</button>
+          <button class="gallery-filter" data-tab="performances">Performances</button>
+        </div>
       </div>
     </div>
 
     <section class="section">
       <div class="container">
-        <div class="events-list-grid" id="eventsGrid">
-          <div class="loading-state" id="eventsLoading">
+        <div class="events-list-grid" id="eventsPageGrid">
+          <div class="loading-state" id="eventsPageLoading">
             <div class="loader"></div>
             <span>Loading events...</span>
           </div>
@@ -77,10 +89,7 @@
               <img src="/logo.png" alt="" class="footer-logo" />
               NZSL Cultural Foundation
             </div>
-            <p>
-              Dedicated to preserving, showcasing, and celebrating Sri Lankan
-              culture in Aotearoa New Zealand.
-            </p>
+            <p id="footerTagline">Dedicated to preserving, showcasing, and celebrating Sri Lankan culture in Aotearoa New Zealand.</p>
             <div class="footer-social" id="footerSocial"></div>
           </div>
           <div>
@@ -106,13 +115,13 @@
             <div class="footer-heading">Contact</div>
             <ul class="footer-links">
               <li>
-                <a href="mailto:info@nzslfoundation.org.nz"
+                <a id="footerEmail" href="mailto:info@nzslfoundation.org.nz"
                   >info@nzslfoundation.org.nz</a
                 >
               </li>
-              <li><a href="tel:+6445678901">+64 4 567 8901</a></li>
+              <li><a id="footerPhone" href="tel:+6445678901">+64 4 567 8901</a></li>
               <li>
-                <span style="color: var(--text-muted)"
+                <span id="footerAddress" style="color: var(--text-muted)"
                   >Wellington, New Zealand</span
                 >
               </li>
@@ -120,7 +129,7 @@
           </div>
         </div>
         <div class="footer-bottom">
-          <span>© 2026 NZSL Cultural Foundation. All rights reserved.</span>
+          <span id="footerCopyright">© 2026 NZSL Cultural Foundation. All rights reserved.</span>
           <span>Preserving Sri Lankan heritage in Aotearoa</span>
         </div>
       </div>
@@ -128,18 +137,14 @@
 
     <script src="/js/app.js"></script>
     <script>
-      // Load all events for the events page
-      (async function () {
-        const grid = document.getElementById("eventsGrid");
-        const loading = document.getElementById("eventsLoading");
-        if (!grid) return;
-        const data = await apiFetch("/events?limit=50");
-        if (!data || !data.events) {
-          if (loading) loading.innerHTML = "<span>Failed to load events</span>";
+      // Load events for the events page, split into Upcoming / Performances tabs
+      function renderEventCards(events) {
+        const grid = document.getElementById("eventsPageGrid");
+        if (events.length === 0) {
+          grid.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem;grid-column:1/-1">No events to show here yet.</p>';
           return;
         }
-        if (loading) loading.remove();
-        grid.innerHTML = data.events
+        grid.innerHTML = events
           .map(
             (event, i) => `
           <div class="event-card reveal reveal-delay-${(i % 4) + 1}">
@@ -171,7 +176,34 @@
           .join("");
         initScrollReveal();
         initPremiumCardTilt();
-      })();
+      }
+
+      async function loadEventsTab(tab) {
+        const grid = document.getElementById("eventsPageGrid");
+        if (!grid) return;
+        grid.innerHTML = '<div class="loading-state"><div class="loader"></div><span>Loading events...</span></div>';
+
+        const endpoint = tab === "performances" ? "/events?category=performance&limit=50" : "/events?limit=50";
+        const data = await apiFetch(endpoint);
+        if (!data || !data.events) {
+          grid.innerHTML = "<span>Failed to load events</span>";
+          return;
+        }
+        const events = tab === "performances"
+          ? data.events
+          : data.events.filter((e) => e.category !== "performance");
+        renderEventCards(events);
+      }
+
+      document.querySelectorAll("#eventsFilters .gallery-filter").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll("#eventsFilters .gallery-filter").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          loadEventsTab(btn.dataset.tab);
+        });
+      });
+
+      loadEventsTab("upcoming");
 
       (async function () {
         try {
@@ -185,6 +217,31 @@
             ).join("");
           }
         } catch (_) {}
+      })();
+    </script>
+  
+    <script>
+      (function () {
+        function applySiteContent(settings) {
+          const get = (key) => (settings || []).find((s) => s.key === key)?.value;
+          const email = get("contact_email");
+          const phone = get("contact_phone");
+          const address = get("contact_address");
+          const tagline = get("footer_tagline");
+          const copyright = get("footer_copyright");
+
+          const emailEl = document.getElementById("footerEmail");
+          if (emailEl && email) { emailEl.textContent = email; emailEl.href = "mailto:" + email; }
+          const phoneEl = document.getElementById("footerPhone");
+          if (phoneEl && phone) { phoneEl.textContent = phone; phoneEl.href = "tel:" + phone.replace(/[^\d+]/g, ""); }
+          const addressEl = document.getElementById("footerAddress");
+          if (addressEl && address) addressEl.textContent = address;
+          const taglineEl = document.getElementById("footerTagline");
+          if (taglineEl && tagline) taglineEl.textContent = tagline;
+          const copyrightEl = document.getElementById("footerCopyright");
+          if (copyrightEl && copyright) copyrightEl.textContent = copyright;
+        }
+        apiFetch("/settings").then((data) => applySiteContent(data?.settings)).catch(() => {});
       })();
     </script>
   </body>

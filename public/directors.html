@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Leadership — NZSL Cultural Foundation</title>
+    <title>Our Directors — NZSL Cultural Foundation</title>
     <meta
       name="description"
-      content="Meet the dedicated individuals who guide the New Zealand Sri Lanka Cultural Foundation's mission."
+      content="Meet the Directors of the New Zealand Sri Lanka Cultural Foundation and read their biographies."
     />
     <meta name="theme-color" content="#1a1a1a" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -33,7 +33,7 @@
           <li><a href="/events" class="nav-link">Events</a></li>
           <li><a href="/programmes" class="nav-link">Programmes</a></li>
           <li><a href="/gallery" class="nav-link">Gallery</a></li>
-          <li><a href="/leadership" class="nav-link active">Leadership</a></li>
+          <li><a href="/leadership" class="nav-link">Leadership</a></li>
           <li><a href="/#stories" class="nav-link">Stories</a></li>
           <li><a href="/#videos" class="nav-link">Videos</a></li>
           <li><a href="/membership" class="nav-link">Membership</a></li>
@@ -51,23 +51,22 @@
 
     <div class="page-header">
       <div class="container">
-        <h1 class="page-header-title">Our Leadership</h1>
+        <h1 class="page-header-title">Our Directors</h1>
         <p class="page-header-subtitle">
-          Meet the dedicated individuals who guide our foundation's mission to
-          preserve and celebrate Sri Lankan culture in New Zealand.
+          Meet our Directors and read their biographies.
         </p>
         <p style="margin-top: 12px">
-          <a href="/directors" style="color: var(--accent)">Meet Our Directors →</a>
+          <a href="/leadership" style="color: var(--accent)">Meet the Full Team →</a>
         </p>
       </div>
     </div>
 
     <section class="section">
       <div class="container">
-        <div class="leadership-full-grid" id="leadershipGrid">
-          <div class="loading-state" id="leadershipLoading">
+        <div class="leadership-full-grid" id="directorsGrid">
+          <div class="loading-state" id="directorsLoading">
             <div class="loader"></div>
-            <span>Loading leadership...</span>
+            <span>Loading directors...</span>
           </div>
         </div>
       </div>
@@ -99,8 +98,8 @@
             <ul class="footer-links">
               <li><a href="/gallery">Cultural Gallery</a></li>
               <li><a href="/#stories">Stories</a></li>
-              <li><a href="/events">Festivals</a></li>
-              <li><a href="/events">Workshops</a></li>
+              <li><a href="/productions">Productions</a></li>
+              <li><a href="/partners">Partners &amp; Sponsors</a></li>
             </ul>
           </div>
           <div>
@@ -130,16 +129,20 @@
     <script src="/js/app.js"></script>
     <script>
       (async function () {
-        const grid = document.getElementById("leadershipGrid");
-        const loading = document.getElementById("leadershipLoading");
+        const grid = document.getElementById("directorsGrid");
+        const loading = document.getElementById("directorsLoading");
         if (!grid) return;
-        const data = await apiFetch("/leadership");
+        const data = await apiFetch("/leadership?category=director");
         if (!data || !data.leaders) {
           if (loading)
-            loading.innerHTML = "<span>Failed to load leadership</span>";
+            loading.innerHTML = "<span>Failed to load directors</span>";
           return;
         }
         if (loading) loading.remove();
+        if (data.leaders.length === 0) {
+          grid.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem">No directors listed yet.</p>';
+          return;
+        }
         grid.innerHTML = data.leaders
           .map((leader, i) => {
             const initials = leader.name.split(" ").map(w => w[0]).slice(0,2).join("").toUpperCase();
@@ -151,7 +154,7 @@
                 : `<div class="leader-photo-placeholder"><span class="leader-photo-placeholder-initials">${initials}</span></div>`}
               <div class="leader-photo-overlay"></div>
               <div class="leader-photo-meta">
-                <div class="leader-full-role">${leader.role}${leader.category === "director" ? ' · <span style="color:var(--accent)">Director</span>' : ""}</div>
+                <div class="leader-full-role">${leader.role}</div>
                 <h3 class="leader-full-name">${leader.name}</h3>
               </div>
             </div>
