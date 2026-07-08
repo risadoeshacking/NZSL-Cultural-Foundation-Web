@@ -8,6 +8,10 @@ export function useApi(path, deps = []) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!path) {
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     apiFetch(path)

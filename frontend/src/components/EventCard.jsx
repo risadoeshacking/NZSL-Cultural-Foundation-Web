@@ -1,6 +1,64 @@
 import { Link } from "react-router-dom";
 import { getDay, getMonth } from "../utils/date";
 
+const CATEGORY_COLORS = {
+  festival: "#d4760a",
+  exhibition: "#8b3a9f",
+  performance: "#0f9b8e",
+  workshop: "#d4760a",
+  cultural: "#d4760a",
+  general: "#8b3a9f",
+  arts: "#8b3a9f",
+  culture: "#d4760a",
+  heritage: "#ffb300",
+  community: "#ffb300",
+};
+
+function categoryColor(category) {
+  return CATEGORY_COLORS[String(category).toLowerCase()] || "#d4760a";
+}
+
+/** Full event card with image band, category badge, date badge — used on the /events hub page. */
+export function EventGridCard({ event }) {
+  const color = categoryColor(event.category);
+  return (
+    <div className="overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm">
+      <div
+        className="relative h-40"
+        style={{ background: `linear-gradient(135deg, ${color}30 0%, ${color}10 100%)` }}
+      >
+        <div className="absolute left-3 top-3 rounded-full bg-black/50 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-wide text-white backdrop-blur">
+          {event.category}
+        </div>
+        <div className="absolute right-3 top-3 rounded-lg bg-white px-2.5 py-1.5 text-center shadow">
+          <div className="font-display text-base font-semibold leading-none text-maroon">
+            {getDay(event.date)}
+          </div>
+          <div className="text-[0.6rem] uppercase tracking-wide text-text-dark-soft">
+            {getMonth(event.date)}
+          </div>
+        </div>
+      </div>
+      <div className="p-4">
+        <div className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color }}>
+          {event.category}
+        </div>
+        <h3 className="mb-1 font-display text-lg font-semibold text-text-dark">{event.title}</h3>
+        {event.description && (
+          <p className="mb-3 line-clamp-2 text-sm text-text-dark-soft">{event.description}</p>
+        )}
+        <div className="flex items-center justify-between text-xs text-text-dark-soft">
+          <span>{event.location || "TBA"}</span>
+          <span>
+            {event.time_start}
+            {event.time_end ? ` – ${event.time_end}` : ""}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Compact list item with a date badge — used in the homepage's Upcoming Events list. */
 export function EventListItem({ event }) {
   return (
