@@ -108,41 +108,6 @@
     <!-- Global Floating Petal Field -->
     <div class="petal-field" id="petalField" aria-hidden="true"></div>
 
-    <!-- Cultural Marquee -->
-    <div class="cultural-marquee" aria-hidden="true">
-      <div class="marquee-track" id="marqueeTrack">
-        <!-- duplicated for seamless loop — JS fills this -->
-      </div>
-    </div>
-
-    <!-- Foundation Impact Section -->
-    <section class="impact-section section-light" id="impact">
-      <div class="container">
-        <div class="impact-grid">
-          <div class="impact-card reveal">
-            <div class="impact-number" data-count="12">0</div>
-            <div class="impact-label">Events Organised</div>
-            <div class="impact-divider"></div>
-          </div>
-          <div class="impact-card reveal reveal-delay-1">
-            <div class="impact-number" data-count="500">0</div>
-            <div class="impact-label">Families Reached</div>
-            <div class="impact-divider"></div>
-          </div>
-          <div class="impact-card reveal reveal-delay-2">
-            <div class="impact-number" data-count="24">0</div>
-            <div class="impact-label">Cultural Programs</div>
-            <div class="impact-divider"></div>
-          </div>
-          <div class="impact-card reveal reveal-delay-3">
-            <div class="impact-number" data-count="8">0</div>
-            <div class="impact-label">Years of Service</div>
-            <div class="impact-divider"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- Productions + Upcoming Events -->
     <section class="section section-light" id="productions">
       <div class="container">
@@ -421,6 +386,29 @@
 
     <script src="/js/app.js"></script>
     <script>
+      (async function () {
+        try {
+          const data = await apiFetch("/settings");
+          const settings = data?.settings || [];
+          const url = settings.find((s) => s.key === "hero_banner_url")?.value;
+          const position = settings.find((s) => s.key === "hero_banner_position")?.value || "50";
+          if (url) {
+            const heroBg = document.getElementById("heroBg");
+            const heroVisualBg = document.getElementById("heroVisualBg");
+            if (heroBg) {
+              heroBg.style.backgroundImage = `url('${url}')`;
+              heroBg.style.backgroundPosition = `center ${position}%`;
+            }
+            if (heroVisualBg) {
+              heroVisualBg.style.backgroundImage = `url('${url}')`;
+              heroVisualBg.style.backgroundPosition = `center ${position}%`;
+            }
+          }
+        } catch (e) {
+          // fall back to the default background image already set in the markup
+        }
+      })();
+
       (async function () {
         const grid = document.getElementById("productionsHomeGrid");
         const loading = document.getElementById("productionsHomeLoading");

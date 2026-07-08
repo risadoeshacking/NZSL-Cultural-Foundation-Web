@@ -486,34 +486,6 @@ function initScrollReveal() {
 }
 
 // ========================================
-// IMPACT COUNTERS
-// ========================================
-function initImpactCounters() {
-  const counters = document.querySelectorAll('.impact-number[data-count]');
-  if (!counters.length) return;
-
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      const el     = entry.target;
-      const target = parseInt(el.dataset.count);
-      let current  = 0;
-      const step   = Math.ceil(target / 42);
-
-      const timer = setInterval(() => {
-        current += step;
-        if (current >= target) { current = target; clearInterval(timer); }
-        el.textContent = current + '+';
-      }, 28);
-
-      obs.unobserve(el);
-    });
-  }, { threshold: 0.5 });
-
-  counters.forEach(c => obs.observe(c));
-}
-
-// ========================================
 // EVENTS
 // ========================================
 async function loadEvents() {
@@ -1182,48 +1154,6 @@ function initCinematicFlags() {
 }
 
 // ========================================
-// CULTURAL MARQUEE
-// ========================================
-function initCulturalMarquee() {
-  const track = document.getElementById('marqueeTrack');
-  if (!track) return;
-
-  const items = [
-    { text: 'Kandyan Dance',    cls: '' },
-    { text: 'ශ්‍රී ලංකාව',       cls: 'sinhala' },
-    { text: 'Vesak',            cls: '' },
-    { text: 'Avurudu',          cls: '' },
-    { text: 'ආයුබෝවන්',         cls: 'sinhala' },
-    { text: 'Batik Art',        cls: '' },
-    { text: 'Bharatanatyam',    cls: '' },
-    { text: 'Poson Poya',       cls: '' },
-    { text: 'Deepavali',        cls: '' },
-    { text: 'Rabana',           cls: '' },
-    { text: 'Colombo • Wellington', cls: '' },
-    { text: 'ලෝකය සිරා',        cls: 'sinhala' },
-    { text: 'Ceylon Spices',    cls: '' },
-    { text: 'Aotearoa',         cls: '' },
-    { text: 'Two Nations · One Heart', cls: '' },
-    { text: 'ශ්‍රී ලංකා',        cls: 'sinhala' },
-    { text: 'Heritage',         cls: '' },
-    { text: 'Community',        cls: '' },
-    { text: 'Kottu · Hoppers · Lamprais', cls: '' },
-    { text: 'Sinhala New Year', cls: '' },
-    { text: 'Tamil Heritage',   cls: '' },
-    { text: 'සංස්කෘතිය',        cls: 'sinhala' },
-  ];
-
-  function buildItems() {
-    return items.map(item =>
-      `<span class="marquee-item ${item.cls}">${item.text}</span><span class="marquee-sep" aria-hidden="true"></span>`
-    ).join('');
-  }
-
-  // Duplicate for seamless loop
-  track.innerHTML = buildItems() + buildItems();
-}
-
-// ========================================
 // FLOATING LOTUS PETALS
 // ========================================
 function initFloatingPetals() {
@@ -1503,13 +1433,11 @@ function initApp() {
   initPremiumCardTilt();
   initGalleryFilters();
   initLightboxKeyboard();
-  initImpactCounters();
   initBridgeCanvas();
   initBridgeFlags();
   initCinematicFlags();
 
   // New cultural enhancements
-  initCulturalMarquee();
   initFloatingPetals();
   initSectionGlowLines();
 

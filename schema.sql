@@ -133,6 +133,11 @@ INSERT INTO site_settings (key, value, category, label) VALUES
   ('footer_copyright', '© 2026 NZSL Cultural Foundation. All rights reserved.', 'footer', 'Footer Copyright Text')
 ON CONFLICT (key) DO NOTHING;
 
+INSERT INTO site_settings (key, value, category, label) VALUES
+  ('hero_banner_url',      '',   'homepage', 'Hero Banner Image URL'),
+  ('hero_banner_position', '50', 'homepage', 'Hero Banner Vertical Position')
+ON CONFLICT (key) DO NOTHING;
+
 -- Memberships (Dancing / Vocals / Both registrations)
 CREATE TABLE IF NOT EXISTS memberships (
   id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

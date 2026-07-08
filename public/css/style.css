@@ -791,49 +791,6 @@ h6 {
   font-weight: 300;
 }
 
-/* --- Impact Section --- */
-.impact-section {
-  padding: var(--space-4xl) 0;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-surface);
-}
-
-.impact-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 2rem;
-  text-align: center;
-}
-
-.impact-card {
-  padding: 2rem 1rem;
-}
-
-.impact-number {
-  font-family: var(--font-display);
-  font-size: clamp(2.5rem, 4vw, 3.5rem);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-
-.impact-label {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  font-weight: 400;
-  letter-spacing: 0.02em;
-}
-
-.impact-divider {
-  width: 30px;
-  height: 1px;
-  background: var(--accent);
-  margin: 16px auto 0;
-  opacity: 0.5;
-}
-
 /* --- Story Section --- */
 .story-section {
   padding: var(--space-5xl) 0;
@@ -3687,9 +3644,6 @@ h6 {
   .hero-title {
     font-size: clamp(2.2rem, 8vw, 3.5rem);
   }
-  .impact-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
   .events-grid {
     grid-template-columns: 1fr;
   }
@@ -3751,9 +3705,6 @@ h6 {
 }
 
 @media (max-width: 480px) {
-  .impact-grid {
-    grid-template-columns: 1fr;
-  }
   .gallery-masonry {
     columns: 1;
   }
@@ -3777,11 +3728,6 @@ h6 {
    ======================================== */
 
 /* --- Keyframes --- */
-@keyframes marqueeScroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
 @keyframes petalFloat {
   0%   { transform: translateY(110vh) translateX(0)               rotate(0deg);   opacity: 0; }
   8%   { opacity: 0.7; }
@@ -3828,67 +3774,6 @@ h6 {
   0%   { d: path("M0,20 C200,40 400,0 600,20 C800,40 1000,0 1200,20 L1200,60 L0,60 Z"); }
   50%  { d: path("M0,35 C200,5 400,45 600,25 C800,5 1000,45 1200,35 L1200,60 L0,60 Z"); }
   100% { d: path("M0,20 C200,40 400,0 600,20 C800,40 1000,0 1200,20 L1200,60 L0,60 Z"); }
-}
-
-/* --- Cultural Marquee --- */
-.cultural-marquee {
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(90deg,
-    var(--bg-surface) 0%,
-    rgba(212,118,10,0.06) 30%,
-    rgba(139,58,159,0.05) 70%,
-    var(--bg-surface) 100%
-  );
-  border-top:    1px solid rgba(212,118,10,0.18);
-  border-bottom: 1px solid rgba(212,118,10,0.18);
-  padding: 0;
-  z-index: 10;
-}
-
-.marquee-track {
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-  animation: marqueeScroll 38s linear infinite;
-  will-change: transform;
-  padding: 13px 0;
-}
-
-.marquee-track:hover { animation-play-state: paused; }
-
-.marquee-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0 1.8rem;
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(212,118,10,0.72);
-  transition: color 0.2s;
-}
-
-.marquee-item:hover { color: var(--accent); }
-
-.marquee-item.sinhala {
-  font-family: var(--font-display);
-  font-size: 0.88rem;
-  letter-spacing: 0.04em;
-  text-transform: none;
-  color: rgba(139,58,159,0.65);
-}
-
-.marquee-sep {
-  display: inline-block;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: rgba(212,118,10,0.35);
-  flex-shrink: 0;
-  margin: 0 0.3rem;
 }
 
 /* --- Global Petal Layer --- */
@@ -3946,16 +3831,6 @@ h6 {
 }
 
 /* --- Section colour bands --- */
-.impact-section {
-  position: relative;
-  background: linear-gradient(
-    160deg,
-    var(--bg-base) 0%,
-    rgba(212,118,10,0.04) 50%,
-    var(--bg-base) 100%
-  );
-}
-
 .highlights-section {
   position: relative;
   background: linear-gradient(
@@ -3964,23 +3839,6 @@ h6 {
     rgba(139,58,159,0.06) 50%,
     var(--bg-surface) 100%
   );
-}
-
-/* --- Impact cards — animated border glow on hover --- */
-.impact-card {
-  transition: transform 0.3s var(--ease-out), box-shadow 0.3s;
-}
-.impact-card:hover {
-  transform: translateY(-6px);
-  animation: borderGlow 1.8s ease infinite;
-}
-
-.impact-number {
-  font-size: clamp(3rem, 6vw, 5rem) !important;
-  background: linear-gradient(135deg, var(--accent) 0%, rgba(248,192,35,1) 60%, var(--accent-light) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 /* --- Highlight cards enhanced --- */
@@ -4313,7 +4171,6 @@ h6 {
 
 @media (max-width: 600px) {
   .fb-feed-grid { grid-template-columns: 1fr; }
-  .marquee-item { font-size: 0.72rem; padding: 0 1.2rem; }
 }
 
 /* --- Homepage: Productions + Upcoming Events split row --- */

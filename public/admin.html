@@ -557,6 +557,28 @@
               </button>
             </div>
           </div>
+          <div class="admin-table-container" style="margin-bottom: 1.5rem">
+            <div class="admin-table-header" style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border)">
+              <h2 style="font-size: 1rem; margin: 0">Homepage Hero Banner</h2>
+            </div>
+            <div style="padding: 1.5rem">
+              <div id="heroBannerPreviewWrap" style="
+                width: 100%; aspect-ratio: 21 / 9; border-radius: 8px; overflow: hidden;
+                background: #1a1a1a center 50% / cover no-repeat; border: 1px solid var(--border);
+                cursor: grab; position: relative; user-select: none;
+              ">
+                <div id="heroBannerEmptyState" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.85rem">No banner uploaded yet</div>
+              </div>
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-top:8px">
+                Drag the preview up/down to reposition the image. Recommended size: 1600×600px or larger (landscape), JPG/PNG/WebP, max 10MB.
+              </p>
+              <div style="display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap">
+                <input type="file" id="heroBannerFileInput" accept="image/*" style="font-size:0.8rem" onchange="previewHeroBanner(this)" />
+                <button type="button" class="btn btn-primary btn-sm" id="heroBannerSaveBtn" onclick="saveHeroBanner()">Save Banner</button>
+              </div>
+            </div>
+          </div>
+
           <div id="settingsForm"></div>
         </div>
 

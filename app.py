@@ -1168,6 +1168,33 @@ def create_app():
                 )
         return jsonify({"message": "Settings updated successfully"})
 
+    @app.post("/api/settings/admin/hero-banner")
+    def admin_upload_hero_banner():
+        admin, err = require_admin()
+        if err:
+            return err
+
+        if "banner" not in request.files:
+            return jsonify({"error": "No banner file provided"}), 400
+        file = request.files["banner"]
+        if not file or file.filename == "":
+            return jsonify({"error": "No banner file provided"}), 400
+
+        try:
+            validate_image(file)
+        except ValueError as e:
+            msg = str(e)
+            if "File too large" in msg:
+                return jsonify({"error": msg}), 413
+            return jsonify({"error": msg}), 400
+
+        ext = os.path.splitext(file.filename.lower())[1]
+        try:
+            banner_url = store_uploaded_file(file, ext, "settings")
+        except RuntimeError as e:
+            return jsonify({"error": str(e)}), 502
+        return jsonify({"url": banner_url}), 201
+
     # Memberships
     def _add_one_month(d):
         year = d.year + (d.month // 12)

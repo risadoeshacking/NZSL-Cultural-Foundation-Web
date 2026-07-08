@@ -194,6 +194,12 @@ INSERT INTO site_settings (key, value, category, label) VALUES
   ('footer_copyright', '© 2026 NZSL Cultural Foundation. All rights reserved.', 'footer', 'Footer Copyright Text')
 ON CONFLICT (key) DO NOTHING;
 
+-- Homepage hero banner: admin-uploadable, editable via a dedicated widget in the Settings admin UI
+INSERT INTO site_settings (key, value, category, label) VALUES
+  ('hero_banner_url',      '',   'homepage', 'Hero Banner Image URL'),
+  ('hero_banner_position', '50', 'homepage', 'Hero Banner Vertical Position')
+ON CONFLICT (key) DO NOTHING;
+
 -- Reclassify existing gallery photos into the new taxonomy (general / performances / classes)
 UPDATE gallery SET category = 'performances' WHERE category = 'performance';
 UPDATE gallery SET category = 'general' WHERE category IN ('heritage','culture','arts','events');
