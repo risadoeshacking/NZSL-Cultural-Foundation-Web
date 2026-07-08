@@ -18,7 +18,7 @@ export default function VideoModal({ video, onClose }) {
       <div className="aspect-video w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
         <iframe
           className="h-full w-full rounded-lg"
-          src={`https://www.youtube.com/embed/${video.video_id}?autoplay=1`}
+          src={`https://www.youtube-nocookie.com/embed/${video.video_id}?autoplay=1`}
           title={video.title}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
