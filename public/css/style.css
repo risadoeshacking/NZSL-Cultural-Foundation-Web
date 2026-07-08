@@ -427,14 +427,14 @@ h6 {
   inset: 0;
   background: linear-gradient(
       90deg,
-      rgba(26, 26, 26, 0.95) 0%,
-      rgba(26, 26, 26, 0.7) 50%,
-      rgba(26, 26, 26, 0.4) 100%
+      rgba(13, 10, 8, 0.62) 0%,
+      rgba(13, 10, 8, 0.4) 50%,
+      rgba(13, 10, 8, 0.18) 100%
     ),
     linear-gradient(
       180deg,
-      rgba(26, 26, 26, 0.3) 0%,
-      rgba(26, 26, 26, 0.8) 100%
+      rgba(13, 10, 8, 0.1) 0%,
+      rgba(13, 10, 8, 0.4) 100%
     );
   z-index: 1;
 }
@@ -557,6 +557,7 @@ h6 {
   line-height: 1.05;
   letter-spacing: -0.02em;
   margin-bottom: 28px;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55), 0 1px 4px rgba(0, 0, 0, 0.5);
   animation: fadeInUp 0.8s var(--ease-out) 0.15s both;
 }
 
@@ -576,6 +577,7 @@ h6 {
   margin-bottom: 40px;
   max-width: 460px;
   font-weight: 300;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
   animation: fadeInUp 0.8s var(--ease-out) 0.3s both;
 }
 
