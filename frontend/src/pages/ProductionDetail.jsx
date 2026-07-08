@@ -22,7 +22,7 @@ export default function ProductionDetail() {
   const [activeImage, setActiveImage] = useState(null);
   const [activeVideo, setActiveVideo] = useState(null);
 
-  const photos = galleryData?.gallery || [];
+  const photos = galleryData?.images || [];
   const videos = videosData?.videos || [];
 
   if (loading) {

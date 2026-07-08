@@ -18,7 +18,7 @@ export default function GalleryVideosWhatWeDo() {
   const [activeImage, setActiveImage] = useState(null);
   const [activeVideo, setActiveVideo] = useState(null);
 
-  const photos = (galleryData?.gallery || []).slice(0, 6);
+  const photos = (galleryData?.images || []).slice(0, 6);
   const featuredVideo = (videosData?.videos || [])[0];
 
   return (
