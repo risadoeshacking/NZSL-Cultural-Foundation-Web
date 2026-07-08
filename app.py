@@ -152,7 +152,12 @@ def bootstrap_default_admin():
 
 
 def create_app():
-    app = Flask(__name__, static_folder="public", static_url_path="")
+    # static_folder=None: Flask's automatic static route would otherwise claim
+    # the same /<path:...> pattern as our own catch-all below and silently win
+    # the routing tie for any path that isn't a real file (e.g. /about),
+    # returning its own 404 before our SPA fallback ever runs. Serving
+    # everything through our own routes avoids that collision entirely.
+    app = Flask(__name__, static_folder=None)
     CORS(app)
 
     limiter = Limiter(
@@ -2208,40 +2213,27 @@ def create_app():
             }
         )
 
-    # Explicit page routes — must be defined before the catch-all so Flask
-    # prefers these over the built-in static-file /<path:filename> handler.
-    _pages = ["about", "events", "gallery", "leadership", "admin", "contact", "membership", "productions", "programmes", "directors", "partners"]
-
-    def _make_page_view(filename):
-        def view():
-            return app.send_static_file(filename)
-        return view
-
-    for _page in _pages:
-        app.add_url_rule(
-            f"/{_page}",
-            endpoint=f"page_{_page}",
-            view_func=_make_page_view(f"{_page}.html"),
-        )
-
-    @app.get("/productions/<slug>")
-    def page_production_detail(slug):
-        return app.send_static_file("production.html")
-
-    @app.get("/programmes/<slug>")
-    def page_programme_detail(slug):
-        return app.send_static_file("programme.html")
+    # The admin dashboard is still its own static page. Every other route is
+    # the React frontend, which serves itself off index.html and handles
+    # routing client-side (see the catch-all below).
+    @app.get("/admin")
+    def page_admin():
+        return send_from_directory(public_dir, "admin.html")
 
     @app.get("/")
     def index_page():
-        return app.send_static_file("index.html")
+        return send_from_directory(public_dir, "index.html")
 
-    # Catch-all: anything else that isn't an API route falls back to index
+    # Catch-all: serves real static files (JS/CSS bundles, images, etc.) if
+    # they exist on disk; anything else that isn't an API route falls back
+    # to index.html so the React app's client-side router can handle it.
     @app.get("/<path:path>")
     def spa_fallback(path):
         if request.path.startswith("/api/"):
             return jsonify({"error": "Not found"}), 404
-        return app.send_static_file("index.html")
+        if os.path.isfile(os.path.join(public_dir, path)):
+            return send_from_directory(public_dir, path)
+        return send_from_directory(public_dir, "index.html")
 
     return app
 
