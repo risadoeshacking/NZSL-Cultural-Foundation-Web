@@ -4463,3 +4463,22 @@ h6 {
   .home-split-row { grid-template-columns: 1fr; }
   .home-triple-row { grid-template-columns: 1fr; }
 }
+
+/* --- Light "cream" section variant (matches client sitemap mockup) --- */
+.section-light {
+  background: var(--bg-cream);
+  --bg-surface: var(--bg-cream);
+  --bg-card: #ffffff;
+  --bg-elevated: var(--bg-warm-white);
+  --text-primary: var(--text-dark);
+  --text-secondary: var(--text-dark-secondary);
+  --text-tertiary: rgba(26, 26, 26, 0.45);
+  --text-muted: rgba(26, 26, 26, 0.5);
+  --border: rgba(26, 26, 26, 0.08);
+  --border-light: rgba(26, 26, 26, 0.12);
+  --border-hover: rgba(26, 26, 26, 0.18);
+}
+
+.section-light .loading-state {
+  color: var(--text-dark-secondary);
+}
