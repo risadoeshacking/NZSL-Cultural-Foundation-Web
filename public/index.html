@@ -61,7 +61,6 @@
       <div class="hero-particles" id="heroParticles" aria-hidden="true"></div>
 
       <div class="hero-inner">
-        <!-- Left: Content -->
         <div class="hero-content">
           <div class="hero-badge">
             <span class="hero-badge-dot"></span>
@@ -79,21 +78,6 @@
             <a href="/events" class="btn btn-primary btn-lg">Explore Our Journey</a>
             <a href="/gallery" class="btn btn-secondary btn-lg">View Cultural Gallery</a>
           </div>
-        </div>
-
-        <!-- Right: Visual -->
-        <div class="hero-visual" aria-hidden="true">
-          <div class="hero-visual-glow-ring"></div>
-          <div class="hero-visual-frame">
-            <div class="hero-visual-bg" id="heroVisualBg"></div>
-            <div class="hero-visual-overlay"></div>
-            <div class="hero-visual-float" id="heroVisualFloat"></div>
-            <div class="hero-visual-corner hvc-tl"></div>
-            <div class="hero-visual-corner hvc-tr"></div>
-            <div class="hero-visual-corner hvc-bl"></div>
-            <div class="hero-visual-corner hvc-br"></div>
-          </div>
-          <div class="hero-visual-label">Sri Lankan Heritage in Aotearoa</div>
         </div>
       </div>
 
@@ -394,14 +378,9 @@
           const position = settings.find((s) => s.key === "hero_banner_position")?.value || "50";
           if (url) {
             const heroBg = document.getElementById("heroBg");
-            const heroVisualBg = document.getElementById("heroVisualBg");
             if (heroBg) {
               heroBg.style.backgroundImage = `url('${url}')`;
               heroBg.style.backgroundPosition = `center ${position}%`;
-            }
-            if (heroVisualBg) {
-              heroVisualBg.style.backgroundImage = `url('${url}')`;
-              heroVisualBg.style.backgroundPosition = `center ${position}%`;
             }
           }
         } catch (e) {
