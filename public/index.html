@@ -413,86 +413,107 @@
       </div>
     </section>
 
-    <!-- Our Major Productions -->
+    <!-- Productions + Upcoming Events -->
     <section class="section section-alt" id="productions">
-      <div class="container">
-        <div class="section-header reveal">
-          <div>
-            <div class="section-label">Festivals &amp; Productions</div>
-            <h2 class="heading-lg section-title">Our Major Productions</h2>
-            <p class="section-subtitle">The Foundation's signature festivals and stage productions.</p>
-          </div>
-          <a href="/productions" class="btn btn-ghost">View All Productions →</a>
-        </div>
-        <div class="events-grid" id="productionsHomeGrid">
-          <div class="loading-state" id="productionsHomeLoading">
-            <div class="loader"></div>
-            <span>Loading productions...</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Chapter III: Events -->
-    <section class="section" id="events">
       <div class="chapter-indicator" aria-hidden="true">
         <span class="chapter-roman">III</span>
         <span class="chapter-name">Our Events</span>
       </div>
       <div class="container">
-        <div class="section-header reveal">
+        <div class="home-split-row">
           <div>
-            <div class="section-label">Cultural Events</div>
-            <h2 class="heading-lg section-title">Featured Events</h2>
-            <p class="section-subtitle">Experience the vibrant cultural celebrations happening across Aotearoa.</p>
+            <div class="section-header reveal">
+              <div>
+                <div class="section-label">Festivals &amp; Productions</div>
+                <h2 class="heading-lg section-title">Our Major Productions</h2>
+              </div>
+            </div>
+            <div class="events-grid" id="productionsHomeGrid">
+              <div class="loading-state" id="productionsHomeLoading">
+                <div class="loader"></div>
+                <span>Loading productions...</span>
+              </div>
+            </div>
+            <div style="margin-top: 24px; text-align: center">
+              <a href="/productions" class="btn btn-primary">View All Productions →</a>
+            </div>
           </div>
-          <a href="/events" class="btn btn-ghost">View All Events →</a>
-        </div>
-        <div class="events-grid" id="eventsGrid">
-          <div class="loading-state" id="eventsLoading">
-            <div class="loader"></div>
-            <span>Loading events...</span>
+          <div>
+            <div class="section-header reveal">
+              <div>
+                <div class="section-label">What's On</div>
+                <h2 class="heading-lg section-title">Upcoming Events</h2>
+              </div>
+            </div>
+            <div class="upcoming-list" id="upcomingEventsHome">
+              <div class="loading-state" id="upcomingEventsHomeLoading">
+                <div class="loader"></div>
+                <span>Loading events...</span>
+              </div>
+            </div>
+            <div style="margin-top: 16px; text-align: right">
+              <a href="/events" class="btn btn-ghost">View All Events →</a>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-
-    <!-- Gallery Preview -->
-    <section class="gallery-section" id="gallery">
+    <!-- Moments in Pictures + Watch Our Videos + What We Do -->
+    <section class="section section-alt" id="gallery">
       <div class="container">
-        <div class="section-header reveal">
+        <div class="home-triple-row">
           <div>
-            <div class="section-label">Cultural Gallery</div>
-            <h2 class="heading-lg section-title">Visual Heritage</h2>
-            <p class="section-subtitle">A glimpse into the beauty of Sri Lankan culture and our community.</p>
+            <div class="section-header reveal">
+              <div>
+                <div class="section-label">Cultural Gallery</div>
+                <h2 class="heading-lg section-title" style="font-size: 1.4rem">Moments in Pictures</h2>
+              </div>
+            </div>
+            <div class="moments-grid" id="momentsGridHome">
+              <div class="loading-state" id="momentsGridHomeLoading">
+                <div class="loader"></div>
+                <span>Loading...</span>
+              </div>
+            </div>
+            <div style="margin-top: 16px; text-align: center">
+              <a href="/gallery" class="btn btn-ghost btn-sm">View Full Gallery →</a>
+            </div>
           </div>
-          <a href="/gallery" class="btn btn-ghost">View Full Gallery →</a>
-        </div>
-        <div class="gallery-masonry" id="galleryMasonry">
-          <div class="loading-state" id="galleryLoading">
-            <div class="loader"></div>
-            <span>Loading gallery...</span>
+          <div id="videos">
+            <div class="section-header reveal">
+              <div>
+                <div class="section-label">Watch &amp; Experience</div>
+                <h2 class="heading-lg section-title" style="font-size: 1.4rem">Watch Our Videos</h2>
+              </div>
+            </div>
+            <div id="featuredVideoHome">
+              <div class="loading-state" id="featuredVideoHomeLoading">
+                <div class="loader"></div>
+                <span>Loading videos...</span>
+              </div>
+            </div>
+            <div style="margin-top: 16px; text-align: center">
+              <a href="/gallery" class="btn btn-ghost btn-sm">View All Videos →</a>
+            </div>
           </div>
-        </div>
-      </div>
-    </section>
-
-
-    <!-- Video Gallery -->
-    <section class="section" id="videos">
-      <div class="container">
-        <div class="section-header reveal">
           <div>
-            <div class="section-label">Watch &amp; Experience</div>
-            <h2 class="heading-lg section-title">Video Gallery</h2>
-            <p class="section-subtitle">Performances, festivals and community moments captured on film.</p>
-          </div>
-        </div>
-        <div class="video-grid" id="videoGrid">
-          <div class="loading-state" id="videosLoading">
-            <div class="loader"></div>
-            <span>Loading videos...</span>
+            <div class="section-header reveal">
+              <div>
+                <div class="section-label">Our Foundation</div>
+                <h2 class="heading-lg section-title" style="font-size: 1.4rem">What We Do</h2>
+              </div>
+            </div>
+            <p class="whatwedo-text">
+              We offer quality programmes in dance and music that celebrate our
+              heritage and develop confidence, discipline and creativity.
+            </p>
+            <div class="whatwedo-list">
+              <div class="whatwedo-item"><span class="whatwedo-item-check">✓</span> Experienced tutors</div>
+              <div class="whatwedo-item"><span class="whatwedo-item-check">✓</span> Inclusive and welcoming environment</div>
+              <div class="whatwedo-item"><span class="whatwedo-item-check">✓</span> Opportunities to perform and grow</div>
+            </div>
+            <a href="/programmes" class="btn btn-primary btn-sm">Explore Programmes</a>
           </div>
         </div>
       </div>
@@ -669,6 +690,98 @@
           initPremiumCardTilt();
         } catch (e) {
           if (loading) loading.innerHTML = "<span>Could not load productions.</span>";
+        }
+      })();
+
+      (async function () {
+        const list = document.getElementById("upcomingEventsHome");
+        const loading = document.getElementById("upcomingEventsHomeLoading");
+        if (!list) return;
+        try {
+          const data = await apiFetch("/events?limit=4");
+          const events = (data?.events || []).filter((e) => e.category !== "performance").slice(0, 4);
+          if (loading) loading.remove();
+          if (events.length === 0) {
+            list.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:1rem">No upcoming events yet.</p>';
+            return;
+          }
+          list.innerHTML = events
+            .map(
+              (ev, i) => `
+            <div class="upcoming-list-item reveal reveal-delay-${(i % 3) + 1}">
+              <div class="upcoming-date-badge">
+                <div class="upcoming-date-badge-day">${getDay(ev.date)}</div>
+                <div class="upcoming-date-badge-month">${getMonth(ev.date)}</div>
+              </div>
+              <div class="upcoming-item-body">
+                <div class="upcoming-item-title">${ev.title}</div>
+                <div class="upcoming-item-meta">${ev.time_start || ""}${ev.location ? " · " + ev.location : ""}</div>
+              </div>
+              <a href="/events" class="upcoming-item-link">View Details ›</a>
+            </div>
+          `
+            )
+            .join("");
+          initScrollReveal();
+        } catch (e) {
+          if (loading) loading.innerHTML = "<span>Could not load events.</span>";
+        }
+      })();
+
+      (async function () {
+        const grid = document.getElementById("momentsGridHome");
+        const loading = document.getElementById("momentsGridHomeLoading");
+        if (!grid) return;
+        try {
+          const data = await apiFetch("/gallery?limit=6");
+          const images = (data?.images || []).slice(0, 6);
+          if (loading) loading.remove();
+          if (images.length === 0) {
+            grid.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:1rem;grid-column:1/-1">No photos yet.</p>';
+            return;
+          }
+          galleryImages = images;
+          grid.innerHTML = images
+            .map(
+              (img, i) => `
+            <div class="moments-item reveal reveal-delay-${(i % 3) + 1}" onclick="openLightbox(${i})">
+              <img src="${img.image_url}" alt="${img.title || ""}" loading="lazy" />
+            </div>
+          `
+            )
+            .join("");
+          initScrollReveal();
+        } catch (e) {
+          if (loading) loading.innerHTML = "<span>Could not load gallery.</span>";
+        }
+      })();
+
+      (async function () {
+        const wrap = document.getElementById("featuredVideoHome");
+        const loading = document.getElementById("featuredVideoHomeLoading");
+        if (!wrap) return;
+        try {
+          const data = await apiFetch("/videos?limit=1");
+          const video = (data?.videos || [])[0];
+          if (loading) loading.remove();
+          if (!video) {
+            wrap.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:1rem">No videos yet.</p>';
+            return;
+          }
+          wrap.innerHTML = `
+            <div class="video-card reveal">
+              <div class="video-embed-wrap" onclick="openVideoModal('${video.video_id}', '${(video.title || "").replace(/'/g, "\\'")}')">
+                <img class="video-thumb" src="https://img.youtube.com/vi/${video.video_id}/hqdefault.jpg" alt="${video.title}" loading="lazy" />
+                <button class="video-play-btn" aria-label="Play ${video.title}" type="button">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+              </div>
+              <div class="video-card-title">${video.title}</div>
+            </div>
+          `;
+          initScrollReveal();
+        } catch (e) {
+          if (loading) loading.innerHTML = "<span>Could not load videos.</span>";
         }
       })();
 
