@@ -20,6 +20,17 @@
 
   --color-text-dark: #1a1a1a;
   --color-text-dark-soft: rgb(26 26 26 / 65%);
+
+  --animate-marquee: marquee 28s linear infinite;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 body {
