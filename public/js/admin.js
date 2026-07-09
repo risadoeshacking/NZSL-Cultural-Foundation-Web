@@ -16,6 +16,17 @@ function clearToken() {
   localStorage.removeItem("nzsl_admin_token");
 }
 
+// --- Date Helpers ---
+// The API returns dates as RFC 1123 strings (e.g. "Sat, 01 Aug 2026 00:00:00
+// GMT"), not ISO — <input type="date"> silently rejects anything that isn't
+// exactly YYYY-MM-DD, so form fields must be normalized through this first.
+function toDateInputValue(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "";
+  return d.toISOString().split("T")[0];
+}
+
 // --- API Fetch ---
 async function adminFetch(endpoint, { token, method = "GET", body } = {}) {
   const headers = { "Content-Type": "application/json" };
@@ -128,7 +139,7 @@ function showEventModal(event = null) {
           }" required /></div>
           <div class="admin-form-row">
             <div class="admin-form-group"><label>Date</label><input name="date" type="date" value="${
-              event?.date?.split("T")[0] || ""
+              toDateInputValue(event?.date)
             }" required /></div>
             <div class="admin-form-group"><label>Category</label><select name="category">
               <option value="festival" ${
@@ -149,6 +160,12 @@ function showEventModal(event = null) {
               <option value="community" ${
                 event?.category === "community" ? "selected" : ""
               }>Community</option>
+              <option value="production" ${
+                event?.category === "production" ? "selected" : ""
+              }>Production</option>
+              <option value="classes" ${
+                event?.category === "classes" ? "selected" : ""
+              }>Classes</option>
             </select></div>
           </div>
           <div class="admin-form-row">

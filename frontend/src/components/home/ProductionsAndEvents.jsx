@@ -2,13 +2,14 @@ import { useApi } from "../../hooks/useApi";
 import SectionHeader from "../ui/SectionHeader";
 import Button from "../ui/Button";
 import { LinkCard, EventListItem } from "../EventCard";
+import { isUpcoming } from "../../utils/date";
 
 export default function ProductionsAndEvents() {
   const { data: productionsData, loading: productionsLoading } = useApi("/productions");
-  const { data: eventsData, loading: eventsLoading } = useApi("/events?limit=4");
+  const { data: eventsData, loading: eventsLoading } = useApi("/events?limit=100");
 
   const productions = (productionsData?.productions || []).slice(0, 3);
-  const events = (eventsData?.events || []).slice(0, 4);
+  const events = (eventsData?.events || []).filter((e) => isUpcoming(e.date)).slice(0, 5);
 
   return (
     <section className="bg-cream px-5 py-16">

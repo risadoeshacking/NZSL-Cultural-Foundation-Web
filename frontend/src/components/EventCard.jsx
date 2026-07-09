@@ -12,6 +12,8 @@ const CATEGORY_COLORS = {
   culture: "#d4760a",
   heritage: "#ffb300",
   community: "#ffb300",
+  production: "#6f1d2e",
+  classes: "#2e7d32",
 };
 
 function categoryColor(category) {

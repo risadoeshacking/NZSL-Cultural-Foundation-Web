@@ -4,15 +4,18 @@ import Button from "../components/ui/Button";
 import { EventGridCard } from "../components/EventCard";
 import { useApi } from "../hooks/useApi";
 
-const BROWSE_TABS = [
-  { id: "all", label: "All" },
-  { id: "festival", label: "Festival" },
-  { id: "cultural", label: "Cultural" },
-  { id: "performance", label: "Performance" },
-  { id: "workshop", label: "Workshop" },
-  { id: "exhibition", label: "Exhibition" },
-  { id: "year", label: "By Year" },
-];
+// Matches the category options in the admin's event form (public/js/admin.js).
+const CATEGORY_LABELS = {
+  festival: "Festival",
+  cultural: "Cultural",
+  performance: "Performance",
+  workshop: "Workshop",
+  exhibition: "Exhibition",
+  community: "Community",
+  production: "Production",
+  classes: "Classes",
+};
+const CATEGORY_ORDER = Object.keys(CATEGORY_LABELS);
 
 export default function Events() {
   const [browse, setBrowse] = useState("all");
@@ -20,14 +23,29 @@ export default function Events() {
   const { data, loading } = useApi("/events?limit=200");
   const allEvents = data?.events || [];
 
+  // Only show a category chip if at least one event actually uses it.
+  const categories = useMemo(() => {
+    const present = new Set(allEvents.map((e) => e.category));
+    return CATEGORY_ORDER.filter((c) => present.has(c));
+  }, [allEvents]);
+
+  const browseTabs = useMemo(
+    () => [
+      { id: "all", label: "All" },
+      ...categories.map((c) => ({ id: c, label: CATEGORY_LABELS[c] || c })),
+      { id: "year", label: "By Year" },
+    ],
+    [categories]
+  );
+
   const years = useMemo(() => {
-    const set = new Set(allEvents.map((e) => new Date(e.date).getFullYear()));
+    const set = new Set(allEvents.map((e) => new Date(e.date).getUTCFullYear()));
     return [...set].sort((a, b) => b - a);
   }, [allEvents]);
 
   const events = useMemo(() => {
     if (browse === "year") {
-      return year ? allEvents.filter((e) => new Date(e.date).getFullYear() === Number(year)) : allEvents;
+      return year ? allEvents.filter((e) => new Date(e.date).getUTCFullYear() === Number(year)) : allEvents;
     }
     if (browse === "all") return allEvents;
     return allEvents.filter((e) => e.category === browse);
@@ -51,7 +69,7 @@ export default function Events() {
       <section className="bg-cream px-5 py-16">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8 flex flex-wrap gap-2">
-            {BROWSE_TABS.map((t) => (
+            {browseTabs.map((t) => (
               <button
                 key={t.id}
                 type="button"
