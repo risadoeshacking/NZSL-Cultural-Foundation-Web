@@ -8,9 +8,7 @@ export default function ProductionsAndEvents() {
   const { data: eventsData, loading: eventsLoading } = useApi("/events?limit=4");
 
   const productions = (productionsData?.productions || []).slice(0, 3);
-  const events = (eventsData?.events || [])
-    .filter((e) => e.category !== "performance")
-    .slice(0, 4);
+  const events = (eventsData?.events || []).slice(0, 4);
 
   return (
     <section className="bg-cream px-5 py-16">
