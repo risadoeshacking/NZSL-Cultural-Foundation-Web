@@ -851,6 +851,7 @@ def create_app():
     def get_gallery():
         category = request.args.get("category")
         production_id = request.args.get("production_id")
+        event_id = request.args.get("event_id")
         year = request.args.get("year")
         limit = request.args.get("limit", "50")
         offset = request.args.get("offset", "0")
@@ -866,6 +867,11 @@ def create_app():
         elif production_id:
             conditions.append("production_id = %s")
             params.append(production_id)
+        if event_id == "any":
+            conditions.append("event_id IS NOT NULL")
+        elif event_id:
+            conditions.append("event_id = %s")
+            params.append(event_id)
         if year:
             conditions.append("EXTRACT(YEAR FROM created_at)::int = %s")
             params.append(int(year))
@@ -950,10 +956,11 @@ def create_app():
         category = data.get("category")
         photographer = data.get("photographer")
         production_id = data.get("production_id") or None
+        event_id = data.get("event_id") or None
 
         sql = (
-            "INSERT INTO gallery (title, description, image_url, category, photographer, production_id, created_by) "
-            "VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING *"
+            "INSERT INTO gallery (title, description, image_url, category, photographer, production_id, event_id, created_by) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *"
         )
         params = [
             sanitize_text(title) or "Untitled",
@@ -962,6 +969,7 @@ def create_app():
             category or "general",
             sanitize_text(photographer) or None,
             production_id,
+            event_id,
             admin["id"],
         ]
         rows = db.query(sql, params)

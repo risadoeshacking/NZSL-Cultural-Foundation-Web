@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Play } from "lucide-react";
 import PageHeader from "../components/PageHeader";
 import Lightbox from "../components/Lightbox";
@@ -13,20 +14,34 @@ const MEDIA_TABS = [
 const BROWSE_TABS = [
   { id: "all", label: "All" },
   { id: "productions", label: "Productions" },
+  { id: "events", label: "Events" },
   { id: "performances", label: "Performances" },
   { id: "classes", label: "Classes" },
   { id: "year", label: "By Year" },
 ];
 
 export default function Gallery() {
+  const [searchParams] = useSearchParams();
   const [media, setMedia] = useState("photos");
   const [browse, setBrowse] = useState("all");
   const [productionId, setProductionId] = useState("");
+  const [eventId, setEventId] = useState("");
   const [year, setYear] = useState("");
   const [activeIndex, setActiveIndex] = useState(null);
   const [activeVideo, setActiveVideo] = useState(null);
 
+  // Deep-link support: /gallery?event=<id> from the "Visit {Event} Gallery" button.
+  useEffect(() => {
+    const requestedEvent = searchParams.get("event");
+    if (requestedEvent) {
+      setBrowse("events");
+      setEventId(requestedEvent);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const { data: productionsData } = useApi("/productions");
+  const { data: eventsData } = useApi("/events?limit=200");
   const { data: yearsData } = useApi(
     browse === "year" ? (media === "photos" ? "/gallery/years" : "/videos/years") : null,
     [browse, media]
@@ -38,9 +53,10 @@ export default function Gallery() {
     if (browse === "performances") params.set("category", "performances");
     else if (browse === "classes") params.set("category", "classes");
     else if (browse === "productions") params.set("production_id", productionId || "any");
+    else if (browse === "events") params.set("event_id", eventId || "any");
     else if (browse === "year" && year) params.set("year", year);
     return params.toString();
-  }, [browse, productionId, year]);
+  }, [browse, productionId, eventId, year]);
 
   const endpoint = media === "photos" ? `/gallery?${query}` : `/videos?${query}`;
   const { data, loading } = useApi(endpoint, [endpoint]);
@@ -48,11 +64,13 @@ export default function Gallery() {
   const photos = media === "photos" ? data?.images || [] : [];
   const videos = media === "videos" ? data?.videos || [] : [];
   const productions = productionsData?.productions || [];
+  const events = eventsData?.events || [];
   const years = yearsData?.years || [];
 
   const handleBrowseChange = (id) => {
     setBrowse(id);
     if (id !== "productions") setProductionId("");
+    if (id !== "events") setEventId("");
     if (id !== "year") setYear("");
   };
 
@@ -106,6 +124,23 @@ export default function Gallery() {
                 {productions.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {browse === "events" && (
+            <div className="mb-8 flex justify-center">
+              <select
+                value={eventId}
+                onChange={(e) => setEventId(e.target.value)}
+                className="rounded-lg border border-black/10 bg-white px-3 py-2 text-sm"
+              >
+                <option value="">All Events</option>
+                {events.map((ev) => (
+                  <option key={ev.id} value={ev.id}>
+                    {ev.title}
                   </option>
                 ))}
               </select>

@@ -262,6 +262,18 @@ async function productionOptionsHtml(selectedId) {
   }
 }
 
+async function eventOptionsHtml(selectedId) {
+  try {
+    const data = await adminFetch("/events/admin/all", { token: currentToken });
+    const options = (data.events || [])
+      .map((ev) => `<option value="${ev.id}" ${selectedId === ev.id ? "selected" : ""}>${ev.title}</option>`)
+      .join("");
+    return `<option value="">— None —</option>${options}`;
+  } catch (e) {
+    return `<option value="">— None —</option>`;
+  }
+}
+
 function slugifyClient(text) {
   return (text || "")
     .normalize("NFKD")
@@ -614,10 +626,14 @@ function showGalleryUpload() {
   document.getElementById("modalContainer").innerHTML = `
     <div class="admin-modal-overlay" onclick="closeModal(event)">
       <div class="admin-modal" onclick="event.stopPropagation()">
-        <h2>Upload Gallery Image</h2>
-        <form id="galleryUploadForm" onsubmit="uploadGalleryImage(event)">
-          <div class="admin-form-group"><label>Image File</label><input name="image" type="file" accept="image/*" required /></div>
-          <div class="admin-form-group"><label>Title</label><input name="title" /></div>
+        <h2>Upload Gallery Images</h2>
+        <form id="galleryUploadForm" onsubmit="uploadGalleryImages(event)">
+          <div class="admin-form-group">
+            <label>Image Files</label>
+            <input name="image" type="file" accept="image/*" multiple required onchange="updateGalleryFileCount(this)" />
+            <p id="galleryFileCount" style="font-size:0.75rem;color:var(--text-muted);margin-top:4px"></p>
+          </div>
+          <div class="admin-form-group"><label>Title</label><input name="title" placeholder="Applied to every photo in this batch" /></div>
           <div class="admin-form-group"><label>Description</label><textarea name="description" rows="3"></textarea></div>
           <div class="admin-form-row">
             <div class="admin-form-group"><label>Category</label><select name="category">
@@ -627,11 +643,15 @@ function showGalleryUpload() {
             </select></div>
             <div class="admin-form-group"><label>Photographer</label><input name="photographer" /></div>
           </div>
-          <div class="admin-form-group"><label>Link to Production</label><select name="production_id" id="galleryProductionSelect"><option value="">Loading...</option></select></div>
+          <div class="admin-form-row">
+            <div class="admin-form-group"><label>Link to Production</label><select name="production_id" id="galleryProductionSelect"><option value="">Loading...</option></select></div>
+            <div class="admin-form-group"><label>Link to Event</label><select name="event_id" id="galleryEventSelect"><option value="">Loading...</option></select></div>
+          </div>
           <div class="admin-form-actions">
             <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary btn-sm">Upload</button>
+            <button type="submit" class="btn btn-primary btn-sm" id="galleryUploadBtn">Upload</button>
           </div>
+          <p id="galleryUploadProgress" style="font-size:0.8rem;color:var(--text-muted);margin-top:0.75rem"></p>
         </form>
       </div>
     </div>`;
@@ -639,25 +659,58 @@ function showGalleryUpload() {
     const select = document.getElementById("galleryProductionSelect");
     if (select) select.innerHTML = html;
   });
+  eventOptionsHtml().then((html) => {
+    const select = document.getElementById("galleryEventSelect");
+    if (select) select.innerHTML = html;
+  });
 }
 
-async function uploadGalleryImage(e) {
+function updateGalleryFileCount(input) {
+  const el = document.getElementById("galleryFileCount");
+  if (!el) return;
+  const n = input.files?.length || 0;
+  el.textContent = n > 0 ? `${n} photo${n === 1 ? "" : "s"} selected` : "";
+}
+
+async function uploadGalleryImages(e) {
   e.preventDefault();
-  const form = new FormData(e.target);
-  try {
-    const res = await fetch(`${API_BASE}/gallery/admin/upload`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${currentToken}` },
-      body: form,
-    });
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error || "Upload failed");
+  const fileInput = e.target.querySelector('input[name="image"]');
+  const files = Array.from(fileInput.files || []);
+  if (files.length === 0) return;
+
+  const sharedFields = new FormData(e.target);
+  sharedFields.delete("image");
+
+  const btn = document.getElementById("galleryUploadBtn");
+  const progressEl = document.getElementById("galleryUploadProgress");
+  btn.disabled = true;
+
+  let succeeded = 0;
+  let failed = 0;
+  for (let i = 0; i < files.length; i++) {
+    progressEl.textContent = `Uploading ${i + 1} of ${files.length}...`;
+    const fd = new FormData();
+    for (const [key, value] of sharedFields.entries()) fd.append(key, value);
+    fd.append("image", files[i]);
+    try {
+      const res = await fetch(`${API_BASE}/gallery/admin/upload`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${currentToken}` },
+        body: fd,
+      });
+      if (!res.ok) throw new Error();
+      succeeded++;
+    } catch (err) {
+      failed++;
     }
+  }
+
+  loadGalleryTable();
+  if (failed === 0) {
     closeModal();
-    loadGalleryTable();
-  } catch (err) {
-    alert(err.message);
+  } else {
+    btn.disabled = false;
+    progressEl.textContent = `${succeeded} uploaded, ${failed} failed. You can try again for the rest.`;
   }
 }
 

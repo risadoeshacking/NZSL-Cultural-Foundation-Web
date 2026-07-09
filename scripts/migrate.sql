@@ -203,3 +203,6 @@ ON CONFLICT (key) DO NOTHING;
 -- Reclassify existing gallery photos into the new taxonomy (general / performances / classes)
 UPDATE gallery SET category = 'performances' WHERE category = 'performance';
 UPDATE gallery SET category = 'general' WHERE category IN ('heritage','culture','arts','events');
+
+-- Link gallery photos to an event (alongside the existing production link)
+ALTER TABLE gallery ADD COLUMN IF NOT EXISTS event_id UUID REFERENCES events(id) ON DELETE SET NULL;

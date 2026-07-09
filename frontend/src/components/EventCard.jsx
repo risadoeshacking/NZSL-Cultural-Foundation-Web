@@ -48,13 +48,19 @@ export function EventGridCard({ event }) {
         {event.description && (
           <p className="mb-3 line-clamp-2 text-sm text-text-dark-soft">{event.description}</p>
         )}
-        <div className="flex items-center justify-between text-xs text-text-dark-soft">
+        <div className="mb-3 flex items-center justify-between text-xs text-text-dark-soft">
           <span>{event.location || "TBA"}</span>
           <span>
             {event.time_start}
             {event.time_end ? ` – ${event.time_end}` : ""}
           </span>
         </div>
+        <Link
+          to={`/gallery?event=${event.id}`}
+          className="text-xs font-semibold text-maroon hover:text-maroon-light"
+        >
+          Visit {event.title} Gallery →
+        </Link>
       </div>
     </div>
   );

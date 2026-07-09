@@ -217,6 +217,9 @@ CREATE TABLE IF NOT EXISTS productions (
 ALTER TABLE gallery ADD COLUMN IF NOT EXISTS production_id UUID REFERENCES productions(id) ON DELETE SET NULL;
 ALTER TABLE videos  ADD COLUMN IF NOT EXISTS production_id UUID REFERENCES productions(id) ON DELETE SET NULL;
 
+-- Link gallery photos to an event
+ALTER TABLE gallery ADD COLUMN IF NOT EXISTS event_id UUID REFERENCES events(id) ON DELETE SET NULL;
+
 -- Programmes (Learn to Dance, Learn to Sing)
 CREATE TABLE IF NOT EXISTS programmes (
   id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
