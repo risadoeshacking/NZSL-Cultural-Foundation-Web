@@ -26,7 +26,18 @@ const FEATURES = [
 export default function FeatureCards() {
   return (
     <section className="bg-cream px-5 py-14">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Mobile: one compact line, icon + short label, no card box */}
+      <div className="mx-auto flex max-w-7xl justify-between gap-2 sm:hidden">
+        {FEATURES.map(({ icon: Icon, title }) => (
+          <div key={title} className="flex flex-1 flex-col items-center gap-1.5 text-center">
+            <Icon className="text-gold" size={22} strokeWidth={1.75} />
+            <span className="text-[0.7rem] font-medium leading-tight text-text-dark">{title}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Tablet/desktop: full cards */}
+      <div className="mx-auto hidden max-w-7xl gap-6 sm:grid sm:grid-cols-2 lg:grid-cols-4">
         {FEATURES.map(({ icon: Icon, title, description }) => (
           <div
             key={title}
