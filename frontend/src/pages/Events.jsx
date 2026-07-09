@@ -14,10 +14,7 @@ export default function Events() {
   const endpoint = tab === "performances" ? "/events?category=performance&limit=50" : "/events?limit=50";
   const { data, loading } = useApi(endpoint, [tab]);
 
-  const events =
-    tab === "performances"
-      ? data?.events || []
-      : (data?.events || []).filter((e) => e.category !== "performance");
+  const events = data?.events || [];
 
   return (
     <>
