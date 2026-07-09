@@ -10,7 +10,6 @@ const CATEGORY_LABELS = {
   cultural: "Cultural",
   performance: "Performance",
   workshop: "Workshop",
-  exhibition: "Exhibition",
   community: "Community",
   production: "Production",
   classes: "Classes",

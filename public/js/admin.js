@@ -154,9 +154,6 @@ function showEventModal(event = null) {
               <option value="workshop" ${
                 event?.category === "workshop" ? "selected" : ""
               }>Workshop</option>
-              <option value="exhibition" ${
-                event?.category === "exhibition" ? "selected" : ""
-              }>Exhibition</option>
               <option value="community" ${
                 event?.category === "community" ? "selected" : ""
               }>Community</option>

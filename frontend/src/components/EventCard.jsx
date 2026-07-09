@@ -3,7 +3,6 @@ import { getDay, getMonth } from "../utils/date";
 
 const CATEGORY_COLORS = {
   festival: "#d4760a",
-  exhibition: "#8b3a9f",
   performance: "#0f9b8e",
   workshop: "#d4760a",
   cultural: "#d4760a",
