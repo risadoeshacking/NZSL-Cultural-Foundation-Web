@@ -568,6 +568,11 @@
                 cursor: grab; position: relative; user-select: none;
               ">
                 <div id="heroBannerEmptyState" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.85rem">No banner uploaded yet</div>
+                <button type="button" id="heroBannerRemoveBtn" onclick="clearHeroBannerSlot(1)" onmousedown="event.stopPropagation()" title="Remove photo" style="
+                  display:none; position:absolute; top:8px; right:8px; width:28px; height:28px; border-radius:50%;
+                  background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.3); color:#fff; font-size:16px;
+                  line-height:1; cursor:pointer; align-items:center; justify-content:center;
+                ">×</button>
               </div>
               <p style="font-size:0.75rem;color:var(--text-muted);margin-top:8px">
                 Drag the preview up/down to reposition the image. Recommended size: 1600×600px or larger (landscape), JPG/PNG/WebP, max 10MB.

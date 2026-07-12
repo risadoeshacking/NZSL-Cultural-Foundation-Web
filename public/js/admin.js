@@ -2060,6 +2060,11 @@ function generateHeroBannerExtraSlots() {
         background: #1a1a1a center 50% / cover no-repeat; border: 1px solid var(--border); position: relative;
       ">
         <div id="heroBannerEmptyState${slot}" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.7rem">Photo ${slot}</div>
+        <button type="button" id="heroBannerRemoveBtn${slot}" onclick="clearHeroBannerSlot(${slot})" title="Remove photo" style="
+          display:none; position:absolute; top:4px; right:4px; width:22px; height:22px; border-radius:50%;
+          background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.3); color:#fff; font-size:13px;
+          line-height:1; cursor:pointer; align-items:center; justify-content:center;
+        ">×</button>
       </div>
       <input type="file" id="heroBannerFileInput${slot}" accept="image/*" style="font-size:0.7rem;margin-top:6px;width:100%" onchange="previewHeroBannerSlot(this, ${slot})" />
     </div>
@@ -2095,16 +2100,27 @@ function renderHeroBannerPreview(url, slot = 1) {
   const suffix = slot === 1 ? "" : String(slot);
   const wrap = document.getElementById(`heroBannerPreviewWrap${suffix}`);
   const empty = document.getElementById(`heroBannerEmptyState${suffix}`);
+  const removeBtn = document.getElementById(`heroBannerRemoveBtn${suffix}`);
   if (!wrap) return;
   wrap.dataset.url = url || "";
   if (url) {
     wrap.style.backgroundImage = `url('${url}')`;
     if (slot === 1) wrap.style.backgroundPosition = `center ${heroBannerPositionY}%`;
     if (empty) empty.style.display = "none";
+    if (removeBtn) removeBtn.style.display = "flex";
   } else {
     wrap.style.backgroundImage = "none";
     if (empty) empty.style.display = "flex";
+    if (removeBtn) removeBtn.style.display = "none";
   }
+}
+
+function clearHeroBannerSlot(slot) {
+  const suffix = slot === 1 ? "" : String(slot);
+  const fileInput = document.getElementById(`heroBannerFileInput${suffix}`);
+  if (fileInput) fileInput.value = "";
+  renderHeroBannerPreview("", slot);
+  refreshHeroLivePreview();
 }
 
 function previewHeroBanner(input) {
