@@ -2042,28 +2042,32 @@ async function saveSettings() {
 
 // --- Hero Banner (homepage) ---
 let heroBannerPositionY = 50;
+const HERO_BANNER_SLOT_KEYS = { 1: "hero_banner_url", 2: "hero_banner_url_2", 3: "hero_banner_url_3", 4: "hero_banner_url_4" };
 
 async function loadHeroBannerSetting() {
   try {
     const data = await adminFetch("/settings/admin", { token: currentToken });
     const settings = data.settings || [];
-    const urlSetting = settings.find((s) => s.key === "hero_banner_url");
     const posSetting = settings.find((s) => s.key === "hero_banner_position");
     heroBannerPositionY = posSetting?.value ? parseFloat(posSetting.value) : 50;
-    renderHeroBannerPreview(urlSetting?.value || "");
+    for (const slot of [1, 2, 3, 4]) {
+      const urlSetting = settings.find((s) => s.key === HERO_BANNER_SLOT_KEYS[slot]);
+      renderHeroBannerPreview(urlSetting?.value || "", slot);
+    }
   } catch (e) {
     // settings table may not exist yet — the generic form already surfaces that error
   }
 }
 
-function renderHeroBannerPreview(url) {
-  const wrap = document.getElementById("heroBannerPreviewWrap");
-  const empty = document.getElementById("heroBannerEmptyState");
+function renderHeroBannerPreview(url, slot = 1) {
+  const suffix = slot === 1 ? "" : String(slot);
+  const wrap = document.getElementById(`heroBannerPreviewWrap${suffix}`);
+  const empty = document.getElementById(`heroBannerEmptyState${suffix}`);
   if (!wrap) return;
   wrap.dataset.url = url || "";
   if (url) {
     wrap.style.backgroundImage = `url('${url}')`;
-    wrap.style.backgroundPosition = `center ${heroBannerPositionY}%`;
+    if (slot === 1) wrap.style.backgroundPosition = `center ${heroBannerPositionY}%`;
     if (empty) empty.style.display = "none";
   } else {
     wrap.style.backgroundImage = "none";
@@ -2076,8 +2080,15 @@ function previewHeroBanner(input) {
   const reader = new FileReader();
   reader.onload = (e) => {
     heroBannerPositionY = 50;
-    renderHeroBannerPreview(e.target.result);
+    renderHeroBannerPreview(e.target.result, 1);
   };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function previewHeroBannerSlot(input, slot) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = (e) => renderHeroBannerPreview(e.target.result, slot);
   reader.readAsDataURL(input.files[0]);
 }
 
@@ -2117,47 +2128,51 @@ function initHeroBannerDrag() {
   wrap.addEventListener("touchend", onUp);
 }
 
+async function uploadHeroBannerFile(file) {
+  const fd = new FormData();
+  fd.append("banner", file);
+  const res = await fetch(`${API_BASE}/settings/admin/hero-banner`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${currentToken}` },
+    body: fd,
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || "Banner upload failed");
+  }
+  const uploadData = await res.json();
+  return uploadData.url;
+}
+
 async function saveHeroBanner() {
   const btn = document.getElementById("heroBannerSaveBtn");
-  const fileInput = document.getElementById("heroBannerFileInput");
-  const wrap = document.getElementById("heroBannerPreviewWrap");
   btn.disabled = true;
   btn.textContent = "Saving...";
   try {
-    let url = wrap.dataset.url || "";
-    if (fileInput.files && fileInput.files[0]) {
-      const fd = new FormData();
-      fd.append("banner", fileInput.files[0]);
-      const res = await fetch(`${API_BASE}/settings/admin/hero-banner`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${currentToken}` },
-        body: fd,
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "Banner upload failed");
+    const settings = [{ key: "hero_banner_position", value: String(Math.round(heroBannerPositionY)) }];
+    for (const slot of [1, 2, 3, 4]) {
+      const suffix = slot === 1 ? "" : String(slot);
+      const fileInput = document.getElementById(`heroBannerFileInput${suffix}`);
+      const wrap = document.getElementById(`heroBannerPreviewWrap${suffix}`);
+      let url = wrap.dataset.url || "";
+      if (fileInput.files && fileInput.files[0]) {
+        url = await uploadHeroBannerFile(fileInput.files[0]);
+        wrap.dataset.url = url;
+        fileInput.value = "";
       }
-      const uploadData = await res.json();
-      url = uploadData.url;
+      settings.push({ key: HERO_BANNER_SLOT_KEYS[slot], value: url });
     }
     await adminFetch("/settings/admin", {
       token: currentToken,
       method: "PUT",
-      body: {
-        settings: [
-          { key: "hero_banner_url", value: url },
-          { key: "hero_banner_position", value: String(Math.round(heroBannerPositionY)) },
-        ],
-      },
+      body: { settings },
     });
-    wrap.dataset.url = url;
-    fileInput.value = "";
-    alert("Hero banner saved!");
+    alert("Hero banner photos saved!");
   } catch (e) {
     alert(e.message);
   } finally {
     btn.disabled = false;
-    btn.textContent = "Save Banner";
+    btn.textContent = "Save Banner Photos";
   }
 }
 

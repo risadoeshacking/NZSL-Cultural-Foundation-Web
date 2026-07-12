@@ -129,8 +129,8 @@ export default function Contact() {
               </li>
               <li>
                 <div className="font-semibold text-text-dark">Email</div>
-                <a href={`mailto:${get("contact_email", "info@nzslfoundation.org.nz")}`} className="text-maroon">
-                  {get("contact_email", "info@nzslfoundation.org.nz")}
+                <a href={`mailto:${get("contact_email", "info@nzslcf.org.nz")}`} className="text-maroon">
+                  {get("contact_email", "info@nzslcf.org.nz")}
                 </a>
               </li>
             </ul>

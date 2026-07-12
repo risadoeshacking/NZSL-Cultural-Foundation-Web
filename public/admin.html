@@ -574,8 +574,42 @@
               </p>
               <div style="display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap">
                 <input type="file" id="heroBannerFileInput" accept="image/*" style="font-size:0.8rem" onchange="previewHeroBanner(this)" />
-                <button type="button" class="btn btn-primary btn-sm" id="heroBannerSaveBtn" onclick="saveHeroBanner()">Save Banner</button>
               </div>
+
+              <p style="font-size:0.8rem;color:var(--text-muted);margin-top:20px;margin-bottom:8px">
+                Add up to 3 more photos to rotate through automatically on the homepage banner (optional).
+              </p>
+              <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:12px">
+                <div>
+                  <div id="heroBannerPreviewWrap2" style="
+                    width: 100%; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden;
+                    background: #1a1a1a center 50% / cover no-repeat; border: 1px solid var(--border); position: relative;
+                  ">
+                    <div id="heroBannerEmptyState2" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.7rem">Photo 2</div>
+                  </div>
+                  <input type="file" id="heroBannerFileInput2" accept="image/*" style="font-size:0.7rem;margin-top:6px;width:100%" onchange="previewHeroBannerSlot(this, 2)" />
+                </div>
+                <div>
+                  <div id="heroBannerPreviewWrap3" style="
+                    width: 100%; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden;
+                    background: #1a1a1a center 50% / cover no-repeat; border: 1px solid var(--border); position: relative;
+                  ">
+                    <div id="heroBannerEmptyState3" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.7rem">Photo 3</div>
+                  </div>
+                  <input type="file" id="heroBannerFileInput3" accept="image/*" style="font-size:0.7rem;margin-top:6px;width:100%" onchange="previewHeroBannerSlot(this, 3)" />
+                </div>
+                <div>
+                  <div id="heroBannerPreviewWrap4" style="
+                    width: 100%; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden;
+                    background: #1a1a1a center 50% / cover no-repeat; border: 1px solid var(--border); position: relative;
+                  ">
+                    <div id="heroBannerEmptyState4" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.7rem">Photo 4</div>
+                  </div>
+                  <input type="file" id="heroBannerFileInput4" accept="image/*" style="font-size:0.7rem;margin-top:6px;width:100%" onchange="previewHeroBannerSlot(this, 4)" />
+                </div>
+              </div>
+
+              <button type="button" class="btn btn-primary btn-sm" id="heroBannerSaveBtn" style="margin-top:16px" onclick="saveHeroBanner()">Save Banner Photos</button>
             </div>
           </div>
 

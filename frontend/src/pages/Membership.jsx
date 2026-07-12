@@ -50,7 +50,7 @@ export default function Membership() {
   };
 
   const copyAccountDetails = () => {
-    const accountName = get("bank_account_name", "NZSL Cultural Foundation");
+    const accountName = get("bank_account_name", "New Zealand Sri Lanka Cultural Foundation");
     const accountNumber = get("bank_account_number", "Contact us for details");
     const bankName = get("bank_name", "");
     const reference = get("payment_reference", "Your full name");
@@ -61,7 +61,7 @@ export default function Membership() {
   };
 
   if (status.state === "success") {
-    const accountName = get("bank_account_name", "NZSL Cultural Foundation");
+    const accountName = get("bank_account_name", "New Zealand Sri Lanka Cultural Foundation");
     const accountNumber = get("bank_account_number", "Contact us for details");
     const bankName = get("bank_name", "");
     const reference = get("payment_reference", "Your full name");

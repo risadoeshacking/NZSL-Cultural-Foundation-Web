@@ -1,19 +1,45 @@
+import { useEffect, useState } from "react";
 import { CalendarDays, GraduationCap } from "lucide-react";
 import Button from "../ui/Button";
 import { useSiteSettings } from "../../context/SiteSettingsContext";
 
+const SLIDE_INTERVAL_MS = 6000;
+
 export default function Hero() {
   const { get } = useSiteSettings();
-  const bannerUrl = get("hero_banner_url") || "/background.jpg";
   const bannerPosition = get("hero_banner_position", "50");
+  const photos = [
+    get("hero_banner_url"),
+    get("hero_banner_url_2"),
+    get("hero_banner_url_3"),
+    get("hero_banner_url_4"),
+  ].filter(Boolean);
+  const slides = photos.length > 0 ? photos : ["/background.jpg"];
+
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    if (slides.length < 2) return;
+    const id = setInterval(() => {
+      setActiveIndex((i) => (i + 1) % slides.length);
+    }, SLIDE_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [slides.length]);
 
   return (
     <section className="bg-cream px-5 pt-10 pb-16 md:pt-14">
       <div className="relative min-h-[55vh] overflow-hidden rounded-3xl bg-ink shadow-xl md:min-h-[65vh]">
-        <div
-          className="absolute inset-0 bg-cover"
-          style={{ backgroundImage: `url('${bannerUrl}')`, backgroundPosition: `center ${bannerPosition}%` }}
-        />
+        {slides.map((url, i) => (
+          <div
+            key={url + i}
+            className="absolute inset-0 bg-cover transition-opacity duration-1000 ease-in-out"
+            style={{
+              backgroundImage: `url('${url}')`,
+              backgroundPosition: `center ${bannerPosition}%`,
+              opacity: i === activeIndex % slides.length ? 1 : 0,
+            }}
+          />
+        ))}
         {/* Dark on the text side, fading smoothly into the photo — no hard seam. */}
         <div
           className="absolute inset-0"
@@ -24,8 +50,8 @@ export default function Hero() {
         />
 
         <div className="relative flex min-h-[55vh] max-w-xl flex-col justify-center gap-5 px-8 py-12 md:min-h-[65vh] md:px-14">
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-warm-white/70">
-            New Zealand Sri Lanka Cultural Foundation
+          <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/15 px-4 py-1.5 text-[10px] font-medium uppercase tracking-widest text-warm-white/70 sm:text-xs">
+            <span className="truncate">New Zealand Sri Lanka Cultural Foundation</span>
           </div>
           <h1 className="font-display text-4xl font-semibold leading-tight text-warm-white md:text-5xl">
             Preserving Heritage.
@@ -41,7 +67,7 @@ export default function Hero() {
               <CalendarDays size={16} /> Upcoming Events
             </Button>
             <Button to="/membership" variant="secondary" className="text-warm-white border-white/25">
-              <GraduationCap size={16} /> Enrol in Classes
+              <GraduationCap size={16} /> Enrol Now
             </Button>
           </div>
         </div>

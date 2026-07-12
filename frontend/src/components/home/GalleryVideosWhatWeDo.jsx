@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play, Check } from "lucide-react";
+import { Play } from "lucide-react";
 import { useApi } from "../../hooks/useApi";
 import SectionHeader from "../ui/SectionHeader";
 import Button from "../ui/Button";
@@ -7,9 +7,22 @@ import Lightbox from "../Lightbox";
 import VideoModal from "../VideoModal";
 
 const WHAT_WE_DO_ITEMS = [
-  "Experienced tutors",
-  "Inclusive and welcoming environment",
-  "Opportunities to perform and grow",
+  {
+    title: "Learn",
+    description: "Quality programmes in dance and music that inspire creativity, confidence and cultural connection.",
+  },
+  {
+    title: "Create",
+    description: "Produce and present performances and major productions that showcase Sri Lankan arts and talent.",
+  },
+  {
+    title: "Connect",
+    description: "Collaborate with multicultural communities to celebrate diversity and build understanding through the arts.",
+  },
+  {
+    title: "Inspire",
+    description: "Create opportunities for people of all ages to participate, perform and grow together.",
+  },
 ];
 
 export default function GalleryVideosWhatWeDo() {
@@ -92,19 +105,19 @@ export default function GalleryVideosWhatWeDo() {
         <div>
           <SectionHeader eyebrow="Our Foundation" title="What We Do" light className="mb-6" />
           <p className="mb-5 text-sm leading-relaxed text-warm-white/70">
-            We offer quality programmes in dance and music that celebrate our heritage and develop
-            confidence, discipline and creativity.
+            We bring people together through arts, culture and community, creating opportunities to
+            learn, perform, celebrate and connect across generations and cultures.
           </p>
-          <ul className="mb-6 flex flex-col gap-3">
-            {WHAT_WE_DO_ITEMS.map((item) => (
-              <li key={item} className="flex items-center gap-2 text-sm text-warm-white/80">
-                <Check size={16} className="flex-shrink-0 text-gold" />
-                {item}
+          <ul className="mb-6 flex flex-col gap-4">
+            {WHAT_WE_DO_ITEMS.map(({ title, description }) => (
+              <li key={title} className="text-sm">
+                <div className="font-display font-semibold text-warm-white">{title}</div>
+                <div className="text-warm-white/70">{description}</div>
               </li>
             ))}
           </ul>
-          <Button to="/programmes" variant="gold">
-            Explore Programmes
+          <Button to="/about" variant="gold">
+            Explore more about us
           </Button>
         </div>
       </div>

@@ -24,9 +24,15 @@ export default function Nav() {
   return (
     <header className="sticky top-0 z-50 border-b border-black/5 bg-cream/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-5 py-4">
-        <NavLink to="/" className="flex items-center gap-3">
-          <img src="/logo.png" alt="NZSL Cultural Foundation" className="h-9 w-9 rounded-full object-cover" />
-          <span className="font-display text-lg font-semibold text-text-dark">NZSL Foundation</span>
+        <NavLink to="/" className="flex min-w-0 items-center gap-3">
+          <img
+            src="/logo.png"
+            alt="New Zealand Sri Lanka Cultural Foundation"
+            className="h-9 w-9 shrink-0 rounded-full object-cover"
+          />
+          <span className="min-w-0 truncate font-display text-lg font-semibold text-text-dark">
+            New Zealand Sri Lanka Cultural Foundation
+          </span>
         </NavLink>
 
         <nav className="hidden items-center gap-8 md:flex">

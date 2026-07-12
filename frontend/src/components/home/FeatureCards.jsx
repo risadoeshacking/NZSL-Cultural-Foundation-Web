@@ -3,29 +3,31 @@ import { Users, Sparkles, Landmark, HeartHandshake } from "lucide-react";
 const FEATURES = [
   {
     icon: Users,
-    title: "Our Community",
+    title: "Community",
     description: "Bringing people together through culture and creativity.",
   },
   {
     icon: Sparkles,
-    title: "Inspiring Generations",
+    title: "Inspiration",
     description: "Nurturing talent and confidence in young and old.",
   },
   {
     icon: Landmark,
-    title: "Rich Heritage",
+    title: "Heritage",
     description: "Proudly sharing the beauty of Sri Lankan traditions.",
   },
   {
     icon: HeartHandshake,
-    title: "Stronger Together",
+    title: "Unity",
     description: "Building a vibrant multicultural future in New Zealand.",
   },
 ];
 
 export default function FeatureCards() {
   return (
-    <section className="bg-cream px-5 py-14">
+    <section className="bg-cream px-5 py-8">
+      <h2 className="mb-5 text-center font-display text-2xl font-semibold text-text-dark">Our Values</h2>
+
       {/* Mobile: one compact line, icon + short label, no card box */}
       <div className="mx-auto flex max-w-7xl justify-between gap-2 sm:hidden">
         {FEATURES.map(({ icon: Icon, title }) => (

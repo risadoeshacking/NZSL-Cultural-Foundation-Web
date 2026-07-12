@@ -125,16 +125,19 @@ ON CONFLICT (key) DO NOTHING;
 INSERT INTO site_settings (key, value, category, label) VALUES
   ('contact_address', 'Wellington, New Zealand',        'contact', 'Address'),
   ('contact_phone',   '+64 4 567 8901',                  'contact', 'Phone'),
-  ('contact_email',   'info@nzslfoundation.org.nz',      'contact', 'Email')
+  ('contact_email',   'info@nzslcf.org.nz',      'contact', 'Email')
 ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO site_settings (key, value, category, label) VALUES
   ('footer_tagline',   'Dedicated to preserving, showcasing, and celebrating Sri Lankan culture in Aotearoa New Zealand.', 'footer', 'Footer Tagline'),
-  ('footer_copyright', '© 2026 NZSL Cultural Foundation. All rights reserved.', 'footer', 'Footer Copyright Text')
+  ('footer_copyright', '© 2026 New Zealand Sri Lanka Cultural Foundation. All rights reserved.', 'footer', 'Footer Copyright Text')
 ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO site_settings (key, value, category, label) VALUES
   ('hero_banner_url',      '',   'homepage', 'Hero Banner Image URL'),
+  ('hero_banner_url_2',    '',   'homepage', 'Hero Banner Image URL 2'),
+  ('hero_banner_url_3',    '',   'homepage', 'Hero Banner Image URL 3'),
+  ('hero_banner_url_4',    '',   'homepage', 'Hero Banner Image URL 4'),
   ('hero_banner_position', '50', 'homepage', 'Hero Banner Vertical Position')
 ON CONFLICT (key) DO NOTHING;
 

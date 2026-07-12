@@ -23,12 +23,12 @@ export default function Footer() {
 
   return (
     <footer className="border-t border-white/10 bg-ink-deep text-warm-white/80">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-5 py-14 md:grid-cols-4">
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-5 py-14 md:grid-cols-3">
         <div>
           <div className="mb-3 flex items-center gap-2">
             <img src="/logo.png" alt="" className="h-8 w-8 rounded-full object-cover" />
             <span className="font-display text-lg font-semibold text-warm-white">
-              NZSL Cultural Foundation
+              New Zealand Sri Lanka Cultural Foundation
             </span>
           </div>
           <p className="text-sm leading-relaxed text-warm-white/60">
@@ -77,38 +77,13 @@ export default function Footer() {
           <ul className="space-y-2 text-sm text-warm-white/70">
             <li>{get("contact_address", "Wellington, New Zealand")}</li>
             <li>{get("contact_phone", "+64 4 567 8901")}</li>
-            <li>{get("contact_email", "info@nzslfoundation.org.nz")}</li>
+            <li>{get("contact_email", "info@nzslcf.org.nz")}</li>
           </ul>
-        </div>
-
-        <div>
-          <div className="mb-3 font-display text-sm font-semibold uppercase tracking-wide text-gold">
-            Newsletter
-          </div>
-          <p className="mb-3 text-sm text-warm-white/60">
-            Subscribe to receive updates on events, classes and performances.
-          </p>
-          <form
-            className="flex gap-2"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <input
-              type="email"
-              placeholder="Your email address"
-              className="w-full rounded-md border border-white/15 bg-transparent px-3 py-2 text-sm placeholder:text-warm-white/40 focus:border-gold focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="rounded-md bg-gold px-4 py-2 text-sm font-semibold text-ink hover:bg-gold-light"
-            >
-              Subscribe
-            </button>
-          </form>
         </div>
       </div>
 
       <div className="border-t border-white/10 px-5 py-5 text-center text-xs text-warm-white/50">
-        {get("footer_copyright", "© 2026 NZSL Cultural Foundation. All rights reserved.")}
+        {get("footer_copyright", "© 2026 New Zealand Sri Lanka Cultural Foundation. All rights reserved.")}
       </div>
     </footer>
   );
