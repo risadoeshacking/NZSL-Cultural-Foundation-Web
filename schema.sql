@@ -134,11 +134,17 @@ INSERT INTO site_settings (key, value, category, label) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO site_settings (key, value, category, label) VALUES
-  ('hero_banner_url',      '',   'homepage', 'Hero Banner Image URL'),
-  ('hero_banner_url_2',    '',   'homepage', 'Hero Banner Image URL 2'),
-  ('hero_banner_url_3',    '',   'homepage', 'Hero Banner Image URL 3'),
-  ('hero_banner_url_4',    '',   'homepage', 'Hero Banner Image URL 4'),
-  ('hero_banner_position', '50', 'homepage', 'Hero Banner Vertical Position')
+  ('hero_banner_url',         '',      'homepage', 'Hero Banner Image URL'),
+  ('hero_banner_url_2',       '',      'homepage', 'Hero Banner Image URL 2'),
+  ('hero_banner_url_3',       '',      'homepage', 'Hero Banner Image URL 3'),
+  ('hero_banner_url_4',       '',      'homepage', 'Hero Banner Image URL 4'),
+  ('hero_banner_url_5',       '',      'homepage', 'Hero Banner Image URL 5'),
+  ('hero_banner_url_6',       '',      'homepage', 'Hero Banner Image URL 6'),
+  ('hero_banner_url_7',       '',      'homepage', 'Hero Banner Image URL 7'),
+  ('hero_banner_url_8',       '',      'homepage', 'Hero Banner Image URL 8'),
+  ('hero_banner_position',    '50',    'homepage', 'Hero Banner Vertical Position'),
+  ('hero_banner_transition',  'fade',  'homepage', 'Hero Banner Transition (fade or scroll)'),
+  ('hero_banner_duration',    '6',     'homepage', 'Hero Banner Seconds Per Photo')
 ON CONFLICT (key) DO NOTHING;
 
 -- Memberships (Dancing / Vocals / Both registrations)

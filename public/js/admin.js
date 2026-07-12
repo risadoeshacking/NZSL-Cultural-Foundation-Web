@@ -2042,18 +2042,50 @@ async function saveSettings() {
 
 // --- Hero Banner (homepage) ---
 let heroBannerPositionY = 50;
-const HERO_BANNER_SLOT_KEYS = { 1: "hero_banner_url", 2: "hero_banner_url_2", 3: "hero_banner_url_3", 4: "hero_banner_url_4" };
+const HERO_BANNER_SLOTS = [1, 2, 3, 4, 5, 6, 7, 8];
+const HERO_BANNER_SLOT_KEYS = Object.fromEntries(
+  HERO_BANNER_SLOTS.map((slot) => [slot, slot === 1 ? "hero_banner_url" : `hero_banner_url_${slot}`])
+);
+
+function generateHeroBannerExtraSlots() {
+  const container = document.getElementById("heroBannerExtraSlots");
+  if (!container || container.dataset.built) return;
+  container.dataset.built = "1";
+  container.innerHTML = HERO_BANNER_SLOTS.slice(1)
+    .map(
+      (slot) => `
+    <div>
+      <div id="heroBannerPreviewWrap${slot}" style="
+        width: 100%; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden;
+        background: #1a1a1a center 50% / cover no-repeat; border: 1px solid var(--border); position: relative;
+      ">
+        <div id="heroBannerEmptyState${slot}" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.7rem">Photo ${slot}</div>
+      </div>
+      <input type="file" id="heroBannerFileInput${slot}" accept="image/*" style="font-size:0.7rem;margin-top:6px;width:100%" onchange="previewHeroBannerSlot(this, ${slot})" />
+    </div>
+  `
+    )
+    .join("");
+}
 
 async function loadHeroBannerSetting() {
+  generateHeroBannerExtraSlots();
   try {
     const data = await adminFetch("/settings/admin", { token: currentToken });
     const settings = data.settings || [];
     const posSetting = settings.find((s) => s.key === "hero_banner_position");
     heroBannerPositionY = posSetting?.value ? parseFloat(posSetting.value) : 50;
-    for (const slot of [1, 2, 3, 4]) {
+    for (const slot of HERO_BANNER_SLOTS) {
       const urlSetting = settings.find((s) => s.key === HERO_BANNER_SLOT_KEYS[slot]);
       renderHeroBannerPreview(urlSetting?.value || "", slot);
     }
+
+    const transitionSetting = settings.find((s) => s.key === "hero_banner_transition");
+    const durationSetting = settings.find((s) => s.key === "hero_banner_duration");
+    document.getElementById("heroBannerTransition").value = transitionSetting?.value || "fade";
+    document.getElementById("heroBannerDuration").value = durationSetting?.value || "6";
+
+    refreshHeroLivePreview();
   } catch (e) {
     // settings table may not exist yet — the generic form already surfaces that error
   }
@@ -2149,8 +2181,14 @@ async function saveHeroBanner() {
   btn.disabled = true;
   btn.textContent = "Saving...";
   try {
-    const settings = [{ key: "hero_banner_position", value: String(Math.round(heroBannerPositionY)) }];
-    for (const slot of [1, 2, 3, 4]) {
+    const transition = document.getElementById("heroBannerTransition").value;
+    const duration = String(Math.max(2, Math.min(30, parseInt(document.getElementById("heroBannerDuration").value, 10) || 6)));
+    const settings = [
+      { key: "hero_banner_position", value: String(Math.round(heroBannerPositionY)) },
+      { key: "hero_banner_transition", value: transition },
+      { key: "hero_banner_duration", value: duration },
+    ];
+    for (const slot of HERO_BANNER_SLOTS) {
       const suffix = slot === 1 ? "" : String(slot);
       const fileInput = document.getElementById(`heroBannerFileInput${suffix}`);
       const wrap = document.getElementById(`heroBannerPreviewWrap${suffix}`);
@@ -2167,12 +2205,77 @@ async function saveHeroBanner() {
       method: "PUT",
       body: { settings },
     });
+    refreshHeroLivePreview();
     alert("Hero banner photos saved!");
   } catch (e) {
     alert(e.message);
   } finally {
     btn.disabled = false;
     btn.textContent = "Save Banner Photos";
+  }
+}
+
+// --- Hero Banner live preview (mirrors the homepage carousel behavior) ---
+let heroPreviewTimer = null;
+
+function refreshHeroLivePreview() {
+  const urls = HERO_BANNER_SLOTS.map((slot) => {
+    const suffix = slot === 1 ? "" : String(slot);
+    return document.getElementById(`heroBannerPreviewWrap${suffix}`)?.dataset.url || "";
+  }).filter(Boolean);
+  const transition = document.getElementById("heroBannerTransition").value;
+  const duration = parseInt(document.getElementById("heroBannerDuration").value, 10) || 6;
+  startHeroLivePreview(urls, heroBannerPositionY, transition, duration);
+}
+
+function startHeroLivePreview(urls, positionY, transition, durationSec) {
+  const stage = document.getElementById("heroBannerLivePreview");
+  const empty = document.getElementById("heroBannerLivePreviewEmpty");
+  if (!stage) return;
+
+  if (heroPreviewTimer) {
+    clearInterval(heroPreviewTimer);
+    heroPreviewTimer = null;
+  }
+  stage.querySelectorAll(".hero-preview-slide, .hero-preview-track").forEach((el) => el.remove());
+
+  if (urls.length === 0) {
+    if (empty) empty.style.display = "flex";
+    return;
+  }
+  if (empty) empty.style.display = "none";
+
+  let active = 0;
+
+  if (transition === "scroll") {
+    const track = document.createElement("div");
+    track.className = "hero-preview-track";
+    track.style.cssText = `display:flex;height:100%;width:${urls.length * 100}%;transition:transform 1s ease-in-out;transform:translateX(0)`;
+    urls.forEach((url) => {
+      const slide = document.createElement("div");
+      slide.style.cssText = `width:${100 / urls.length}%;height:100%;background:#1a1a1a url('${url}') center ${positionY}% / cover no-repeat;flex-shrink:0`;
+      track.appendChild(slide);
+    });
+    stage.appendChild(track);
+    heroPreviewTimer = setInterval(() => {
+      active = (active + 1) % urls.length;
+      track.style.transform = `translateX(-${active * (100 / urls.length)}%)`;
+    }, durationSec * 1000);
+  } else {
+    urls.forEach((url, i) => {
+      const slide = document.createElement("div");
+      slide.className = "hero-preview-slide";
+      slide.style.cssText = `position:absolute;inset:0;background:#1a1a1a url('${url}') center ${positionY}% / cover no-repeat;transition:opacity 1s ease-in-out;opacity:${i === 0 ? 1 : 0}`;
+      stage.appendChild(slide);
+    });
+    if (urls.length > 1) {
+      heroPreviewTimer = setInterval(() => {
+        const slides = stage.querySelectorAll(".hero-preview-slide");
+        slides[active].style.opacity = "0";
+        active = (active + 1) % urls.length;
+        slides[active].style.opacity = "1";
+      }, durationSec * 1000);
+    }
   }
 }
 

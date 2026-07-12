@@ -3,43 +3,72 @@ import { CalendarDays, GraduationCap } from "lucide-react";
 import Button from "../ui/Button";
 import { useSiteSettings } from "../../context/SiteSettingsContext";
 
-const SLIDE_INTERVAL_MS = 6000;
+const HERO_SLOT_KEYS = [
+  "hero_banner_url",
+  "hero_banner_url_2",
+  "hero_banner_url_3",
+  "hero_banner_url_4",
+  "hero_banner_url_5",
+  "hero_banner_url_6",
+  "hero_banner_url_7",
+  "hero_banner_url_8",
+];
 
 export default function Hero() {
   const { get } = useSiteSettings();
   const bannerPosition = get("hero_banner_position", "50");
-  const photos = [
-    get("hero_banner_url"),
-    get("hero_banner_url_2"),
-    get("hero_banner_url_3"),
-    get("hero_banner_url_4"),
-  ].filter(Boolean);
+  const transition = get("hero_banner_transition", "fade");
+  const durationMs = (Number(get("hero_banner_duration", "6")) || 6) * 1000;
+  const photos = HERO_SLOT_KEYS.map((key) => get(key)).filter(Boolean);
   const slides = photos.length > 0 ? photos : ["/background.jpg"];
 
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
+    setActiveIndex(0);
     if (slides.length < 2) return;
     const id = setInterval(() => {
       setActiveIndex((i) => (i + 1) % slides.length);
-    }, SLIDE_INTERVAL_MS);
+    }, durationMs);
     return () => clearInterval(id);
-  }, [slides.length]);
+  }, [slides.length, durationMs, transition]);
 
   return (
     <section className="bg-cream px-5 pt-10 pb-16 md:pt-14">
       <div className="relative min-h-[55vh] overflow-hidden rounded-3xl bg-ink shadow-xl md:min-h-[65vh]">
-        {slides.map((url, i) => (
+        {transition === "scroll" ? (
           <div
-            key={url + i}
-            className="absolute inset-0 bg-cover transition-opacity duration-1000 ease-in-out"
+            className="absolute inset-0 flex transition-transform duration-1000 ease-in-out"
             style={{
-              backgroundImage: `url('${url}')`,
-              backgroundPosition: `center ${bannerPosition}%`,
-              opacity: i === activeIndex % slides.length ? 1 : 0,
+              width: `${slides.length * 100}%`,
+              transform: `translateX(-${activeIndex * (100 / slides.length)}%)`,
             }}
-          />
-        ))}
+          >
+            {slides.map((url, i) => (
+              <div
+                key={url + i}
+                className="h-full shrink-0 bg-cover"
+                style={{
+                  width: `${100 / slides.length}%`,
+                  backgroundImage: `url('${url}')`,
+                  backgroundPosition: `center ${bannerPosition}%`,
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          slides.map((url, i) => (
+            <div
+              key={url + i}
+              className="absolute inset-0 bg-cover transition-opacity duration-1000 ease-in-out"
+              style={{
+                backgroundImage: `url('${url}')`,
+                backgroundPosition: `center ${bannerPosition}%`,
+                opacity: i === activeIndex % slides.length ? 1 : 0,
+              }}
+            />
+          ))
+        )}
         {/* Dark on the text side, fading smoothly into the photo — no hard seam. */}
         <div
           className="absolute inset-0"
