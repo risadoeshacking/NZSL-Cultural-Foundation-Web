@@ -11,9 +11,10 @@ export default function Hero() {
   const durationMs = (Number(get("hero_banner_duration", "6")) || 6) * 1000;
   const photos = HERO_SLOTS.map((slot) => ({
     url: get(slot === 1 ? "hero_banner_url" : `hero_banner_url_${slot}`),
-    position: get(slot === 1 ? "hero_banner_position" : `hero_banner_position_${slot}`, "50"),
+    positionX: get(slot === 1 ? "hero_banner_position_x" : `hero_banner_position_x_${slot}`, "50"),
+    positionY: get(slot === 1 ? "hero_banner_position" : `hero_banner_position_${slot}`, "50"),
   })).filter((s) => s.url);
-  const slides = photos.length > 0 ? photos : [{ url: "/background.jpg", position: "50" }];
+  const slides = photos.length > 0 ? photos : [{ url: "/background.jpg", positionX: "50", positionY: "50" }];
 
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -37,20 +38,20 @@ export default function Hero() {
               transform: `translateX(-${activeIndex * (100 / slides.length)}%)`,
             }}
           >
-            {slides.map(({ url, position }, i) => (
+            {slides.map(({ url, positionX, positionY }, i) => (
               <div
                 key={url + i}
                 className="h-full shrink-0 bg-cover"
                 style={{
                   width: `${100 / slides.length}%`,
                   backgroundImage: `url('${url}')`,
-                  backgroundPosition: `center ${position}%`,
+                  backgroundPosition: `${positionX}% ${positionY}%`,
                 }}
               />
             ))}
           </div>
         ) : (
-          slides.map(({ url, position }, i) => {
+          slides.map(({ url, positionX, positionY }, i) => {
             const isActive = i === activeIndex % slides.length;
             return (
               <div
@@ -58,7 +59,7 @@ export default function Hero() {
                 className="absolute inset-0 bg-cover"
                 style={{
                   backgroundImage: `url('${url}')`,
-                  backgroundPosition: `center ${position}%`,
+                  backgroundPosition: `${positionX}% ${positionY}%`,
                   opacity: isActive ? 1 : 0,
                   transform: isActive ? "scale(1.05)" : "scale(1)",
                   transition: `opacity 1000ms ease-in-out, transform ${durationMs}ms ease-out`,

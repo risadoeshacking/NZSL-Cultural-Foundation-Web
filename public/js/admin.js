@@ -2098,7 +2098,11 @@ const HERO_BANNER_SLOT_KEYS = Object.fromEntries(
 const HERO_BANNER_POSITION_KEYS = Object.fromEntries(
   HERO_BANNER_SLOTS.map((slot) => [slot, slot === 1 ? "hero_banner_position" : `hero_banner_position_${slot}`])
 );
+const HERO_BANNER_POSITION_X_KEYS = Object.fromEntries(
+  HERO_BANNER_SLOTS.map((slot) => [slot, slot === 1 ? "hero_banner_position_x" : `hero_banner_position_x_${slot}`])
+);
 const heroBannerPositions = Object.fromEntries(HERO_BANNER_SLOTS.map((slot) => [slot, 50]));
+const heroBannerPositionsX = Object.fromEntries(HERO_BANNER_SLOTS.map((slot) => [slot, 50]));
 
 function generateHeroBannerExtraSlots() {
   const container = document.getElementById("heroBannerExtraSlots");
@@ -2119,6 +2123,11 @@ function generateHeroBannerExtraSlots() {
           background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.3); color:#fff; font-size:13px;
           line-height:1; cursor:pointer; align-items:center; justify-content:center;
         ">×</button>
+        <button type="button" id="heroBannerAdjustBtn${slot}" onclick="openHeroCropAdjust(${slot})" onmousedown="event.stopPropagation()" title="Adjust crop" style="
+          display:none; position:absolute; bottom:4px; right:4px; padding:2px 8px; border-radius:20px;
+          background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.3); color:#fff; font-size:11px;
+          line-height:1.6; cursor:pointer;
+        ">Adjust</button>
       </div>
       <input type="file" id="heroBannerFileInput${slot}" accept="image/*" style="font-size:0.7rem;margin-top:6px;width:100%" onchange="previewHeroBannerSlot(this, ${slot})" />
     </div>
@@ -2136,6 +2145,8 @@ async function loadHeroBannerSetting() {
     for (const slot of HERO_BANNER_SLOTS) {
       const posSetting = settings.find((s) => s.key === HERO_BANNER_POSITION_KEYS[slot]);
       heroBannerPositions[slot] = posSetting?.value ? parseFloat(posSetting.value) : 50;
+      const posXSetting = settings.find((s) => s.key === HERO_BANNER_POSITION_X_KEYS[slot]);
+      heroBannerPositionsX[slot] = posXSetting?.value ? parseFloat(posXSetting.value) : 50;
       const urlSetting = settings.find((s) => s.key === HERO_BANNER_SLOT_KEYS[slot]);
       renderHeroBannerPreview(urlSetting?.value || "", slot);
     }
@@ -2156,17 +2167,20 @@ function renderHeroBannerPreview(url, slot = 1) {
   const wrap = document.getElementById(`heroBannerPreviewWrap${suffix}`);
   const empty = document.getElementById(`heroBannerEmptyState${suffix}`);
   const removeBtn = document.getElementById(`heroBannerRemoveBtn${suffix}`);
+  const adjustBtn = document.getElementById(`heroBannerAdjustBtn${suffix}`);
   if (!wrap) return;
   wrap.dataset.url = url || "";
   if (url) {
     wrap.style.backgroundImage = `url('${url}')`;
-    wrap.style.backgroundPosition = `center ${heroBannerPositions[slot]}%`;
+    wrap.style.backgroundPosition = `${heroBannerPositionsX[slot]}% ${heroBannerPositions[slot]}%`;
     if (empty) empty.style.display = "none";
     if (removeBtn) removeBtn.style.display = "flex";
+    if (adjustBtn) adjustBtn.style.display = "block";
   } else {
     wrap.style.backgroundImage = "none";
     if (empty) empty.style.display = "flex";
     if (removeBtn) removeBtn.style.display = "none";
+    if (adjustBtn) adjustBtn.style.display = "none";
   }
 }
 
@@ -2183,6 +2197,7 @@ function previewHeroBanner(input) {
   const reader = new FileReader();
   reader.onload = (e) => {
     heroBannerPositions[1] = 50;
+    heroBannerPositionsX[1] = 50;
     renderHeroBannerPreview(e.target.result, 1);
   };
   reader.readAsDataURL(input.files[0]);
@@ -2193,6 +2208,7 @@ function previewHeroBannerSlot(input, slot) {
   const reader = new FileReader();
   reader.onload = (e) => {
     heroBannerPositions[slot] = 50;
+    heroBannerPositionsX[slot] = 50;
     renderHeroBannerPreview(e.target.result, slot);
   };
   reader.readAsDataURL(input.files[0]);
@@ -2207,36 +2223,159 @@ function initHeroBannerDragForSlot(slot) {
   const wrap = document.getElementById(`heroBannerPreviewWrap${suffix}`);
   if (!wrap || wrap.dataset.dragBound) return;
   wrap.dataset.dragBound = "1";
+  bindHeroPositionDrag(wrap, slot, wrap);
+}
 
+/** Binds 2D drag-to-reposition on `el`, writing into the shared position state for `slot`
+ *  and painting the result onto `paintEl` (usually `el` itself, but the crop modal points
+ *  this at its own quick-preview box while also refreshing the full-photo frame overlay). */
+function bindHeroPositionDrag(el, slot, paintEl, onUpdate) {
   let dragging = false;
+  let startX = 0;
   let startY = 0;
-  let startPos = 50;
+  let startPosX = 50;
+  let startPosY = 50;
 
-  const onDown = (clientY) => {
-    if (!wrap.dataset.url) return;
+  const onDown = (clientX, clientY) => {
+    if (!el.dataset.url) return;
     dragging = true;
+    startX = clientX;
     startY = clientY;
-    startPos = heroBannerPositions[slot];
-    wrap.style.cursor = "grabbing";
+    startPosX = heroBannerPositionsX[slot];
+    startPosY = heroBannerPositions[slot];
+    el.style.cursor = "grabbing";
   };
-  const onMove = (clientY) => {
+  const onMove = (clientX, clientY) => {
     if (!dragging) return;
-    const delta = clientY - startY;
-    const height = wrap.getBoundingClientRect().height || 1;
-    heroBannerPositions[slot] = Math.min(100, Math.max(0, startPos - (delta / height) * 100));
-    wrap.style.backgroundPosition = `center ${heroBannerPositions[slot]}%`;
+    const rect = el.getBoundingClientRect();
+    const deltaX = clientX - startX;
+    const deltaY = clientY - startY;
+    heroBannerPositionsX[slot] = Math.min(100, Math.max(0, startPosX - (deltaX / (rect.width || 1)) * 100));
+    heroBannerPositions[slot] = Math.min(100, Math.max(0, startPosY - (deltaY / (rect.height || 1)) * 100));
+    paintEl.style.backgroundPosition = `${heroBannerPositionsX[slot]}% ${heroBannerPositions[slot]}%`;
+    if (onUpdate) onUpdate();
   };
   const onUp = () => {
     dragging = false;
-    wrap.style.cursor = "grab";
+    el.style.cursor = "grab";
   };
 
-  wrap.addEventListener("mousedown", (e) => onDown(e.clientY));
-  window.addEventListener("mousemove", (e) => onMove(e.clientY));
+  el.addEventListener("mousedown", (e) => onDown(e.clientX, e.clientY));
+  window.addEventListener("mousemove", (e) => onMove(e.clientX, e.clientY));
   window.addEventListener("mouseup", onUp);
-  wrap.addEventListener("touchstart", (e) => onDown(e.touches[0].clientY), { passive: true });
-  wrap.addEventListener("touchmove", (e) => onMove(e.touches[0].clientY), { passive: true });
-  wrap.addEventListener("touchend", onUp);
+  el.addEventListener("touchstart", (e) => onDown(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+  el.addEventListener("touchmove", (e) => onMove(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+  el.addEventListener("touchend", onUp);
+}
+
+// --- Hero Banner crop-adjust modal ---
+let heroCropActiveSlot = null;
+
+function openHeroCropAdjust(slot) {
+  const suffix = slot === 1 ? "" : String(slot);
+  const wrap = document.getElementById(`heroBannerPreviewWrap${suffix}`);
+  const url = wrap?.dataset.url;
+  if (!url) return;
+  heroCropActiveSlot = slot;
+
+  document.getElementById("modalContainer").innerHTML = `
+    <div class="admin-modal-overlay" onclick="closeHeroCropAdjust(event)">
+      <div class="admin-modal" onclick="event.stopPropagation()" style="max-width:900px">
+        <h2>Adjust Photo ${slot}</h2>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px">
+          Drag either photo below to reposition it — the gold frame on the right shows exactly what will appear in the 1600×600 banner.
+        </p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+          <div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em">Banner preview</div>
+            <div id="heroCropQuickPreview" data-url="${url}" style="
+              width:100%; aspect-ratio:21/9; border-radius:8px; overflow:hidden;
+              background:#1a1a1a url('${url}') ${heroBannerPositionsX[slot]}% ${heroBannerPositions[slot]}% / cover no-repeat;
+              border:1px solid var(--border); cursor:grab; position:relative; user-select:none;
+            "></div>
+          </div>
+          <div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em">Full photo — the gold box is your banner</div>
+            <div id="heroCropFullWrap" style="
+              width:100%; aspect-ratio:1/1; border-radius:8px; overflow:hidden;
+              background:#0a0a0a; border:1px solid var(--border); position:relative;
+            ">
+              <img id="heroCropFullImg" src="${url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain" />
+              <div id="heroCropFrame" style="position:absolute;border:2px solid var(--accent);box-shadow:0 0 0 9999px rgba(0,0,0,0.6);pointer-events:none"></div>
+            </div>
+          </div>
+        </div>
+        <div class="admin-form-actions">
+          <button type="button" class="btn btn-primary btn-sm" onclick="closeHeroCropAdjust()">Done</button>
+        </div>
+      </div>
+    </div>`;
+
+  const quickPreview = document.getElementById("heroCropQuickPreview");
+  quickPreview.dataset.url = url;
+  bindHeroPositionDrag(quickPreview, slot, quickPreview, () => renderHeroCropFrame(slot));
+
+  const img = document.getElementById("heroCropFullImg");
+  if (img.complete && img.naturalWidth) {
+    renderHeroCropFrame(slot);
+  } else {
+    img.onload = () => renderHeroCropFrame(slot);
+  }
+  window.addEventListener("resize", heroCropResizeHandler);
+}
+
+function heroCropResizeHandler() {
+  if (heroCropActiveSlot != null) renderHeroCropFrame(heroCropActiveSlot);
+}
+
+function renderHeroCropFrame(slot) {
+  const img = document.getElementById("heroCropFullImg");
+  const wrap = document.getElementById("heroCropFullWrap");
+  const frame = document.getElementById("heroCropFrame");
+  if (!img || !wrap || !frame || !img.naturalWidth) return;
+
+  const dispW = wrap.clientWidth;
+  const dispH = wrap.clientHeight;
+  const imgW = img.naturalWidth;
+  const imgH = img.naturalHeight;
+
+  const containScale = Math.min(dispW / imgW, dispH / imgH);
+  const renderedW = imgW * containScale;
+  const renderedH = imgH * containScale;
+  const renderOffsetX = (dispW - renderedW) / 2;
+  const renderOffsetY = (dispH - renderedH) / 2;
+
+  const targetRatio = 21 / 9;
+  let frameW, frameH;
+  if (renderedW / renderedH > targetRatio) {
+    frameH = renderedH;
+    frameW = frameH * targetRatio;
+  } else {
+    frameW = renderedW;
+    frameH = frameW / targetRatio;
+  }
+
+  const frameLeft = renderOffsetX + (renderedW - frameW) * (heroBannerPositionsX[slot] / 100);
+  const frameTop = renderOffsetY + (renderedH - frameH) * (heroBannerPositions[slot] / 100);
+
+  frame.style.left = `${frameLeft}px`;
+  frame.style.top = `${frameTop}px`;
+  frame.style.width = `${frameW}px`;
+  frame.style.height = `${frameH}px`;
+}
+
+function closeHeroCropAdjust(e) {
+  if (e && e.target && !e.target.classList.contains("admin-modal-overlay")) return;
+  const slot = heroCropActiveSlot;
+  heroCropActiveSlot = null;
+  window.removeEventListener("resize", heroCropResizeHandler);
+  closeModal();
+  if (slot != null) {
+    const suffix = slot === 1 ? "" : String(slot);
+    const wrap = document.getElementById(`heroBannerPreviewWrap${suffix}`);
+    if (wrap) renderHeroBannerPreview(wrap.dataset.url, slot);
+    refreshHeroLivePreview();
+  }
 }
 
 async function uploadHeroBannerFile(file) {
@@ -2277,6 +2416,7 @@ async function saveHeroBanner() {
       }
       settings.push({ key: HERO_BANNER_SLOT_KEYS[slot], value: url });
       settings.push({ key: HERO_BANNER_POSITION_KEYS[slot], value: String(Math.round(heroBannerPositions[slot])) });
+      settings.push({ key: HERO_BANNER_POSITION_X_KEYS[slot], value: String(Math.round(heroBannerPositionsX[slot])) });
     }
     await adminFetch("/settings/admin", {
       token: currentToken,
@@ -2299,7 +2439,7 @@ function refreshHeroLivePreview() {
   const slides = HERO_BANNER_SLOTS.map((slot) => {
     const suffix = slot === 1 ? "" : String(slot);
     const url = document.getElementById(`heroBannerPreviewWrap${suffix}`)?.dataset.url || "";
-    return { url, position: heroBannerPositions[slot] };
+    return { url, positionX: heroBannerPositionsX[slot], positionY: heroBannerPositions[slot] };
   }).filter((s) => s.url);
   const transition = document.getElementById("heroBannerTransition").value;
   const duration = parseInt(document.getElementById("heroBannerDuration").value, 10) || 6;
@@ -2329,9 +2469,9 @@ function startHeroLivePreview(slides, transition, durationSec) {
     const track = document.createElement("div");
     track.className = "hero-preview-track";
     track.style.cssText = `display:flex;height:100%;width:${slides.length * 100}%;transition:transform 1s ease-in-out;transform:translateX(0)`;
-    slides.forEach(({ url, position }) => {
+    slides.forEach(({ url, positionX, positionY }) => {
       const slide = document.createElement("div");
-      slide.style.cssText = `width:${100 / slides.length}%;height:100%;background:#1a1a1a url('${url}') center ${position}% / cover no-repeat;flex-shrink:0`;
+      slide.style.cssText = `width:${100 / slides.length}%;height:100%;background:#1a1a1a url('${url}') ${positionX}% ${positionY}% / cover no-repeat;flex-shrink:0`;
       track.appendChild(slide);
     });
     stage.appendChild(track);
@@ -2340,10 +2480,10 @@ function startHeroLivePreview(slides, transition, durationSec) {
       track.style.transform = `translateX(-${active * (100 / slides.length)}%)`;
     }, durationSec * 1000);
   } else {
-    slides.forEach(({ url, position }, i) => {
+    slides.forEach(({ url, positionX, positionY }, i) => {
       const slide = document.createElement("div");
       slide.className = "hero-preview-slide";
-      slide.style.cssText = `position:absolute;inset:0;background:#1a1a1a url('${url}') center ${position}% / cover no-repeat;transition:opacity 1s ease-in-out;opacity:${i === 0 ? 1 : 0}`;
+      slide.style.cssText = `position:absolute;inset:0;background:#1a1a1a url('${url}') ${positionX}% ${positionY}% / cover no-repeat;transition:opacity 1s ease-in-out;opacity:${i === 0 ? 1 : 0}`;
       stage.appendChild(slide);
     });
     if (slides.length > 1) {

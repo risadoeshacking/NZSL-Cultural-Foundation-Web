@@ -573,16 +573,21 @@
                   background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.3); color:#fff; font-size:16px;
                   line-height:1; cursor:pointer; align-items:center; justify-content:center;
                 ">×</button>
+                <button type="button" id="heroBannerAdjustBtn" onclick="openHeroCropAdjust(1)" onmousedown="event.stopPropagation()" title="Adjust crop" style="
+                  display:none; position:absolute; bottom:8px; right:8px; padding:5px 12px; border-radius:20px;
+                  background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.3); color:#fff; font-size:12px;
+                  line-height:1.6; cursor:pointer;
+                ">Adjust crop</button>
               </div>
               <p style="font-size:0.75rem;color:var(--text-muted);margin-top:8px">
-                Drag the preview up/down to reposition the image. Recommended size: 1600×600px or larger (landscape), JPG/PNG/WebP, max 10MB.
+                Drag the preview to reposition the image, or click "Adjust crop" to see the full photo and exactly what will show in the banner. Recommended size: 1600×600px or larger (landscape), JPG/PNG/WebP, max 10MB.
               </p>
               <div style="display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap">
                 <input type="file" id="heroBannerFileInput" accept="image/*" style="font-size:0.8rem" onchange="previewHeroBanner(this)" />
               </div>
 
               <p style="font-size:0.8rem;color:var(--text-muted);margin-top:20px;margin-bottom:8px">
-                Add up to 7 more photos (8 total) to rotate through automatically on the homepage banner. It loops back to the first once it reaches the last. Drag any photo up/down to reposition it — each photo keeps its own position.
+                Add up to 7 more photos (8 total) to rotate through automatically on the homepage banner. It loops back to the first once it reaches the last. Drag any photo to reposition it, or hover a photo and click "Adjust" for a bigger, easier view — each photo keeps its own crop.
               </p>
               <div id="heroBannerExtraSlots" style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px"></div>
 
