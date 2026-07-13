@@ -41,6 +41,43 @@ async function adminFetch(endpoint, { token, method = "GET", body } = {}) {
   return data;
 }
 
+// --- Toasts ---
+function showToast(message, type = "success", duration = 4000) {
+  let container = document.getElementById("toastContainer");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toastContainer";
+    container.className = "toast-container";
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add("leaving");
+    setTimeout(() => toast.remove(), 200);
+  }, duration);
+}
+
+// --- Loading helpers ---
+function skeletonRows(cols, rows = 5) {
+  return Array.from({ length: rows }, () =>
+    `<tr>${Array.from({ length: cols }, () => `<td><div class="skeleton" style="height:14px;"></div></td>`).join("")}</tr>`
+  ).join("");
+}
+
+function setBtnLoading(btn, loading, idleLabel) {
+  if (loading) {
+    btn.dataset.idleLabel = idleLabel ?? btn.textContent;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="loader" style="width:14px;height:14px;"></span> Saving...`;
+  } else {
+    btn.disabled = false;
+    btn.textContent = idleLabel ?? btn.dataset.idleLabel;
+  }
+}
+
 // --- Navigation ---
 function switchSection(section) {
   document
@@ -101,9 +138,10 @@ async function loadDashboardStats() {
 
 // --- Events ---
 async function loadEventsTable() {
+  const tbody = document.getElementById("eventsTableBody");
+  tbody.innerHTML = skeletonRows(5);
   try {
     const data = await adminFetch("/events/admin/all", { token: currentToken });
-    const tbody = document.getElementById("eventsTableBody");
     tbody.innerHTML = (data.events || [])
       .map(
         (e) => `
@@ -121,7 +159,7 @@ async function loadEventsTable() {
       )
       .join("");
   } catch (e) {
-    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">Failed to load. <a href="#" onclick="loadEventsTable();return false;">Retry</a></td></tr>`;
   }
 }
 
@@ -203,6 +241,8 @@ function showEventModal(event = null) {
 
 async function saveEvent(e, id) {
   e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  setBtnLoading(btn, true);
   const form = new FormData(e.target);
   const body = Object.fromEntries(form.entries());
   try {
@@ -222,7 +262,8 @@ async function saveEvent(e, id) {
     closeModal();
     loadEventsTable();
   } catch (err) {
-    alert(err.message);
+    showToast(err.message, "error");
+    setBtnLoading(btn, false, id ? "Update" : "Create");
   }
 }
 
@@ -232,7 +273,7 @@ async function editEvent(id) {
     const event = data.events.find((e) => e.id === id);
     if (event) showEventModal(event);
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -245,7 +286,7 @@ async function deleteEvent(id) {
     });
     loadEventsTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -285,9 +326,10 @@ function slugifyClient(text) {
 }
 
 async function loadProductionsTable() {
+  const tbody = document.getElementById("productionsTableBody");
+  tbody.innerHTML = skeletonRows(5);
   try {
     const data = await adminFetch("/productions/admin/all", { token: currentToken });
-    const tbody = document.getElementById("productionsTableBody");
     tbody.innerHTML = (data.productions || [])
       .map(
         (p) => `
@@ -305,7 +347,7 @@ async function loadProductionsTable() {
       )
       .join("");
   } catch (e) {
-    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">Failed to load. <a href="#" onclick="loadProductionsTable();return false;">Retry</a></td></tr>`;
   }
 }
 
@@ -375,8 +417,7 @@ function previewProductionCover(input) {
 async function saveProduction(e, id) {
   e.preventDefault();
   const btn = document.getElementById("productionSaveBtn");
-  btn.disabled = true;
-  btn.textContent = "Saving...";
+  setBtnLoading(btn, true);
 
   try {
     let cover_image = document.getElementById("coverUrlInput")?.value || "";
@@ -411,9 +452,8 @@ async function saveProduction(e, id) {
     closeModal();
     loadProductionsTable();
   } catch (err) {
-    alert(err.message);
-    btn.disabled = false;
-    btn.textContent = id ? "Update" : "Add Production";
+    showToast(err.message, "error");
+    setBtnLoading(btn, false, id ? "Update" : "Add Production");
   }
 }
 
@@ -423,7 +463,7 @@ async function editProduction(id) {
     const production = data.productions.find((p) => p.id === id);
     if (production) showProductionModal(production);
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -433,15 +473,16 @@ async function deleteProduction(id) {
     await adminFetch(`/productions/admin/${id}`, { token: currentToken, method: "DELETE" });
     loadProductionsTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
 // --- Posts (News) ---
 async function loadPostsTable() {
+  const tbody = document.getElementById("postsTableBody");
+  tbody.innerHTML = skeletonRows(5);
   try {
     const data = await adminFetch("/news/admin/all", { token: currentToken });
-    const tbody = document.getElementById("postsTableBody");
     tbody.innerHTML = (data.news || [])
       .map(
         (p) => `
@@ -469,7 +510,7 @@ async function loadPostsTable() {
       )
       .join("");
   } catch (e) {
-    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">Failed to load. <a href="#" onclick="loadPostsTable();return false;">Retry</a></td></tr>`;
   }
 }
 
@@ -534,8 +575,7 @@ function previewPostImage(input) {
 async function savePost(e, id) {
   e.preventDefault();
   const btn = document.getElementById("postSaveBtn");
-  btn.disabled = true;
-  btn.textContent = "Saving...";
+  setBtnLoading(btn, true);
 
   try {
     // Upload image first if a file was chosen
@@ -570,9 +610,8 @@ async function savePost(e, id) {
     closeModal();
     loadPostsTable();
   } catch (err) {
-    alert(err.message);
-    btn.disabled = false;
-    btn.textContent = id ? "Update" : "Publish";
+    showToast(err.message, "error");
+    setBtnLoading(btn, false, id ? "Update" : "Publish");
   }
 }
 
@@ -582,7 +621,7 @@ async function editPost(id) {
     const post = data.news.find((p) => p.id === id);
     if (post) showPostModal(post);
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -592,17 +631,18 @@ async function deletePost(id) {
     await adminFetch(`/news/admin/${id}`, { token: currentToken, method: "DELETE" });
     loadPostsTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
 // --- Gallery ---
 async function loadGalleryTable() {
+  const tbody = document.getElementById("galleryTableBody");
+  tbody.innerHTML = skeletonRows(4);
   try {
     const data = await adminFetch("/gallery/admin/all", {
       token: currentToken,
     });
-    const tbody = document.getElementById("galleryTableBody");
     tbody.innerHTML = (data.images || [])
       .map(
         (img) => `
@@ -618,7 +658,7 @@ async function loadGalleryTable() {
       )
       .join("");
   } catch (e) {
-    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:2rem;">Failed to load. <a href="#" onclick="loadGalleryTable();return false;">Retry</a></td></tr>`;
   }
 }
 
@@ -723,17 +763,18 @@ async function deleteGalleryImage(id) {
     });
     loadGalleryTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
 // --- Stories ---
 async function loadStoriesTable() {
+  const tbody = document.getElementById("storiesTableBody");
+  tbody.innerHTML = skeletonRows(5);
   try {
     const data = await adminFetch("/stories/admin/all", {
       token: currentToken,
     });
-    const tbody = document.getElementById("storiesTableBody");
     tbody.innerHTML = (data.stories || [])
       .map(
         (s) => `
@@ -751,7 +792,7 @@ async function loadStoriesTable() {
       )
       .join("");
   } catch (e) {
-    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">Failed to load. <a href="#" onclick="loadStoriesTable();return false;">Retry</a></td></tr>`;
   }
 }
 
@@ -813,6 +854,8 @@ function showStoryModal(story = null) {
 
 async function saveStory(e, id) {
   e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  setBtnLoading(btn, true);
   const form = new FormData(e.target);
   const body = Object.fromEntries(form.entries());
   try {
@@ -832,7 +875,8 @@ async function saveStory(e, id) {
     closeModal();
     loadStoriesTable();
   } catch (err) {
-    alert(err.message);
+    showToast(err.message, "error");
+    setBtnLoading(btn, false, id ? "Update" : "Create");
   }
 }
 
@@ -844,7 +888,7 @@ async function editStory(id) {
     const story = data.stories.find((s) => s.id === id);
     if (story) showStoryModal(story);
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -857,17 +901,18 @@ async function deleteStory(id) {
     });
     loadStoriesTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
 // --- Leadership ---
 async function loadLeadershipTable() {
+  const tbody = document.getElementById("leadershipTableBody");
+  tbody.innerHTML = skeletonRows(6);
   try {
     const data = await adminFetch("/leadership/admin/all", {
       token: currentToken,
     });
-    const tbody = document.getElementById("leadershipTableBody");
     tbody.innerHTML = (data.leaders || [])
       .map(
         (l) => `
@@ -886,7 +931,7 @@ async function loadLeadershipTable() {
       )
       .join("");
   } catch (e) {
-    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Failed to load. <a href="#" onclick="loadLeadershipTable();return false;">Retry</a></td></tr>`;
   }
 }
 
@@ -959,8 +1004,7 @@ function previewLeaderPhoto(input) {
 async function saveLeader(e, id) {
   e.preventDefault();
   const btn = document.getElementById("leaderSaveBtn");
-  btn.disabled = true;
-  btn.textContent = "Saving...";
+  setBtnLoading(btn, true);
 
   try {
     // Upload photo first if a file was selected
@@ -996,9 +1040,8 @@ async function saveLeader(e, id) {
     closeModal();
     loadLeadershipTable();
   } catch (err) {
-    alert(err.message);
-    btn.disabled = false;
-    btn.textContent = "Save";
+    showToast(err.message, "error");
+    setBtnLoading(btn, false, "Save");
   }
 }
 
@@ -1010,7 +1053,7 @@ async function editLeader(id) {
     const leader = data.leaders.find((l) => l.id === id);
     if (leader) showLeaderModal(leader);
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -1023,15 +1066,16 @@ async function deleteLeader(id) {
     });
     loadLeadershipTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
 // --- Partners & Sponsors ---
 async function loadSponsorsTable() {
+  const tbody = document.getElementById("sponsorsTableBody");
+  tbody.innerHTML = skeletonRows(5);
   try {
     const data = await adminFetch("/sponsors/admin/all", { token: currentToken });
-    const tbody = document.getElementById("sponsorsTableBody");
     tbody.innerHTML = (data.sponsors || [])
       .map(
         (s) => `
@@ -1049,7 +1093,7 @@ async function loadSponsorsTable() {
       )
       .join("");
   } catch (e) {
-    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">Failed to load. <a href="#" onclick="loadSponsorsTable();return false;">Retry</a></td></tr>`;
   }
 }
 
@@ -1114,8 +1158,7 @@ function previewSponsorLogo(input) {
 async function saveSponsor(e, id) {
   e.preventDefault();
   const btn = document.getElementById("sponsorSaveBtn");
-  btn.disabled = true;
-  btn.textContent = "Saving...";
+  setBtnLoading(btn, true);
 
   try {
     let logo_url = document.getElementById("sponsorLogoUrlInput")?.value || "";
@@ -1150,9 +1193,8 @@ async function saveSponsor(e, id) {
     closeModal();
     loadSponsorsTable();
   } catch (err) {
-    alert(err.message);
-    btn.disabled = false;
-    btn.textContent = id ? "Update" : "Add Sponsor";
+    showToast(err.message, "error");
+    setBtnLoading(btn, false, id ? "Update" : "Add Sponsor");
   }
 }
 
@@ -1162,7 +1204,7 @@ async function editSponsor(id) {
     const sponsor = data.sponsors.find((s) => s.id === id);
     if (sponsor) showSponsorModal(sponsor);
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -1172,15 +1214,16 @@ async function deleteSponsor(id) {
     await adminFetch(`/sponsors/admin/${id}`, { token: currentToken, method: "DELETE" });
     loadSponsorsTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
 // --- Programmes ---
 async function loadProgrammesTable() {
+  const tbody = document.getElementById("programmesTableBody");
+  tbody.innerHTML = skeletonRows(5);
   try {
     const data = await adminFetch("/programmes/admin/all", { token: currentToken });
-    const tbody = document.getElementById("programmesTableBody");
     tbody.innerHTML = (data.programmes || [])
       .map(
         (p) => `
@@ -1198,7 +1241,7 @@ async function loadProgrammesTable() {
       )
       .join("");
   } catch (e) {
-    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">Failed to load. <a href="#" onclick="loadProgrammesTable();return false;">Retry</a></td></tr>`;
   }
 }
 
@@ -1264,8 +1307,7 @@ function previewProgrammeCover(input) {
 async function saveProgramme(e, id) {
   e.preventDefault();
   const btn = document.getElementById("programmeSaveBtn");
-  btn.disabled = true;
-  btn.textContent = "Saving...";
+  setBtnLoading(btn, true);
 
   try {
     let cover_image = document.getElementById("programmeCoverUrlInput")?.value || "";
@@ -1300,9 +1342,8 @@ async function saveProgramme(e, id) {
     closeModal();
     loadProgrammesTable();
   } catch (err) {
-    alert(err.message);
-    btn.disabled = false;
-    btn.textContent = id ? "Update" : "Add Programme";
+    showToast(err.message, "error");
+    setBtnLoading(btn, false, id ? "Update" : "Add Programme");
   }
 }
 
@@ -1312,7 +1353,7 @@ async function editProgramme(id) {
     const programme = data.programmes.find((p) => p.id === id);
     if (programme) showProgrammeModal(programme);
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -1322,7 +1363,7 @@ async function deleteProgramme(id) {
     await adminFetch(`/programmes/admin/${id}`, { token: currentToken, method: "DELETE" });
     loadProgrammesTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -1339,9 +1380,10 @@ async function programmeOptionsHtml(selectedId) {
 
 // --- Tutors ---
 async function loadTutorsTable() {
+  const tbody = document.getElementById("tutorsTableBody");
+  tbody.innerHTML = skeletonRows(5);
   try {
     const data = await adminFetch("/tutors/admin/all", { token: currentToken });
-    const tbody = document.getElementById("tutorsTableBody");
     tbody.innerHTML = (data.tutors || [])
       .map(
         (t) => `
@@ -1359,7 +1401,7 @@ async function loadTutorsTable() {
       )
       .join("");
   } catch (e) {
-    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">Failed to load. <a href="#" onclick="loadTutorsTable();return false;">Retry</a></td></tr>`;
   }
 }
 
@@ -1424,8 +1466,7 @@ function previewTutorPhoto(input) {
 async function saveTutor(e, id) {
   e.preventDefault();
   const btn = document.getElementById("tutorSaveBtn");
-  btn.disabled = true;
-  btn.textContent = "Saving...";
+  setBtnLoading(btn, true);
 
   try {
     let photo_url = document.getElementById("tutorPhotoUrlInput")?.value || "";
@@ -1460,9 +1501,8 @@ async function saveTutor(e, id) {
     closeModal();
     loadTutorsTable();
   } catch (err) {
-    alert(err.message);
-    btn.disabled = false;
-    btn.textContent = id ? "Update" : "Add Tutor";
+    showToast(err.message, "error");
+    setBtnLoading(btn, false, id ? "Update" : "Add Tutor");
   }
 }
 
@@ -1472,7 +1512,7 @@ async function editTutor(id) {
     const tutor = data.tutors.find((t) => t.id === id);
     if (tutor) showTutorModal(tutor);
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -1482,15 +1522,16 @@ async function deleteTutor(id) {
     await adminFetch(`/tutors/admin/${id}`, { token: currentToken, method: "DELETE" });
     loadTutorsTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
 // --- Classes ---
 async function loadClassesTable() {
+  const tbody = document.getElementById("classesTableBody");
+  tbody.innerHTML = skeletonRows(6);
   try {
     const data = await adminFetch("/programme-classes/admin/all", { token: currentToken });
-    const tbody = document.getElementById("classesTableBody");
     tbody.innerHTML = (data.classes || [])
       .map(
         (c) => `
@@ -1509,7 +1550,7 @@ async function loadClassesTable() {
       )
       .join("");
   } catch (e) {
-    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">Failed to load. <a href="#" onclick="loadClassesTable();return false;">Retry</a></td></tr>`;
   }
 }
 
@@ -1581,8 +1622,7 @@ async function showClassModal(cls = null) {
 async function saveClass(e, id) {
   e.preventDefault();
   const btn = document.getElementById("classSaveBtn");
-  btn.disabled = true;
-  btn.textContent = "Saving...";
+  setBtnLoading(btn, true);
 
   try {
     const form = new FormData(e.target);
@@ -1599,9 +1639,8 @@ async function saveClass(e, id) {
     closeModal();
     loadClassesTable();
   } catch (err) {
-    alert(err.message);
-    btn.disabled = false;
-    btn.textContent = id ? "Update" : "Add Class";
+    showToast(err.message, "error");
+    setBtnLoading(btn, false, id ? "Update" : "Add Class");
   }
 }
 
@@ -1611,7 +1650,7 @@ async function editClass(id) {
     const cls = data.classes.find((c) => c.id === id);
     if (cls) showClassModal(cls);
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -1621,7 +1660,7 @@ async function deleteClass(id) {
     await adminFetch(`/programme-classes/admin/${id}`, { token: currentToken, method: "DELETE" });
     loadClassesTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -1665,12 +1704,14 @@ function renderMembershipTable() {
 }
 
 async function loadMembershipTable() {
+  const tbody = document.getElementById("membershipTableBody");
+  tbody.innerHTML = skeletonRows(7);
   try {
     const data = await adminFetch("/membership/admin/all", { token: currentToken });
     allMemberships = data.memberships || [];
     renderMembershipTable();
   } catch (e) {
-    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:2rem;">Failed to load. <a href="#" onclick="loadMembershipTable();return false;">Retry</a></td></tr>`;
   }
 }
 
@@ -1695,7 +1736,7 @@ async function markMembershipPaid(id) {
     });
     loadMembershipTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -1708,7 +1749,7 @@ async function activateMembership(id) {
     });
     loadMembershipTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -1718,7 +1759,7 @@ async function rejectMembership(id) {
     await adminFetch(`/membership/admin/${id}/reject`, { token: currentToken, method: "PUT" });
     loadMembershipTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -1728,7 +1769,7 @@ async function waitlistMembership(id) {
     await adminFetch(`/membership/admin/${id}/waitlist`, { token: currentToken, method: "PUT" });
     loadMembershipTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -1741,7 +1782,7 @@ async function deleteMembership(id) {
     });
     loadMembershipTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -1810,15 +1851,16 @@ async function recordMembershipPayment(e, id) {
     loadMembershipPayments(id);
     loadMembershipTable();
   } catch (err) {
-    alert(err.message);
+    showToast(err.message, "error");
   }
 }
 
 // --- Videos ---
 async function loadVideosTable() {
+  const tbody = document.getElementById("videosTableBody");
+  tbody.innerHTML = skeletonRows(3);
   try {
     const data = await adminFetch("/videos/admin/all", { token: currentToken });
-    const tbody = document.getElementById("videosTableBody");
     tbody.innerHTML = (data.videos || [])
       .map(
         (v) => `
@@ -1834,7 +1876,7 @@ async function loadVideosTable() {
       )
       .join("");
   } catch (e) {
-    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:2rem;">Failed to load. <a href="#" onclick="loadVideosTable();return false;">Retry</a></td></tr>`;
   }
 }
 
@@ -1876,6 +1918,8 @@ function showVideoModal(video = null) {
 
 async function saveVideo(e, id) {
   e.preventDefault();
+  const btn = e.target.querySelector('button[type="submit"]');
+  setBtnLoading(btn, true);
   const form = new FormData(e.target);
   const body = Object.fromEntries(form.entries());
   try {
@@ -1887,7 +1931,8 @@ async function saveVideo(e, id) {
     closeModal();
     loadVideosTable();
   } catch (err) {
-    alert(err.message);
+    showToast(err.message, "error");
+    setBtnLoading(btn, false, id ? "Update" : "Add");
   }
 }
 
@@ -1897,7 +1942,7 @@ async function editVideo(id) {
     const video = data.videos.find((v) => v.id === id);
     if (video) showVideoModal(video);
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -1907,15 +1952,16 @@ async function deleteVideo(id) {
     await adminFetch(`/videos/admin/${id}`, { token: currentToken, method: "DELETE" });
     loadVideosTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
 // --- Enquiries ---
 async function loadEnquiriesTable() {
+  const tbody = document.getElementById("enquiriesTableBody");
+  tbody.innerHTML = skeletonRows(5);
   try {
     const data = await adminFetch("/contact/admin/all", { token: currentToken });
-    const tbody = document.getElementById("enquiriesTableBody");
     tbody.innerHTML = (data.enquiries || [])
       .map(
         (q) => `
@@ -1934,7 +1980,7 @@ async function loadEnquiriesTable() {
       )
       .join("");
   } catch (e) {
-    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:2rem;">Failed to load. <a href="#" onclick="loadEnquiriesTable();return false;">Retry</a></td></tr>`;
   }
 }
 
@@ -1946,7 +1992,7 @@ async function viewEnquiry(id) {
     alert(`From: ${enquiry.name} <${enquiry.email}>\nSubject: ${enquiry.subject || "—"}\n\n${enquiry.message}`);
     if (enquiry.status === "new") updateEnquiryStatus(id, "read", true);
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -1959,7 +2005,7 @@ async function updateEnquiryStatus(id, status, silent) {
     });
     loadEnquiriesTable();
   } catch (e) {
-    if (!silent) alert(e.message);
+    if (!silent) showToast(e.message, "error");
   }
 }
 
@@ -1969,7 +2015,7 @@ async function deleteEnquiry(id) {
     await adminFetch(`/contact/admin/${id}`, { token: currentToken, method: "DELETE" });
     loadEnquiriesTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 
@@ -2022,6 +2068,8 @@ async function loadSettings() {
 }
 
 async function saveSettings() {
+  const btn = document.querySelector("#section-settings .admin-header-actions button");
+  setBtnLoading(btn, true);
   const inputs = document.querySelectorAll(".setting-input");
   const settings = Array.from(inputs).map((inp) => ({
     key: inp.dataset.key,
@@ -2034,9 +2082,11 @@ async function saveSettings() {
       method: "PUT",
       body: { settings },
     });
-    alert("Settings saved successfully!");
+    showToast("Settings saved successfully!", "success");
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
+  } finally {
+    setBtnLoading(btn, false, "Save Settings");
   }
 }
 
@@ -2207,8 +2257,7 @@ async function uploadHeroBannerFile(file) {
 
 async function saveHeroBanner() {
   const btn = document.getElementById("heroBannerSaveBtn");
-  btn.disabled = true;
-  btn.textContent = "Saving...";
+  setBtnLoading(btn, true);
   try {
     const transition = document.getElementById("heroBannerTransition").value;
     const duration = String(Math.max(2, Math.min(30, parseInt(document.getElementById("heroBannerDuration").value, 10) || 6)));
@@ -2235,12 +2284,11 @@ async function saveHeroBanner() {
       body: { settings },
     });
     refreshHeroLivePreview();
-    alert("Hero banner photos saved!");
+    showToast("Hero banner photos saved!", "success");
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   } finally {
-    btn.disabled = false;
-    btn.textContent = "Save Banner Photos";
+    setBtnLoading(btn, false, "Save Banner Photos");
   }
 }
 
@@ -2311,13 +2359,14 @@ function startHeroLivePreview(slides, transition, durationSec) {
 
 // --- Admin Users ---
 async function loadAdminUsersTable() {
+  const tbody = document.getElementById("adminUsersTableBody");
+  tbody.innerHTML = skeletonRows(4);
   try {
     const [data, profile] = await Promise.all([
       adminFetch("/admins/admin/all", { token: currentToken }),
       adminFetch("/auth/profile", { token: currentToken }),
     ]);
     const myId = profile.admin?.id;
-    const tbody = document.getElementById("adminUsersTableBody");
     tbody.innerHTML = (data.admins || [])
       .map(
         (a) => `
@@ -2333,7 +2382,7 @@ async function loadAdminUsersTable() {
       )
       .join("");
   } catch (e) {
-    console.error(e);
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:2rem;">Failed to load. <a href="#" onclick="loadAdminUsersTable();return false;">Retry</a></td></tr>`;
   }
 }
 
@@ -2358,8 +2407,7 @@ function showAdminUserModal() {
 async function saveAdminUser(e) {
   e.preventDefault();
   const btn = document.getElementById("adminUserSaveBtn");
-  btn.disabled = true;
-  btn.textContent = "Saving...";
+  setBtnLoading(btn, true);
   try {
     const form = new FormData(e.target);
     const body = Object.fromEntries(form.entries());
@@ -2367,9 +2415,8 @@ async function saveAdminUser(e) {
     closeModal();
     loadAdminUsersTable();
   } catch (err) {
-    alert(err.message);
-    btn.disabled = false;
-    btn.textContent = "Add Admin";
+    showToast(err.message, "error");
+    setBtnLoading(btn, false, "Add Admin");
   }
 }
 
@@ -2379,7 +2426,7 @@ async function deleteAdminUser(id) {
     await adminFetch(`/admins/admin/${id}`, { token: currentToken, method: "DELETE" });
     loadAdminUsersTable();
   } catch (e) {
-    alert(e.message);
+    showToast(e.message, "error");
   }
 }
 

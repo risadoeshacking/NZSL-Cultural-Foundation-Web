@@ -74,6 +74,7 @@
   /* Z-index */
   --z-nav: 200;
   --z-modal: 300;
+  --z-toast: 550;
   --z-lightbox: 10000;
 
   /* Container */
@@ -1475,6 +1476,61 @@ h6 {
   grid-column: 1 / -1;
 }
 
+/* --- Toasts --- */
+.toast-container {
+  position: fixed;
+  top: var(--space-lg);
+  right: var(--space-lg);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  animation: toastIn var(--transition-base);
+}
+
+.toast.leaving {
+  animation: toastOut var(--transition-fast) forwards;
+}
+
+.toast-success {
+  border-left: 3px solid #22c55e;
+}
+
+.toast-error {
+  border-left: 3px solid #ef4444;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes toastOut {
+  to {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
 /* --- Page Header (for sub-pages) --- */
 .page-header {
   padding: 10rem 0 4rem;
@@ -2585,6 +2641,7 @@ h6 {
 .admin-sidebar-nav a.active {
   background: rgba(212, 118, 10, 0.1);
   border: 1px solid var(--border);
+  border-left: 2px solid var(--accent);
   color: white;
 }
 
@@ -2868,6 +2925,18 @@ h6 {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 2rem;
+  animation: modalPop var(--transition-base) ease-out;
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .admin-modal h2 {

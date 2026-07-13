@@ -50,17 +50,22 @@ export default function Hero() {
             ))}
           </div>
         ) : (
-          slides.map(({ url, position }, i) => (
-            <div
-              key={url + i}
-              className="absolute inset-0 bg-cover transition-opacity duration-1000 ease-in-out"
-              style={{
-                backgroundImage: `url('${url}')`,
-                backgroundPosition: `center ${position}%`,
-                opacity: i === activeIndex % slides.length ? 1 : 0,
-              }}
-            />
-          ))
+          slides.map(({ url, position }, i) => {
+            const isActive = i === activeIndex % slides.length;
+            return (
+              <div
+                key={url + i}
+                className="absolute inset-0 bg-cover"
+                style={{
+                  backgroundImage: `url('${url}')`,
+                  backgroundPosition: `center ${position}%`,
+                  opacity: isActive ? 1 : 0,
+                  transform: isActive ? "scale(1.05)" : "scale(1)",
+                  transition: `opacity 1000ms ease-in-out, transform ${durationMs}ms ease-out`,
+                }}
+              />
+            );
+          })
         )}
         {/* Dark on the text side, fading smoothly into the photo — no hard seam. */}
         <div
@@ -71,7 +76,7 @@ export default function Hero() {
           }}
         />
 
-        <div className="relative flex min-h-[55vh] max-w-xl flex-col justify-center gap-5 px-8 py-12 md:min-h-[65vh] md:px-14">
+        <div className="relative flex min-h-[55vh] max-w-xl flex-col justify-center gap-5 px-8 py-12 md:min-h-[65vh] md:px-14 animate-fade-in-up">
           <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/15 px-4 py-1.5 text-[10px] font-medium uppercase tracking-widest text-warm-white/70 sm:text-xs">
             <span className="truncate">New Zealand Sri Lanka Cultural Foundation</span>
           </div>

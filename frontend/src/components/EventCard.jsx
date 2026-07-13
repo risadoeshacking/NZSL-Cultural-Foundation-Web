@@ -104,6 +104,7 @@ export function LinkCard({ to, image, title, subtitle, ctaLabel = "View More" })
           <img
             src={image}
             alt={title}
+            loading="lazy"
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         )}

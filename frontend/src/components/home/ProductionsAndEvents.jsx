@@ -17,7 +17,11 @@ export default function ProductionsAndEvents() {
         <div>
           <SectionHeader eyebrow="Festivals & Productions" title="Our Major Productions" className="mb-8" />
           {productionsLoading ? (
-            <p className="text-sm text-text-dark-soft">Loading productions...</p>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="aspect-4/3 animate-pulse rounded-2xl bg-black/5" />
+              ))}
+            </div>
           ) : productions.length === 0 ? (
             <p className="text-sm text-text-dark-soft">No productions listed yet.</p>
           ) : (
@@ -44,7 +48,11 @@ export default function ProductionsAndEvents() {
         <div>
           <SectionHeader eyebrow="What's On" title="Upcoming Events" className="mb-8" />
           {eventsLoading ? (
-            <p className="text-sm text-text-dark-soft">Loading events...</p>
+            <div className="flex flex-col gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-16 animate-pulse rounded-xl bg-black/5" />
+              ))}
+            </div>
           ) : events.length === 0 ? (
             <p className="text-sm text-text-dark-soft">No upcoming events yet.</p>
           ) : (

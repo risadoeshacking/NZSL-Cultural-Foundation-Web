@@ -41,7 +41,7 @@ export default function Partners() {
                   >
                     <div className="flex h-16 items-center justify-center">
                       {s.logo_url ? (
-                        <img src={s.logo_url} alt={s.name} className="max-h-16 max-w-[160px] object-contain" />
+                        <img src={s.logo_url} alt={s.name} loading="lazy" className="max-h-16 max-w-[160px] object-contain" />
                       ) : (
                         <Handshake className="text-gold" size={32} />
                       )}

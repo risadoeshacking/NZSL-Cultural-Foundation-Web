@@ -184,6 +184,7 @@ export default function Gallery() {
                     <img
                       src={photo.image_url}
                       alt={photo.title || ""}
+                      loading="lazy"
                       className="w-full object-cover transition-transform group-hover:scale-105"
                       style={{ height: `${150 + (i % 3) * 60}px` }}
                     />
@@ -209,6 +210,7 @@ export default function Gallery() {
                     <img
                       src={`https://img.youtube.com/vi/${video.video_id}/hqdefault.jpg`}
                       alt={video.title}
+                      loading="lazy"
                       className="h-full w-full object-cover"
                     />
                     <span className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40">

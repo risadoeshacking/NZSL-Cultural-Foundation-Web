@@ -40,7 +40,11 @@ export default function GalleryVideosWhatWeDo() {
         <div>
           <SectionHeader eyebrow="Cultural Gallery" title="Moments in Pictures" light className="mb-6" />
           {galleryLoading ? (
-            <p className="text-sm text-warm-white/60">Loading...</p>
+            <div className="grid grid-cols-3 gap-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="aspect-square animate-pulse rounded-lg bg-white/5" />
+              ))}
+            </div>
           ) : photos.length === 0 ? (
             <p className="text-sm text-warm-white/60">No photos yet.</p>
           ) : (
@@ -55,6 +59,7 @@ export default function GalleryVideosWhatWeDo() {
                   <img
                     src={photo.image_url}
                     alt={photo.title || ""}
+                    loading="lazy"
                     className="h-full w-full object-cover transition-transform hover:scale-105"
                   />
                 </button>
@@ -71,7 +76,7 @@ export default function GalleryVideosWhatWeDo() {
         <div>
           <SectionHeader eyebrow="Watch & Experience" title="Watch Our Videos" light className="mb-6" />
           {videosLoading ? (
-            <p className="text-sm text-warm-white/60">Loading videos...</p>
+            <div className="aspect-video w-full animate-pulse rounded-xl bg-white/5" />
           ) : !featuredVideo ? (
             <p className="text-sm text-warm-white/60">No videos yet.</p>
           ) : (
@@ -83,6 +88,7 @@ export default function GalleryVideosWhatWeDo() {
               <img
                 src={`https://img.youtube.com/vi/${featuredVideo.video_id}/hqdefault.jpg`}
                 alt={featuredVideo.title}
+                loading="lazy"
                 className="h-full w-full object-cover"
               />
               <span className="absolute inset-0 flex items-center justify-center bg-black/30 transition-colors group-hover:bg-black/40">
