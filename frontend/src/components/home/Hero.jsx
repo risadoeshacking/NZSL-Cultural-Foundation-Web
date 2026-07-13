@@ -3,24 +3,17 @@ import { CalendarDays, GraduationCap } from "lucide-react";
 import Button from "../ui/Button";
 import { useSiteSettings } from "../../context/SiteSettingsContext";
 
-const HERO_SLOT_KEYS = [
-  "hero_banner_url",
-  "hero_banner_url_2",
-  "hero_banner_url_3",
-  "hero_banner_url_4",
-  "hero_banner_url_5",
-  "hero_banner_url_6",
-  "hero_banner_url_7",
-  "hero_banner_url_8",
-];
+const HERO_SLOTS = [1, 2, 3, 4, 5, 6, 7, 8];
 
 export default function Hero() {
   const { get } = useSiteSettings();
-  const bannerPosition = get("hero_banner_position", "50");
   const transition = get("hero_banner_transition", "fade");
   const durationMs = (Number(get("hero_banner_duration", "6")) || 6) * 1000;
-  const photos = HERO_SLOT_KEYS.map((key) => get(key)).filter(Boolean);
-  const slides = photos.length > 0 ? photos : ["/background.jpg"];
+  const photos = HERO_SLOTS.map((slot) => ({
+    url: get(slot === 1 ? "hero_banner_url" : `hero_banner_url_${slot}`),
+    position: get(slot === 1 ? "hero_banner_position" : `hero_banner_position_${slot}`, "50"),
+  })).filter((s) => s.url);
+  const slides = photos.length > 0 ? photos : [{ url: "/background.jpg", position: "50" }];
 
   const [activeIndex, setActiveIndex] = useState(0);
 
@@ -44,26 +37,26 @@ export default function Hero() {
               transform: `translateX(-${activeIndex * (100 / slides.length)}%)`,
             }}
           >
-            {slides.map((url, i) => (
+            {slides.map(({ url, position }, i) => (
               <div
                 key={url + i}
                 className="h-full shrink-0 bg-cover"
                 style={{
                   width: `${100 / slides.length}%`,
                   backgroundImage: `url('${url}')`,
-                  backgroundPosition: `center ${bannerPosition}%`,
+                  backgroundPosition: `center ${position}%`,
                 }}
               />
             ))}
           </div>
         ) : (
-          slides.map((url, i) => (
+          slides.map(({ url, position }, i) => (
             <div
               key={url + i}
               className="absolute inset-0 bg-cover transition-opacity duration-1000 ease-in-out"
               style={{
                 backgroundImage: `url('${url}')`,
-                backgroundPosition: `center ${bannerPosition}%`,
+                backgroundPosition: `center ${position}%`,
                 opacity: i === activeIndex % slides.length ? 1 : 0,
               }}
             />

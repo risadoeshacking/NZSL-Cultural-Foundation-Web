@@ -2041,11 +2041,14 @@ async function saveSettings() {
 }
 
 // --- Hero Banner (homepage) ---
-let heroBannerPositionY = 50;
 const HERO_BANNER_SLOTS = [1, 2, 3, 4, 5, 6, 7, 8];
 const HERO_BANNER_SLOT_KEYS = Object.fromEntries(
   HERO_BANNER_SLOTS.map((slot) => [slot, slot === 1 ? "hero_banner_url" : `hero_banner_url_${slot}`])
 );
+const HERO_BANNER_POSITION_KEYS = Object.fromEntries(
+  HERO_BANNER_SLOTS.map((slot) => [slot, slot === 1 ? "hero_banner_position" : `hero_banner_position_${slot}`])
+);
+const heroBannerPositions = Object.fromEntries(HERO_BANNER_SLOTS.map((slot) => [slot, 50]));
 
 function generateHeroBannerExtraSlots() {
   const container = document.getElementById("heroBannerExtraSlots");
@@ -2058,9 +2061,10 @@ function generateHeroBannerExtraSlots() {
       <div id="heroBannerPreviewWrap${slot}" style="
         width: 100%; aspect-ratio: 4 / 3; border-radius: 8px; overflow: hidden;
         background: #1a1a1a center 50% / cover no-repeat; border: 1px solid var(--border); position: relative;
+        cursor: grab; user-select: none;
       ">
         <div id="heroBannerEmptyState${slot}" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.7rem">Photo ${slot}</div>
-        <button type="button" id="heroBannerRemoveBtn${slot}" onclick="clearHeroBannerSlot(${slot})" title="Remove photo" style="
+        <button type="button" id="heroBannerRemoveBtn${slot}" onclick="clearHeroBannerSlot(${slot})" onmousedown="event.stopPropagation()" title="Remove photo" style="
           display:none; position:absolute; top:4px; right:4px; width:22px; height:22px; border-radius:50%;
           background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.3); color:#fff; font-size:13px;
           line-height:1; cursor:pointer; align-items:center; justify-content:center;
@@ -2071,6 +2075,7 @@ function generateHeroBannerExtraSlots() {
   `
     )
     .join("");
+  HERO_BANNER_SLOTS.slice(1).forEach((slot) => initHeroBannerDragForSlot(slot));
 }
 
 async function loadHeroBannerSetting() {
@@ -2078,9 +2083,9 @@ async function loadHeroBannerSetting() {
   try {
     const data = await adminFetch("/settings/admin", { token: currentToken });
     const settings = data.settings || [];
-    const posSetting = settings.find((s) => s.key === "hero_banner_position");
-    heroBannerPositionY = posSetting?.value ? parseFloat(posSetting.value) : 50;
     for (const slot of HERO_BANNER_SLOTS) {
+      const posSetting = settings.find((s) => s.key === HERO_BANNER_POSITION_KEYS[slot]);
+      heroBannerPositions[slot] = posSetting?.value ? parseFloat(posSetting.value) : 50;
       const urlSetting = settings.find((s) => s.key === HERO_BANNER_SLOT_KEYS[slot]);
       renderHeroBannerPreview(urlSetting?.value || "", slot);
     }
@@ -2105,7 +2110,7 @@ function renderHeroBannerPreview(url, slot = 1) {
   wrap.dataset.url = url || "";
   if (url) {
     wrap.style.backgroundImage = `url('${url}')`;
-    if (slot === 1) wrap.style.backgroundPosition = `center ${heroBannerPositionY}%`;
+    wrap.style.backgroundPosition = `center ${heroBannerPositions[slot]}%`;
     if (empty) empty.style.display = "none";
     if (removeBtn) removeBtn.style.display = "flex";
   } else {
@@ -2127,7 +2132,7 @@ function previewHeroBanner(input) {
   if (!input.files || !input.files[0]) return;
   const reader = new FileReader();
   reader.onload = (e) => {
-    heroBannerPositionY = 50;
+    heroBannerPositions[1] = 50;
     renderHeroBannerPreview(e.target.result, 1);
   };
   reader.readAsDataURL(input.files[0]);
@@ -2136,12 +2141,20 @@ function previewHeroBanner(input) {
 function previewHeroBannerSlot(input, slot) {
   if (!input.files || !input.files[0]) return;
   const reader = new FileReader();
-  reader.onload = (e) => renderHeroBannerPreview(e.target.result, slot);
+  reader.onload = (e) => {
+    heroBannerPositions[slot] = 50;
+    renderHeroBannerPreview(e.target.result, slot);
+  };
   reader.readAsDataURL(input.files[0]);
 }
 
 function initHeroBannerDrag() {
-  const wrap = document.getElementById("heroBannerPreviewWrap");
+  initHeroBannerDragForSlot(1);
+}
+
+function initHeroBannerDragForSlot(slot) {
+  const suffix = slot === 1 ? "" : String(slot);
+  const wrap = document.getElementById(`heroBannerPreviewWrap${suffix}`);
   if (!wrap || wrap.dataset.dragBound) return;
   wrap.dataset.dragBound = "1";
 
@@ -2153,15 +2166,15 @@ function initHeroBannerDrag() {
     if (!wrap.dataset.url) return;
     dragging = true;
     startY = clientY;
-    startPos = heroBannerPositionY;
+    startPos = heroBannerPositions[slot];
     wrap.style.cursor = "grabbing";
   };
   const onMove = (clientY) => {
     if (!dragging) return;
     const delta = clientY - startY;
     const height = wrap.getBoundingClientRect().height || 1;
-    heroBannerPositionY = Math.min(100, Math.max(0, startPos - (delta / height) * 100));
-    wrap.style.backgroundPosition = `center ${heroBannerPositionY}%`;
+    heroBannerPositions[slot] = Math.min(100, Math.max(0, startPos - (delta / height) * 100));
+    wrap.style.backgroundPosition = `center ${heroBannerPositions[slot]}%`;
   };
   const onUp = () => {
     dragging = false;
@@ -2200,7 +2213,6 @@ async function saveHeroBanner() {
     const transition = document.getElementById("heroBannerTransition").value;
     const duration = String(Math.max(2, Math.min(30, parseInt(document.getElementById("heroBannerDuration").value, 10) || 6)));
     const settings = [
-      { key: "hero_banner_position", value: String(Math.round(heroBannerPositionY)) },
       { key: "hero_banner_transition", value: transition },
       { key: "hero_banner_duration", value: duration },
     ];
@@ -2215,6 +2227,7 @@ async function saveHeroBanner() {
         fileInput.value = "";
       }
       settings.push({ key: HERO_BANNER_SLOT_KEYS[slot], value: url });
+      settings.push({ key: HERO_BANNER_POSITION_KEYS[slot], value: String(Math.round(heroBannerPositions[slot])) });
     }
     await adminFetch("/settings/admin", {
       token: currentToken,
@@ -2235,16 +2248,17 @@ async function saveHeroBanner() {
 let heroPreviewTimer = null;
 
 function refreshHeroLivePreview() {
-  const urls = HERO_BANNER_SLOTS.map((slot) => {
+  const slides = HERO_BANNER_SLOTS.map((slot) => {
     const suffix = slot === 1 ? "" : String(slot);
-    return document.getElementById(`heroBannerPreviewWrap${suffix}`)?.dataset.url || "";
-  }).filter(Boolean);
+    const url = document.getElementById(`heroBannerPreviewWrap${suffix}`)?.dataset.url || "";
+    return { url, position: heroBannerPositions[slot] };
+  }).filter((s) => s.url);
   const transition = document.getElementById("heroBannerTransition").value;
   const duration = parseInt(document.getElementById("heroBannerDuration").value, 10) || 6;
-  startHeroLivePreview(urls, heroBannerPositionY, transition, duration);
+  startHeroLivePreview(slides, transition, duration);
 }
 
-function startHeroLivePreview(urls, positionY, transition, durationSec) {
+function startHeroLivePreview(slides, transition, durationSec) {
   const stage = document.getElementById("heroBannerLivePreview");
   const empty = document.getElementById("heroBannerLivePreviewEmpty");
   if (!stage) return;
@@ -2255,7 +2269,7 @@ function startHeroLivePreview(urls, positionY, transition, durationSec) {
   }
   stage.querySelectorAll(".hero-preview-slide, .hero-preview-track").forEach((el) => el.remove());
 
-  if (urls.length === 0) {
+  if (slides.length === 0) {
     if (empty) empty.style.display = "flex";
     return;
   }
@@ -2266,30 +2280,30 @@ function startHeroLivePreview(urls, positionY, transition, durationSec) {
   if (transition === "scroll") {
     const track = document.createElement("div");
     track.className = "hero-preview-track";
-    track.style.cssText = `display:flex;height:100%;width:${urls.length * 100}%;transition:transform 1s ease-in-out;transform:translateX(0)`;
-    urls.forEach((url) => {
+    track.style.cssText = `display:flex;height:100%;width:${slides.length * 100}%;transition:transform 1s ease-in-out;transform:translateX(0)`;
+    slides.forEach(({ url, position }) => {
       const slide = document.createElement("div");
-      slide.style.cssText = `width:${100 / urls.length}%;height:100%;background:#1a1a1a url('${url}') center ${positionY}% / cover no-repeat;flex-shrink:0`;
+      slide.style.cssText = `width:${100 / slides.length}%;height:100%;background:#1a1a1a url('${url}') center ${position}% / cover no-repeat;flex-shrink:0`;
       track.appendChild(slide);
     });
     stage.appendChild(track);
     heroPreviewTimer = setInterval(() => {
-      active = (active + 1) % urls.length;
-      track.style.transform = `translateX(-${active * (100 / urls.length)}%)`;
+      active = (active + 1) % slides.length;
+      track.style.transform = `translateX(-${active * (100 / slides.length)}%)`;
     }, durationSec * 1000);
   } else {
-    urls.forEach((url, i) => {
+    slides.forEach(({ url, position }, i) => {
       const slide = document.createElement("div");
       slide.className = "hero-preview-slide";
-      slide.style.cssText = `position:absolute;inset:0;background:#1a1a1a url('${url}') center ${positionY}% / cover no-repeat;transition:opacity 1s ease-in-out;opacity:${i === 0 ? 1 : 0}`;
+      slide.style.cssText = `position:absolute;inset:0;background:#1a1a1a url('${url}') center ${position}% / cover no-repeat;transition:opacity 1s ease-in-out;opacity:${i === 0 ? 1 : 0}`;
       stage.appendChild(slide);
     });
-    if (urls.length > 1) {
+    if (slides.length > 1) {
       heroPreviewTimer = setInterval(() => {
-        const slides = stage.querySelectorAll(".hero-preview-slide");
-        slides[active].style.opacity = "0";
-        active = (active + 1) % urls.length;
-        slides[active].style.opacity = "1";
+        const slideEls = stage.querySelectorAll(".hero-preview-slide");
+        slideEls[active].style.opacity = "0";
+        active = (active + 1) % slides.length;
+        slideEls[active].style.opacity = "1";
       }, durationSec * 1000);
     }
   }

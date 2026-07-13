@@ -205,6 +205,13 @@ INSERT INTO site_settings (key, value, category, label) VALUES
   ('hero_banner_url_7',       '',      'homepage', 'Hero Banner Image URL 7'),
   ('hero_banner_url_8',       '',      'homepage', 'Hero Banner Image URL 8'),
   ('hero_banner_position',    '50',    'homepage', 'Hero Banner Vertical Position'),
+  ('hero_banner_position_2',  '50',    'homepage', 'Hero Banner Vertical Position 2'),
+  ('hero_banner_position_3',  '50',    'homepage', 'Hero Banner Vertical Position 3'),
+  ('hero_banner_position_4',  '50',    'homepage', 'Hero Banner Vertical Position 4'),
+  ('hero_banner_position_5',  '50',    'homepage', 'Hero Banner Vertical Position 5'),
+  ('hero_banner_position_6',  '50',    'homepage', 'Hero Banner Vertical Position 6'),
+  ('hero_banner_position_7',  '50',    'homepage', 'Hero Banner Vertical Position 7'),
+  ('hero_banner_position_8',  '50',    'homepage', 'Hero Banner Vertical Position 8'),
   ('hero_banner_transition',  'fade',  'homepage', 'Hero Banner Transition (fade or scroll)'),
   ('hero_banner_duration',    '6',     'homepage', 'Hero Banner Seconds Per Photo')
 ON CONFLICT (key) DO NOTHING;
