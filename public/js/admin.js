@@ -78,6 +78,93 @@ function setBtnLoading(btn, loading, idleLabel) {
   }
 }
 
+// --- AI Auto-Enhance (Cloudinary on-the-fly transform, free — no extra API/cost) ---
+function cloudinaryEnhancedUrl(url) {
+  if (!url || typeof url !== "string" || !url.includes("res.cloudinary.com")) return null;
+  const marker = "/upload/";
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return url.slice(0, idx + marker.length) + "e_improve,e_auto_contrast,e_sharpen:60/" + url.slice(idx + marker.length);
+}
+
+async function runImageEnhance({ btn, fileInput, getUrl, setUrl, uploadUrl, uploadField, responseField }) {
+  const idleHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = `<span class="loader" style="width:12px;height:12px;"></span>`;
+  try {
+    let url = getUrl();
+    if (fileInput && fileInput.files && fileInput.files[0]) {
+      const fd = new FormData();
+      fd.append(uploadField, fileInput.files[0]);
+      const res = await fetch(`${API_BASE}${uploadUrl}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${currentToken}` },
+        body: fd,
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Upload failed");
+      }
+      const data = await res.json();
+      url = data[responseField];
+      fileInput.value = "";
+      setUrl(url);
+    }
+    if (!url) {
+      showToast("Choose a photo first.", "error");
+      return;
+    }
+    const enhancedUrl = cloudinaryEnhancedUrl(url);
+    if (!enhancedUrl) {
+      showToast("Auto-enhance needs Cloudinary storage configured on the server.", "error");
+      return;
+    }
+    showEnhanceCompareModal(url, enhancedUrl, setUrl);
+  } catch (e) {
+    showToast(e.message || "Couldn't enhance this image", "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = idleHtml;
+  }
+}
+
+function showEnhanceCompareModal(originalUrl, enhancedUrl, onChoose) {
+  const overlay = document.createElement("div");
+  overlay.className = "admin-modal-overlay";
+  overlay.style.zIndex = "1000";
+  overlay.innerHTML = `
+    <div class="admin-modal" style="max-width:720px" onclick="event.stopPropagation()">
+      <h2>&#10024; Auto-Enhance Preview</h2>
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:16px">Automatic color, contrast &amp; sharpness correction — pick the version to use.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);margin-bottom:6px">Original</div>
+          <img src="${originalUrl}" style="width:100%;border-radius:8px;display:block;background:#111;aspect-ratio:4/3;object-fit:cover" />
+        </div>
+        <div>
+          <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.04em;color:var(--accent);margin-bottom:6px">Enhanced &#10024;</div>
+          <img src="${enhancedUrl}" style="width:100%;border-radius:8px;display:block;background:#111;aspect-ratio:4/3;object-fit:cover" />
+        </div>
+      </div>
+      <div class="admin-form-actions">
+        <button type="button" class="admin-btn" id="enhanceKeepOriginalBtn">Keep Original</button>
+        <button type="button" class="btn btn-primary btn-sm" id="enhanceUseEnhancedBtn">Use Enhanced &#10024;</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+  document.getElementById("enhanceKeepOriginalBtn").onclick = () => {
+    onChoose(originalUrl);
+    overlay.remove();
+  };
+  document.getElementById("enhanceUseEnhancedBtn").onclick = () => {
+    onChoose(enhancedUrl);
+    overlay.remove();
+  };
+}
+
 // --- Navigation ---
 function switchSection(section) {
   document
@@ -375,6 +462,7 @@ function showProductionModal(production = null) {
               <div style="flex:1">
                 <input type="file" id="coverFileInput" accept="image/*" style="font-size:0.8rem;width:100%" onchange="previewProductionCover(this)" />
                 <p style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">JPG, PNG, WebP — max 10MB</p>
+                <button type="button" class="admin-btn" style="font-size:0.7rem;padding:3px 10px;margin-top:4px" onclick="enhanceProductionCover(this)">&#10024; Enhance</button>
               </div>
             </div>
             <input type="hidden" name="cover_image" id="coverUrlInput" value="${currentCover}" />
@@ -412,6 +500,21 @@ function previewProductionCover(input) {
     wrap.innerHTML = `<img id="coverPreview" src="${e.target.result}" style="width:100%;height:100%;object-fit:cover" />`;
   };
   reader.readAsDataURL(file);
+}
+
+function enhanceProductionCover(btn) {
+  runImageEnhance({
+    btn,
+    fileInput: document.getElementById("coverFileInput"),
+    getUrl: () => document.getElementById("coverUrlInput")?.value || "",
+    setUrl: (u) => {
+      document.getElementById("coverUrlInput").value = u;
+      document.getElementById("coverPreviewWrap").innerHTML = `<img id="coverPreview" src="${u}" style="width:100%;height:100%;object-fit:cover" />`;
+    },
+    uploadUrl: "/productions/admin/cover",
+    uploadField: "cover",
+    responseField: "cover_image",
+  });
 }
 
 async function saveProduction(e, id) {
@@ -532,6 +635,7 @@ function showPostModal(post = null) {
             </div>`}
             <input type="file" id="postImageInput" accept="image/*" style="font-size:0.8rem;width:100%" onchange="previewPostImage(this)" />
             <p style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">JPG, PNG, WebP — max 10MB</p>
+            <button type="button" class="admin-btn" style="font-size:0.7rem;padding:3px 10px;margin-top:4px" onclick="enhancePostImage(this)">&#10024; Enhance</button>
             <input type="hidden" name="thumbnail" id="postThumbInput" value="${currentThumb}" />
           </div>
 
@@ -570,6 +674,24 @@ function previewPostImage(input) {
     wrap.style.display = "block";
   };
   reader.readAsDataURL(input.files[0]);
+}
+
+function enhancePostImage(btn) {
+  runImageEnhance({
+    btn,
+    fileInput: document.getElementById("postImageInput"),
+    getUrl: () => document.getElementById("postThumbInput")?.value || "",
+    setUrl: (u) => {
+      document.getElementById("postThumbInput").value = u;
+      const wrap = document.getElementById("postThumbPreviewWrap");
+      const img = document.getElementById("postThumbPreview");
+      img.src = u;
+      wrap.style.display = "block";
+    },
+    uploadUrl: "/news/admin/thumbnail",
+    uploadField: "image",
+    responseField: "thumbnail",
+  });
 }
 
 async function savePost(e, id) {
@@ -959,6 +1081,7 @@ function showLeaderModal(leader = null) {
               <div style="flex:1">
                 <input type="file" id="photoFileInput" accept="image/*" style="font-size:0.8rem;width:100%" onchange="previewLeaderPhoto(this)" />
                 <p style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">JPG, PNG, WebP — max 10MB</p>
+                <button type="button" class="admin-btn" style="font-size:0.7rem;padding:3px 10px;margin-top:4px" onclick="enhanceLeaderPhoto(this)">&#10024; Enhance</button>
               </div>
             </div>
             <input type="hidden" name="photo_url" id="photoUrlInput" value="${currentPhoto}" />
@@ -999,6 +1122,21 @@ function previewLeaderPhoto(input) {
     wrap.innerHTML = `<img id="photoPreview" src="${e.target.result}" style="width:100%;height:100%;object-fit:cover" />`;
   };
   reader.readAsDataURL(file);
+}
+
+function enhanceLeaderPhoto(btn) {
+  runImageEnhance({
+    btn,
+    fileInput: document.getElementById("photoFileInput"),
+    getUrl: () => document.getElementById("photoUrlInput")?.value || "",
+    setUrl: (u) => {
+      document.getElementById("photoUrlInput").value = u;
+      document.getElementById("photoPreviewWrap").innerHTML = `<img id="photoPreview" src="${u}" style="width:100%;height:100%;object-fit:cover" />`;
+    },
+    uploadUrl: "/leadership/admin/photo",
+    uploadField: "photo",
+    responseField: "photo_url",
+  });
 }
 
 async function saveLeader(e, id) {
@@ -1121,6 +1259,7 @@ function showSponsorModal(sponsor = null) {
               <div style="flex:1">
                 <input type="file" id="sponsorLogoFileInput" accept="image/*" style="font-size:0.8rem;width:100%" onchange="previewSponsorLogo(this)" />
                 <p style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">JPG, PNG, WebP — max 10MB</p>
+                <button type="button" class="admin-btn" style="font-size:0.7rem;padding:3px 10px;margin-top:4px" onclick="enhanceSponsorLogo(this)">&#10024; Enhance</button>
               </div>
             </div>
             <input type="hidden" name="logo_url" id="sponsorLogoUrlInput" value="${currentLogo}" />
@@ -1153,6 +1292,21 @@ function previewSponsorLogo(input) {
     wrap.innerHTML = `<img id="sponsorLogoPreview" src="${e.target.result}" style="width:100%;height:100%;object-fit:contain" />`;
   };
   reader.readAsDataURL(file);
+}
+
+function enhanceSponsorLogo(btn) {
+  runImageEnhance({
+    btn,
+    fileInput: document.getElementById("sponsorLogoFileInput"),
+    getUrl: () => document.getElementById("sponsorLogoUrlInput")?.value || "",
+    setUrl: (u) => {
+      document.getElementById("sponsorLogoUrlInput").value = u;
+      document.getElementById("sponsorLogoPreviewWrap").innerHTML = `<img id="sponsorLogoPreview" src="${u}" style="width:100%;height:100%;object-fit:contain" />`;
+    },
+    uploadUrl: "/sponsors/admin/logo",
+    uploadField: "logo",
+    responseField: "logo_url",
+  });
 }
 
 async function saveSponsor(e, id) {
@@ -1269,6 +1423,7 @@ function showProgrammeModal(programme = null) {
               <div style="flex:1">
                 <input type="file" id="programmeCoverFileInput" accept="image/*" style="font-size:0.8rem;width:100%" onchange="previewProgrammeCover(this)" />
                 <p style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">JPG, PNG, WebP — max 10MB</p>
+                <button type="button" class="admin-btn" style="font-size:0.7rem;padding:3px 10px;margin-top:4px" onclick="enhanceProgrammeCover(this)">&#10024; Enhance</button>
               </div>
             </div>
             <input type="hidden" name="cover_image" id="programmeCoverUrlInput" value="${currentCover}" />
@@ -1302,6 +1457,21 @@ function previewProgrammeCover(input) {
     wrap.innerHTML = `<img id="programmeCoverPreview" src="${e.target.result}" style="width:100%;height:100%;object-fit:cover" />`;
   };
   reader.readAsDataURL(file);
+}
+
+function enhanceProgrammeCover(btn) {
+  runImageEnhance({
+    btn,
+    fileInput: document.getElementById("programmeCoverFileInput"),
+    getUrl: () => document.getElementById("programmeCoverUrlInput")?.value || "",
+    setUrl: (u) => {
+      document.getElementById("programmeCoverUrlInput").value = u;
+      document.getElementById("programmeCoverPreviewWrap").innerHTML = `<img id="programmeCoverPreview" src="${u}" style="width:100%;height:100%;object-fit:cover" />`;
+    },
+    uploadUrl: "/programmes/admin/cover",
+    uploadField: "cover",
+    responseField: "cover_image",
+  });
 }
 
 async function saveProgramme(e, id) {
@@ -1429,6 +1599,7 @@ function showTutorModal(tutor = null) {
               <div style="flex:1">
                 <input type="file" id="tutorPhotoFileInput" accept="image/*" style="font-size:0.8rem;width:100%" onchange="previewTutorPhoto(this)" />
                 <p style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">JPG, PNG, WebP — max 10MB</p>
+                <button type="button" class="admin-btn" style="font-size:0.7rem;padding:3px 10px;margin-top:4px" onclick="enhanceTutorPhoto(this)">&#10024; Enhance</button>
               </div>
             </div>
             <input type="hidden" name="photo_url" id="tutorPhotoUrlInput" value="${currentPhoto}" />
@@ -1461,6 +1632,21 @@ function previewTutorPhoto(input) {
     wrap.innerHTML = `<img id="tutorPhotoPreview" src="${e.target.result}" style="width:100%;height:100%;object-fit:cover" />`;
   };
   reader.readAsDataURL(file);
+}
+
+function enhanceTutorPhoto(btn) {
+  runImageEnhance({
+    btn,
+    fileInput: document.getElementById("tutorPhotoFileInput"),
+    getUrl: () => document.getElementById("tutorPhotoUrlInput")?.value || "",
+    setUrl: (u) => {
+      document.getElementById("tutorPhotoUrlInput").value = u;
+      document.getElementById("tutorPhotoPreviewWrap").innerHTML = `<img id="tutorPhotoPreview" src="${u}" style="width:100%;height:100%;object-fit:cover" />`;
+    },
+    uploadUrl: "/tutors/admin/photo",
+    uploadField: "photo",
+    responseField: "photo_url",
+  });
 }
 
 async function saveTutor(e, id) {
@@ -2130,6 +2316,7 @@ function generateHeroBannerExtraSlots() {
         ">Adjust</button>
       </div>
       <input type="file" id="heroBannerFileInput${slot}" accept="image/*" style="font-size:0.7rem;margin-top:6px;width:100%" onchange="previewHeroBannerSlot(this, ${slot})" />
+      <button type="button" class="admin-btn" style="font-size:0.65rem;padding:3px 6px;margin-top:4px;width:100%" onclick="enhanceHeroBannerSlot(${slot}, this)">&#10024; Enhance</button>
     </div>
   `
     )
@@ -2212,6 +2399,22 @@ function previewHeroBannerSlot(input, slot) {
     renderHeroBannerPreview(e.target.result, slot);
   };
   reader.readAsDataURL(input.files[0]);
+}
+
+function enhanceHeroBannerSlot(slot, btn) {
+  const suffix = slot === 1 ? "" : String(slot);
+  runImageEnhance({
+    btn,
+    fileInput: document.getElementById(`heroBannerFileInput${suffix}`),
+    getUrl: () => document.getElementById(`heroBannerPreviewWrap${suffix}`)?.dataset.url || "",
+    setUrl: (u) => {
+      renderHeroBannerPreview(u, slot);
+      refreshHeroLivePreview();
+    },
+    uploadUrl: "/settings/admin/hero-banner",
+    uploadField: "banner",
+    responseField: "url",
+  });
 }
 
 function initHeroBannerDrag() {
