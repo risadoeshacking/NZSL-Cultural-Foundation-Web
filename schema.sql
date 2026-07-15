@@ -199,6 +199,7 @@ CREATE TABLE IF NOT EXISTS videos (
   title       TEXT        NOT NULL,
   youtube_url TEXT        NOT NULL,
   video_id    TEXT        NOT NULL,
+  date        DATE,
   category    TEXT,
   sort_order  INTEGER     NOT NULL DEFAULT 0,
   created_by  UUID        REFERENCES admins(id) ON DELETE SET NULL,

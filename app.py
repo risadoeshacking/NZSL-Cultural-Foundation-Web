@@ -1,3 +1,15 @@
+from psycopg.errors import UniqueViolation
+from psycopg import connect
+from psycopg.rows import dict_row
+import cloudinary.uploader
+import cloudinary
+import requests
+import bcrypt
+import jwt
+from flask_limiter.util import get_remote_address
+from flask_limiter import Limiter
+from flask_cors import CORS
+from flask import Flask, jsonify, request, send_from_directory
 import os
 import re
 import uuid
@@ -8,13 +20,6 @@ from datetime import datetime, date
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, jsonify, request, send_from_directory
-from flask_cors import CORS
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-import jwt
-import bcrypt
-import requests
 
 # Sanitize CLOUDINARY_URL *before* importing cloudinary — its SDK validates
 # and auto-configures from this env var the moment it's imported, and will
@@ -22,7 +27,8 @@ import requests
 # "CLOUDINARY_URL=cloudinary://..." as the value instead of just the
 # "cloudinary://..." part). Fall back to local file storage instead of
 # taking the whole site down over one bad env var.
-_cloudinary_url = (os.environ.get("CLOUDINARY_URL") or "").strip().strip('"').strip("'")
+_cloudinary_url = (os.environ.get("CLOUDINARY_URL")
+                   or "").strip().strip('"').strip("'")
 if _cloudinary_url.startswith("CLOUDINARY_URL="):
     _cloudinary_url = _cloudinary_url[len("CLOUDINARY_URL="):].strip()
 if _cloudinary_url and not _cloudinary_url.startswith("cloudinary://"):
@@ -33,12 +39,6 @@ if _cloudinary_url:
     os.environ["CLOUDINARY_URL"] = _cloudinary_url
 else:
     os.environ.pop("CLOUDINARY_URL", None)
-
-import cloudinary
-import cloudinary.uploader
-from psycopg.rows import dict_row
-from psycopg import connect
-from psycopg.errors import UniqueViolation
 
 
 def _env(name: str, default=None):
@@ -68,6 +68,23 @@ def sanitize_text(s: str | None) -> str | None:
     s = re.sub(r"(?is)<\s*script[^>]*>.*?<\s*/\s*script\s*>", "", s)
     # escape angle brackets
     s = s.replace("<", "<").replace(">", ">")
+    return s
+
+
+def sanitize_rich_text(s: str | None) -> str | None:
+    """Allow safe HTML tags (a, b, i, u, strong, em, br, p, ul, ol, li) while
+    stripping everything else including script tags and event handlers."""
+    if s is None:
+        return None
+    # strip script tags first
+    s = re.sub(r"(?is)<\s*script[^>]*>.*?<\s*/\s*script\s*>", "", s)
+    # strip on* event handlers from all tags
+    s = re.sub(
+        r'\s+on\w+\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)', '', s, flags=re.I)
+    # strip all tags except allowed ones
+    allowed = re.compile(
+        r"<\s*/?\s*(?:a|b|i|u|strong|em|br|p|ul|ol|li|span|h[1-6])\b[^>]*>", re.I)
+    s = allowed.sub(lambda m: m.group(0), re.sub(r"<[^>]+>", "", s))
     return s
 
 
@@ -300,7 +317,8 @@ def create_app():
         if not email or not password:
             return jsonify({"error": "Email and password are required"}), 400
 
-        rows = db.query("SELECT * FROM admins WHERE email = %s", [email.strip().lower()])
+        rows = db.query("SELECT * FROM admins WHERE email = %s",
+                        [email.strip().lower()])
         if not rows:
             return jsonify({"error": "Invalid credentials"}), 401
 
@@ -519,7 +537,7 @@ def create_app():
         params = [
             sanitize_text(title),
             sanitize_text(data.get("description")),
-            sanitize_text(data.get("full_description")),
+            sanitize_rich_text(data.get("full_description")),
             date,
             data.get("end_date") or None,
             data.get("time_start") or None,
@@ -1039,7 +1057,8 @@ def create_app():
         admin, err = require_admin()
         if err:
             return err
-        rows = db.query("SELECT * FROM leadership ORDER BY sort_order ASC, created_at ASC")
+        rows = db.query(
+            "SELECT * FROM leadership ORDER BY sort_order ASC, created_at ASC")
         return jsonify({"leaders": rows})
 
     @app.post("/api/leadership/admin")
@@ -1101,7 +1120,8 @@ def create_app():
             sanitize_text(data["name"]) if data.get("name") else None,
             sanitize_text(data["role"]) if data.get("role") else None,
             sanitize_text(data["bio"]) if "bio" in data else None,
-            sanitize_text(data["contribution"]) if "contribution" in data else None,
+            sanitize_text(data["contribution"]
+                          ) if "contribution" in data else None,
             data.get("photo_url") or None,
             data.get("category") or None,
             int(data["sort_order"]) if "sort_order" in data else None,
@@ -1118,7 +1138,8 @@ def create_app():
         admin, err = require_admin()
         if err:
             return err
-        rows = db.query("DELETE FROM leadership WHERE id = %s RETURNING id", [id])
+        rows = db.query(
+            "DELETE FROM leadership WHERE id = %s RETURNING id", [id])
         if not rows:
             return jsonify({"error": "Leader not found"}), 404
         return jsonify({"message": "Leader deleted successfully"})
@@ -1153,7 +1174,8 @@ def create_app():
     # Site Settings
     @app.get("/api/settings")
     def get_settings_public():
-        rows = db.query("SELECT key, value, category, label FROM site_settings ORDER BY category, key")
+        rows = db.query(
+            "SELECT key, value, category, label FROM site_settings ORDER BY category, key")
         return jsonify({"settings": rows})
 
     @app.get("/api/settings/admin")
@@ -1228,15 +1250,19 @@ def create_app():
     @app.post("/api/membership/register")
     def membership_register():
         data = request.get_json(silent=True) or {}
-        full_name = (data.get("fullName") or data.get("full_name") or "").strip()
+        full_name = (data.get("fullName") or data.get(
+            "full_name") or "").strip()
         email = (data.get("email") or "").strip().lower()
         phone = (data.get("phone") or "").strip()
         age_group = data.get("ageGroup") or data.get("age_group")
         program = data.get("program")
-        guardian_name = (data.get("guardianName") or data.get("guardian_name") or "").strip()
-        guardian_phone = (data.get("guardianPhone") or data.get("guardian_phone") or "").strip()
+        guardian_name = (data.get("guardianName")
+                         or data.get("guardian_name") or "").strip()
+        guardian_phone = (data.get("guardianPhone")
+                          or data.get("guardian_phone") or "").strip()
         medical_notes = data.get("medicalNotes") or data.get("medical_notes")
-        consent_given = parse_bool(data.get("consentGiven") if "consentGiven" in data else data.get("consent_given")) or False
+        consent_given = parse_bool(data.get(
+            "consentGiven") if "consentGiven" in data else data.get("consent_given")) or False
 
         if not full_name or not email or not phone or not age_group or not program:
             return jsonify({"error": "All fields are required"}), 400
@@ -1305,7 +1331,8 @@ def create_app():
             )
         db.execute(
             "INSERT INTO membership_payments (membership_id, amount, note) VALUES (%s,%s,%s)",
-            [id, data.get("amount") or None, sanitize_text(data.get("note")) if data.get("note") else None],
+            [id, data.get("amount") or None, sanitize_text(
+                data.get("note")) if data.get("note") else None],
         )
         return jsonify({"membership": _membership_with_status(rows[0])})
 
@@ -1368,7 +1395,8 @@ def create_app():
         admin, err = require_admin()
         if err:
             return err
-        rows = db.query("DELETE FROM memberships WHERE id = %s RETURNING id", [id])
+        rows = db.query(
+            "DELETE FROM memberships WHERE id = %s RETURNING id", [id])
         if not rows:
             return jsonify({"error": "Membership not found"}), 404
         return jsonify({"message": "Membership deleted successfully"})
@@ -1391,7 +1419,8 @@ def create_app():
         try:
             resp = requests.get(
                 "https://www.youtube.com/oembed",
-                params={"url": f"https://www.youtube.com/watch?v={video_id}", "format": "json"},
+                params={
+                    "url": f"https://www.youtube.com/watch?v={video_id}", "format": "json"},
                 timeout=4,
             )
             if resp.status_code in (401, 403, 404):
@@ -1438,7 +1467,8 @@ def create_app():
         admin, err = require_admin()
         if err:
             return err
-        rows = db.query("SELECT * FROM videos ORDER BY sort_order ASC, created_at DESC")
+        rows = db.query(
+            "SELECT * FROM videos ORDER BY sort_order ASC, created_at DESC")
         return jsonify({"videos": rows})
 
     @app.post("/api/videos/admin")
@@ -1460,12 +1490,13 @@ def create_app():
                          "so it can't be embedded here (YouTube 'Error 153'). Please choose a different video."
             }), 400
         rows = db.query(
-            "INSERT INTO videos (title, youtube_url, video_id, sort_order, production_id, category, created_by) "
-            "VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING *",
+            "INSERT INTO videos (title, youtube_url, video_id, date, sort_order, production_id, category, created_by) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *",
             [
                 sanitize_text(title),
                 youtube_url.strip(),
                 video_id,
+                data.get("date") or None,
                 int(data.get("sort_order") or 0),
                 data.get("production_id") or None,
                 data.get("category") or None,
@@ -1495,6 +1526,7 @@ def create_app():
             "title = COALESCE(%s, title), "
             "youtube_url = COALESCE(%s, youtube_url), "
             "video_id = COALESCE(%s, video_id), "
+            "date = %s, "
             "sort_order = COALESCE(%s, sort_order), "
             "production_id = COALESCE(%s, production_id), "
             "category = COALESCE(%s, category), "
@@ -1504,8 +1536,10 @@ def create_app():
                 sanitize_text(data["title"]) if data.get("title") else None,
                 data.get("youtube_url") or None,
                 video_id,
+                data.get("date") if "date" in data else None,
                 int(data["sort_order"]) if "sort_order" in data else None,
-                (data.get("production_id") or None) if "production_id" in data else None,
+                (data.get("production_id")
+                 or None) if "production_id" in data else None,
                 (data.get("category") or None) if "category" in data else None,
                 id,
             ],
@@ -1541,7 +1575,8 @@ def create_app():
         rows = db.query(
             "INSERT INTO contact_enquiries (name, email, subject, message) "
             "VALUES (%s,%s,%s,%s) RETURNING *",
-            [sanitize_text(name), email, sanitize_text(subject), sanitize_text(message)],
+            [sanitize_text(name), email, sanitize_text(
+                subject), sanitize_text(message)],
         )
         return jsonify({"enquiry": rows[0]}), 201
 
@@ -1550,7 +1585,8 @@ def create_app():
         admin, err = require_admin()
         if err:
             return err
-        rows = db.query("SELECT * FROM contact_enquiries ORDER BY created_at DESC")
+        rows = db.query(
+            "SELECT * FROM contact_enquiries ORDER BY created_at DESC")
         return jsonify({"enquiries": rows})
 
     @app.put("/api/contact/admin/<id>")
@@ -1575,7 +1611,8 @@ def create_app():
         admin, err = require_admin()
         if err:
             return err
-        rows = db.query("DELETE FROM contact_enquiries WHERE id = %s RETURNING id", [id])
+        rows = db.query(
+            "DELETE FROM contact_enquiries WHERE id = %s RETURNING id", [id])
         if not rows:
             return jsonify({"error": "Enquiry not found"}), 404
         return jsonify({"message": "Enquiry deleted successfully"})
@@ -1602,7 +1639,8 @@ def create_app():
         admin, err = require_admin()
         if err:
             return err
-        rows = db.query("SELECT * FROM productions ORDER BY sort_order ASC, created_at ASC")
+        rows = db.query(
+            "SELECT * FROM productions ORDER BY sort_order ASC, created_at ASC")
         return jsonify({"productions": rows})
 
     @app.post("/api/productions/admin")
@@ -1666,8 +1704,10 @@ def create_app():
             sanitize_text(data["title"]) if data.get("title") else None,
             slug,
             sanitize_text(data["tagline"]) if "tagline" in data else None,
-            sanitize_text(data["description"]) if "description" in data else None,
-            sanitize_text(data["full_description"]) if "full_description" in data else None,
+            sanitize_text(data["description"]
+                          ) if "description" in data else None,
+            sanitize_rich_text(data["full_description"]
+                               ) if "full_description" in data else None,
             data.get("cover_image") or None,
             sanitize_text(data["location"]) if "location" in data else None,
             int(data["sort_order"]) if "sort_order" in data else None,
@@ -1687,7 +1727,8 @@ def create_app():
         admin, err = require_admin()
         if err:
             return err
-        rows = db.query("DELETE FROM productions WHERE id = %s RETURNING id", [id])
+        rows = db.query(
+            "DELETE FROM productions WHERE id = %s RETURNING id", [id])
         if not rows:
             return jsonify({"error": "Production not found"}), 404
         return jsonify({"message": "Production deleted successfully"})
@@ -1733,7 +1774,8 @@ def create_app():
         admin, err = require_admin()
         if err:
             return err
-        rows = db.query("SELECT * FROM tutors ORDER BY sort_order ASC, created_at ASC")
+        rows = db.query(
+            "SELECT * FROM tutors ORDER BY sort_order ASC, created_at ASC")
         return jsonify({"tutors": rows})
 
     @app.post("/api/tutors/admin")
@@ -1839,7 +1881,8 @@ def create_app():
         admin, err = require_admin()
         if err:
             return err
-        rows = db.query("SELECT * FROM sponsors ORDER BY sort_order ASC, created_at ASC")
+        rows = db.query(
+            "SELECT * FROM sponsors ORDER BY sort_order ASC, created_at ASC")
         return jsonify({"sponsors": rows})
 
     @app.post("/api/sponsors/admin")
@@ -1899,7 +1942,8 @@ def create_app():
         admin, err = require_admin()
         if err:
             return err
-        rows = db.query("DELETE FROM sponsors WHERE id = %s RETURNING id", [id])
+        rows = db.query(
+            "DELETE FROM sponsors WHERE id = %s RETURNING id", [id])
         if not rows:
             return jsonify({"error": "Sponsor not found"}), 404
         return jsonify({"message": "Sponsor deleted successfully"})
@@ -1978,7 +2022,8 @@ def create_app():
         admin, err = require_admin()
         if err:
             return err
-        rows = db.query("SELECT * FROM programmes ORDER BY sort_order ASC, created_at ASC")
+        rows = db.query(
+            "SELECT * FROM programmes ORDER BY sort_order ASC, created_at ASC")
         return jsonify({"programmes": rows})
 
     @app.post("/api/programmes/admin")
@@ -2035,7 +2080,8 @@ def create_app():
         params = [
             sanitize_text(data["name"]) if data.get("name") else None,
             slug,
-            sanitize_text(data["description"]) if "description" in data else None,
+            sanitize_text(data["description"]
+                          ) if "description" in data else None,
             data.get("cover_image") or None,
             int(data["sort_order"]) if "sort_order" in data else None,
             data.get("status") or None,
@@ -2054,7 +2100,8 @@ def create_app():
         admin, err = require_admin()
         if err:
             return err
-        rows = db.query("DELETE FROM programmes WHERE id = %s RETURNING id", [id])
+        rows = db.query(
+            "DELETE FROM programmes WHERE id = %s RETURNING id", [id])
         if not rows:
             return jsonify({"error": "Programme not found"}), 404
         return jsonify({"message": "Programme deleted successfully"})
@@ -2155,9 +2202,12 @@ def create_app():
             [
                 data.get("programme_id") or None,
                 sanitize_text(data["name"]) if data.get("name") else None,
-                sanitize_text(data["age_group"]) if "age_group" in data else None,
-                sanitize_text(data["schedule"]) if "schedule" in data else None,
-                sanitize_text(data["location"]) if "location" in data else None,
+                sanitize_text(data["age_group"]
+                              ) if "age_group" in data else None,
+                sanitize_text(data["schedule"]
+                              ) if "schedule" in data else None,
+                sanitize_text(data["location"]
+                              ) if "location" in data else None,
                 data.get("fee_amount") if "fee_amount" in data else None,
                 data.get("fee_period") or None,
                 int(data["sort_order"]) if "sort_order" in data else None,
@@ -2178,7 +2228,8 @@ def create_app():
         admin, err = require_admin()
         if err:
             return err
-        rows = db.query("DELETE FROM programme_classes WHERE id = %s RETURNING id", [id])
+        rows = db.query(
+            "DELETE FROM programme_classes WHERE id = %s RETURNING id", [id])
         if not rows:
             return jsonify({"error": "Class not found"}), 404
         return jsonify({"message": "Class deleted successfully"})

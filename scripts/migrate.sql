@@ -225,8 +225,16 @@ INSERT INTO site_settings (key, value, category, label) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 -- Reclassify existing gallery photos into the new taxonomy (general / performances / classes)
-UPDATE gallery SET category = 'performances' WHERE category = 'performance';
-UPDATE gallery SET category = 'general' WHERE category IN ('heritage','culture','arts','events');
+UPDATE gallery SET category = 'Performances' WHERE category = 'performance';
+UPDATE gallery SET category = 'General' WHERE category IN ('heritage','culture','arts','events','general');
+
+-- Reclassify existing video categories to new taxonomy
+UPDATE videos SET category = 'Performances' WHERE category = 'performances';
+UPDATE videos SET category = 'Classes' WHERE category = 'classes';
+UPDATE videos SET category = 'General' WHERE category = 'general' OR category IS NULL;
+
+-- Add date column to videos
+ALTER TABLE videos ADD COLUMN IF NOT EXISTS date DATE;
 
 -- Link gallery photos to an event (alongside the existing production link)
 ALTER TABLE gallery ADD COLUMN IF NOT EXISTS event_id UUID REFERENCES events(id) ON DELETE SET NULL;

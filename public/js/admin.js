@@ -62,8 +62,13 @@ function showToast(message, type = "success", duration = 4000) {
 
 // --- Loading helpers ---
 function skeletonRows(cols, rows = 5) {
-  return Array.from({ length: rows }, () =>
-    `<tr>${Array.from({ length: cols }, () => `<td><div class="skeleton" style="height:14px;"></div></td>`).join("")}</tr>`
+  return Array.from(
+    { length: rows },
+    () =>
+      `<tr>${Array.from(
+        { length: cols },
+        () => `<td><div class="skeleton" style="height:14px;"></div></td>`
+      ).join("")}</tr>`
   ).join("");
 }
 
@@ -80,14 +85,27 @@ function setBtnLoading(btn, loading, idleLabel) {
 
 // --- AI Auto-Enhance (Cloudinary on-the-fly transform, free — no extra API/cost) ---
 function cloudinaryEnhancedUrl(url) {
-  if (!url || typeof url !== "string" || !url.includes("res.cloudinary.com")) return null;
+  if (!url || typeof url !== "string" || !url.includes("res.cloudinary.com"))
+    return null;
   const marker = "/upload/";
   const idx = url.indexOf(marker);
   if (idx === -1) return null;
-  return url.slice(0, idx + marker.length) + "e_improve,e_auto_contrast,e_sharpen:60/" + url.slice(idx + marker.length);
+  return (
+    url.slice(0, idx + marker.length) +
+    "e_improve,e_auto_contrast,e_sharpen:60/" +
+    url.slice(idx + marker.length)
+  );
 }
 
-async function runImageEnhance({ btn, fileInput, getUrl, setUrl, uploadUrl, uploadField, responseField }) {
+async function runImageEnhance({
+  btn,
+  fileInput,
+  getUrl,
+  setUrl,
+  uploadUrl,
+  uploadField,
+  responseField,
+}) {
   const idleHtml = btn.innerHTML;
   btn.disabled = true;
   btn.innerHTML = `<span class="loader" style="width:12px;height:12px;"></span>`;
@@ -116,7 +134,10 @@ async function runImageEnhance({ btn, fileInput, getUrl, setUrl, uploadUrl, uplo
     }
     const enhancedUrl = cloudinaryEnhancedUrl(url);
     if (!enhancedUrl) {
-      showToast("Auto-enhance needs Cloudinary storage configured on the server.", "error");
+      showToast(
+        "Auto-enhance needs Cloudinary storage configured on the server.",
+        "error"
+      );
       return;
     }
     showEnhanceCompareModal(url, enhancedUrl, setUrl);
@@ -188,7 +209,11 @@ function switchSection(section) {
   if (section === "membership") loadMembershipTable();
   if (section === "videos") loadVideosTable();
   if (section === "enquiries") loadEnquiriesTable();
-  if (section === "settings") { loadSettings(); loadHeroBannerSetting(); initHeroBannerDrag(); }
+  if (section === "settings") {
+    loadSettings();
+    loadHeroBannerSetting();
+    initHeroBannerDrag();
+  }
   if (section === "adminusers") loadAdminUsersTable();
   if (section === "account") loadAccountSection();
 }
@@ -205,8 +230,7 @@ async function loadDashboardStats() {
     ]);
     document.getElementById("statEvents").textContent =
       events.events?.length || 0;
-    document.getElementById("statPosts").textContent =
-      posts.news?.length || 0;
+    document.getElementById("statPosts").textContent = posts.news?.length || 0;
     document.getElementById("statGallery").textContent =
       gallery.images?.length || 0;
     document.getElementById("statStories").textContent =
@@ -233,13 +257,17 @@ async function loadEventsTable() {
       .map(
         (e) => `
       <tr>
-        <td><div class="admin-table-title">${e.title}</div><div class="admin-table-subtitle">${e.location || ""}</div></td>
+        <td><div class="admin-table-title">${
+          e.title
+        }</div><div class="admin-table-subtitle">${e.location || ""}</div></td>
         <td>${new Date(e.date).toLocaleDateString("en-NZ")}</td>
         <td>${e.category}</td>
         <td><span class="status-badge ${e.status}">${e.status}</span></td>
         <td class="admin-actions-cell"><div class="admin-actions">
           <button class="admin-btn" onclick="editEvent('${e.id}')">Edit</button>
-          <button class="admin-btn admin-btn-danger" onclick="deleteEvent('${e.id}')">Delete</button>
+          <button class="admin-btn admin-btn-danger" onclick="deleteEvent('${
+            e.id
+          }')">Delete</button>
         </div></td>
       </tr>
     `
@@ -263,9 +291,9 @@ function showEventModal(event = null) {
             event?.title || ""
           }" required /></div>
           <div class="admin-form-row">
-            <div class="admin-form-group"><label>Date</label><input name="date" type="date" value="${
-              toDateInputValue(event?.date)
-            }" required /></div>
+            <div class="admin-form-group"><label>Date</label><input name="date" type="date" value="${toDateInputValue(
+              event?.date
+            )}" required /></div>
             <div class="admin-form-group"><label>Category</label><select name="category">
               <option value="festival" ${
                 event?.category === "festival" ? "selected" : ""
@@ -380,9 +408,16 @@ async function deleteEvent(id) {
 // --- Productions ---
 async function productionOptionsHtml(selectedId) {
   try {
-    const data = await adminFetch("/productions/admin/all", { token: currentToken });
+    const data = await adminFetch("/productions/admin/all", {
+      token: currentToken,
+    });
     const options = (data.productions || [])
-      .map((p) => `<option value="${p.id}" ${selectedId === p.id ? "selected" : ""}>${p.title}</option>`)
+      .map(
+        (p) =>
+          `<option value="${p.id}" ${selectedId === p.id ? "selected" : ""}>${
+            p.title
+          }</option>`
+      )
       .join("");
     return `<option value="">— None —</option>${options}`;
   } catch (e) {
@@ -394,7 +429,12 @@ async function eventOptionsHtml(selectedId) {
   try {
     const data = await adminFetch("/events/admin/all", { token: currentToken });
     const options = (data.events || [])
-      .map((ev) => `<option value="${ev.id}" ${selectedId === ev.id ? "selected" : ""}>${ev.title}</option>`)
+      .map(
+        (ev) =>
+          `<option value="${ev.id}" ${selectedId === ev.id ? "selected" : ""}>${
+            ev.title
+          }</option>`
+      )
       .join("");
     return `<option value="">— None —</option>${options}`;
   } catch (e) {
@@ -416,18 +456,34 @@ async function loadProductionsTable() {
   const tbody = document.getElementById("productionsTableBody");
   tbody.innerHTML = skeletonRows(5);
   try {
-    const data = await adminFetch("/productions/admin/all", { token: currentToken });
+    const data = await adminFetch("/productions/admin/all", {
+      token: currentToken,
+    });
     tbody.innerHTML = (data.productions || [])
       .map(
         (p) => `
       <tr>
-        <td>${p.cover_image ? `<img src="${p.cover_image}" style="width:64px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--border)" />` : "—"}</td>
-        <td><div class="admin-table-title">${p.title}</div><div class="admin-table-subtitle">/productions/${p.slug}</div></td>
-        <td><span class="status-badge ${p.status === "published" ? "published" : "pending"}">${p.status}</span></td>
+        <td>${
+          p.cover_image
+            ? `<img src="${p.cover_image}" style="width:64px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--border)" />`
+            : "—"
+        }</td>
+        <td><div class="admin-table-title">${
+          p.title
+        }</div><div class="admin-table-subtitle">/productions/${
+          p.slug
+        }</div></td>
+        <td><span class="status-badge ${
+          p.status === "published" ? "published" : "pending"
+        }">${p.status}</span></td>
         <td>${p.sort_order}</td>
         <td class="admin-actions-cell"><div class="admin-actions">
-          <button class="admin-btn" onclick="editProduction('${p.id}')">Edit</button>
-          <button class="admin-btn admin-btn-danger" onclick="deleteProduction('${p.id}')">Delete</button>
+          <button class="admin-btn" onclick="editProduction('${
+            p.id
+          }')">Edit</button>
+          <button class="admin-btn admin-btn-danger" onclick="deleteProduction('${
+            p.id
+          }')">Delete</button>
         </div></td>
       </tr>
     `
@@ -445,7 +501,9 @@ function showProductionModal(production = null) {
     <div class="admin-modal-overlay" onclick="closeModal(event)">
       <div class="admin-modal" onclick="event.stopPropagation()">
         <h2>${isEdit ? "Edit Production" : "Add Production"}</h2>
-        <form id="productionForm" onsubmit="saveProduction(event, ${isEdit ? `'${production.id}'` : "null"})">
+        <form id="productionForm" onsubmit="saveProduction(event, ${
+          isEdit ? `'${production.id}'` : "null"
+        })">
 
           <div class="admin-form-group">
             <label>Cover Image</label>
@@ -455,9 +513,11 @@ function showProductionModal(production = null) {
                 background:var(--bg-elevated);border:2px solid var(--border);
                 display:flex;align-items:center;justify-content:center;flex-shrink:0;
               ">
-                ${currentCover
-                  ? `<img id="coverPreview" src="${currentCover}" style="width:100%;height:100%;object-fit:cover" />`
-                  : `<span id="coverPreview" style="font-size:1.4rem;color:var(--text-tertiary)">&#127916;</span>`}
+                ${
+                  currentCover
+                    ? `<img id="coverPreview" src="${currentCover}" style="width:100%;height:100%;object-fit:cover" />`
+                    : `<span id="coverPreview" style="font-size:1.4rem;color:var(--text-tertiary)">&#127916;</span>`
+                }
               </div>
               <div style="flex:1">
                 <input type="file" id="coverFileInput" accept="image/*" style="font-size:0.8rem;width:100%" onchange="previewProductionCover(this)" />
@@ -468,23 +528,43 @@ function showProductionModal(production = null) {
             <input type="hidden" name="cover_image" id="coverUrlInput" value="${currentCover}" />
           </div>
 
-          <div class="admin-form-group"><label>Title</label><input name="title" id="productionTitleInput" value="${production?.title || ""}" required oninput="if(!document.getElementById('productionSlugInput').dataset.touched) document.getElementById('productionSlugInput').value = slugifyClient(this.value)" /></div>
-          <div class="admin-form-group"><label>Slug (URL)</label><input name="slug" id="productionSlugInput" value="${production?.slug || ""}" placeholder="auto-generated from title" oninput="this.dataset.touched = 'true'" /></div>
-          <div class="admin-form-group"><label>Tagline</label><input name="tagline" value="${production?.tagline || ""}" placeholder="e.g. The Beauty of Sri Lanka in Every Step and Beat" /></div>
-          <div class="admin-form-group"><label>Short Description</label><textarea name="description" rows="2" placeholder="Shown on the productions hub cards...">${production?.description || ""}</textarea></div>
-          <div class="admin-form-group"><label>Full Description</label><textarea name="full_description" rows="5" placeholder="Shown on the production's own page...">${production?.full_description || ""}</textarea></div>
+          <div class="admin-form-group"><label>Title</label><input name="title" id="productionTitleInput" value="${
+            production?.title || ""
+          }" required oninput="if(!document.getElementById('productionSlugInput').dataset.touched) document.getElementById('productionSlugInput').value = slugifyClient(this.value)" /></div>
+          <div class="admin-form-group"><label>Slug (URL)</label><input name="slug" id="productionSlugInput" value="${
+            production?.slug || ""
+          }" placeholder="auto-generated from title" oninput="this.dataset.touched = 'true'" /></div>
+          <div class="admin-form-group"><label>Tagline</label><input name="tagline" value="${
+            production?.tagline || ""
+          }" placeholder="e.g. The Beauty of Sri Lanka in Every Step and Beat" /></div>
+          <div class="admin-form-group"><label>Short Description</label><textarea name="description" rows="2" placeholder="Shown on the productions hub cards...">${
+            production?.description || ""
+          }</textarea></div>
+          <div class="admin-form-group"><label>Full Description</label><textarea name="full_description" rows="5" placeholder="Shown on the production's own page...">${
+            production?.full_description || ""
+          }</textarea></div>
           <div class="admin-form-row">
-            <div class="admin-form-group"><label>Location</label><input name="location" value="${production?.location || ""}" /></div>
-            <div class="admin-form-group"><label>Display Order</label><input name="sort_order" type="number" value="${production?.sort_order || 0}" /></div>
+            <div class="admin-form-group"><label>Location</label><input name="location" value="${
+              production?.location || ""
+            }" /></div>
+            <div class="admin-form-group"><label>Display Order</label><input name="sort_order" type="number" value="${
+              production?.sort_order || 0
+            }" /></div>
           </div>
           <div class="admin-form-group"><label>Status</label><select name="status">
-            <option value="published" ${production?.status === "published" ? "selected" : ""}>Published</option>
-            <option value="draft" ${production?.status === "draft" ? "selected" : ""}>Draft</option>
+            <option value="published" ${
+              production?.status === "published" ? "selected" : ""
+            }>Published</option>
+            <option value="draft" ${
+              production?.status === "draft" ? "selected" : ""
+            }>Draft</option>
           </select></div>
 
           <div class="admin-form-actions">
             <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary btn-sm" id="productionSaveBtn">${isEdit ? "Update" : "Add Production"}</button>
+            <button type="submit" class="btn btn-primary btn-sm" id="productionSaveBtn">${
+              isEdit ? "Update" : "Add Production"
+            }</button>
           </div>
         </form>
       </div>
@@ -509,7 +589,9 @@ function enhanceProductionCover(btn) {
     getUrl: () => document.getElementById("coverUrlInput")?.value || "",
     setUrl: (u) => {
       document.getElementById("coverUrlInput").value = u;
-      document.getElementById("coverPreviewWrap").innerHTML = `<img id="coverPreview" src="${u}" style="width:100%;height:100%;object-fit:cover" />`;
+      document.getElementById(
+        "coverPreviewWrap"
+      ).innerHTML = `<img id="coverPreview" src="${u}" style="width:100%;height:100%;object-fit:cover" />`;
     },
     uploadUrl: "/productions/admin/cover",
     uploadField: "cover",
@@ -548,9 +630,17 @@ async function saveProduction(e, id) {
     if (cover_image) body.cover_image = cover_image;
 
     if (id) {
-      await adminFetch(`/productions/admin/${id}`, { token: currentToken, method: "PUT", body });
+      await adminFetch(`/productions/admin/${id}`, {
+        token: currentToken,
+        method: "PUT",
+        body,
+      });
     } else {
-      await adminFetch("/productions/admin", { token: currentToken, method: "POST", body });
+      await adminFetch("/productions/admin", {
+        token: currentToken,
+        method: "POST",
+        body,
+      });
     }
     closeModal();
     loadProductionsTable();
@@ -562,7 +652,9 @@ async function saveProduction(e, id) {
 
 async function editProduction(id) {
   try {
-    const data = await adminFetch("/productions/admin/all", { token: currentToken });
+    const data = await adminFetch("/productions/admin/all", {
+      token: currentToken,
+    });
     const production = data.productions.find((p) => p.id === id);
     if (production) showProductionModal(production);
   } catch (e) {
@@ -571,9 +663,17 @@ async function editProduction(id) {
 }
 
 async function deleteProduction(id) {
-  if (!confirm("Delete this production? Linked gallery images and videos will be unlinked, not deleted.")) return;
+  if (
+    !confirm(
+      "Delete this production? Linked gallery images and videos will be unlinked, not deleted."
+    )
+  )
+    return;
   try {
-    await adminFetch(`/productions/admin/${id}`, { token: currentToken, method: "DELETE" });
+    await adminFetch(`/productions/admin/${id}`, {
+      token: currentToken,
+      method: "DELETE",
+    });
     loadProductionsTable();
   } catch (e) {
     showToast(e.message, "error");
@@ -592,9 +692,11 @@ async function loadPostsTable() {
       <tr>
         <td>
           <div style="display:flex;align-items:center;gap:12px">
-            ${p.thumbnail
-              ? `<img src="${p.thumbnail}" style="width:48px;height:36px;object-fit:cover;border-radius:4px;flex-shrink:0;border:1px solid var(--border)" />`
-              : `<div style="width:48px;height:36px;border-radius:4px;background:var(--bg-elevated);border:1px solid var(--border);flex-shrink:0"></div>`}
+            ${
+              p.thumbnail
+                ? `<img src="${p.thumbnail}" style="width:48px;height:36px;object-fit:cover;border-radius:4px;flex-shrink:0;border:1px solid var(--border)" />`
+                : `<div style="width:48px;height:36px;border-radius:4px;background:var(--bg-elevated);border:1px solid var(--border);flex-shrink:0"></div>`
+            }
             <div>
               <div class="admin-table-title">${p.title}</div>
               <div class="admin-table-subtitle">${p.summary || ""}</div>
@@ -606,7 +708,9 @@ async function loadPostsTable() {
         <td><span class="status-badge ${p.status}">${p.status}</span></td>
         <td class="admin-actions-cell"><div class="admin-actions">
           <button class="admin-btn" onclick="editPost('${p.id}')">Edit</button>
-          <button class="admin-btn admin-btn-danger" onclick="deletePost('${p.id}')">Delete</button>
+          <button class="admin-btn admin-btn-danger" onclick="deletePost('${
+            p.id
+          }')">Delete</button>
         </div></td>
       </tr>
     `
@@ -624,40 +728,68 @@ function showPostModal(post = null) {
     <div class="admin-modal-overlay" onclick="closeModal(event)">
       <div class="admin-modal" onclick="event.stopPropagation()">
         <h2>${isEdit ? "Edit Post" : "New Post"}</h2>
-        <form id="postForm" onsubmit="savePost(event, ${isEdit ? `'${post.id}'` : "null"})">
+        <form id="postForm" onsubmit="savePost(event, ${
+          isEdit ? `'${post.id}'` : "null"
+        })">
 
           <div class="admin-form-group">
             <label>Cover Image</label>
-            ${currentThumb ? `<div id="postThumbPreviewWrap" style="margin-bottom:8px;border-radius:6px;overflow:hidden;max-height:160px;">
+            ${
+              currentThumb
+                ? `<div id="postThumbPreviewWrap" style="margin-bottom:8px;border-radius:6px;overflow:hidden;max-height:160px;">
               <img id="postThumbPreview" src="${currentThumb}" style="width:100%;height:160px;object-fit:cover;display:block;" />
-            </div>` : `<div id="postThumbPreviewWrap" style="display:none;margin-bottom:8px;border-radius:6px;overflow:hidden;max-height:160px;">
+            </div>`
+                : `<div id="postThumbPreviewWrap" style="display:none;margin-bottom:8px;border-radius:6px;overflow:hidden;max-height:160px;">
               <img id="postThumbPreview" src="" style="width:100%;height:160px;object-fit:cover;display:block;" />
-            </div>`}
+            </div>`
+            }
             <input type="file" id="postImageInput" accept="image/*" style="font-size:0.8rem;width:100%" onchange="previewPostImage(this)" />
             <p style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">JPG, PNG, WebP — max 10MB</p>
             <button type="button" class="admin-btn" style="font-size:0.7rem;padding:3px 10px;margin-top:4px" onclick="enhancePostImage(this)">&#10024; Enhance</button>
             <input type="hidden" name="thumbnail" id="postThumbInput" value="${currentThumb}" />
           </div>
 
-          <div class="admin-form-group"><label>Title</label><input name="title" value="${post?.title || ""}" required /></div>
-          <div class="admin-form-group"><label>Summary</label><input name="summary" value="${post?.summary || ""}" placeholder="Short description shown in listings..." /></div>
+          <div class="admin-form-group"><label>Title</label><input name="title" value="${
+            post?.title || ""
+          }" required /></div>
+          <div class="admin-form-group"><label>Summary</label><input name="summary" value="${
+            post?.summary || ""
+          }" placeholder="Short description shown in listings..." /></div>
           <div class="admin-form-row">
             <div class="admin-form-group"><label>Category</label><select name="category">
-              <option value="general" ${post?.category === "general" ? "selected" : ""}>General</option>
-              <option value="cultural" ${post?.category === "cultural" ? "selected" : ""}>Cultural</option>
-              <option value="community" ${post?.category === "community" ? "selected" : ""}>Community</option>
-              <option value="announcement" ${post?.category === "announcement" ? "selected" : ""}>Announcement</option>
+              <option value="general" ${
+                post?.category === "general" ? "selected" : ""
+              }>General</option>
+              <option value="cultural" ${
+                post?.category === "cultural" ? "selected" : ""
+              }>Cultural</option>
+              <option value="community" ${
+                post?.category === "community" ? "selected" : ""
+              }>Community</option>
+              <option value="announcement" ${
+                post?.category === "announcement" ? "selected" : ""
+              }>Announcement</option>
             </select></div>
-            <div class="admin-form-group"><label>Author</label><input name="author" value="${post?.author || ""}" /></div>
+            <div class="admin-form-group"><label>Author</label><input name="author" value="${
+              post?.author || ""
+            }" /></div>
           </div>
-          <div class="admin-form-group"><label>Content</label><textarea name="content" rows="8" required>${post?.content || ""}</textarea></div>
+          <div class="admin-form-group"><label>Content</label><textarea name="content" rows="8" required>${
+            post?.content || ""
+          }</textarea></div>
           <div class="admin-form-group"><label>Status</label><select name="status">
-            <option value="published" ${post?.status === "published" ? "selected" : ""}>Published</option>
-            <option value="draft" ${post?.status === "draft" ? "selected" : ""}>Draft</option>
+            <option value="published" ${
+              post?.status === "published" ? "selected" : ""
+            }>Published</option>
+            <option value="draft" ${
+              post?.status === "draft" ? "selected" : ""
+            }>Draft</option>
           </select></div>
           <div class="admin-form-actions">
             <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary btn-sm" id="postSaveBtn">${isEdit ? "Update" : "Publish"}</button>
+            <button type="submit" class="btn btn-primary btn-sm" id="postSaveBtn">${
+              isEdit ? "Update" : "Publish"
+            }</button>
           </div>
         </form>
       </div>
@@ -725,9 +857,17 @@ async function savePost(e, id) {
     if (thumbnail) body.thumbnail = thumbnail;
 
     if (id) {
-      await adminFetch(`/news/admin/${id}`, { token: currentToken, method: "PUT", body });
+      await adminFetch(`/news/admin/${id}`, {
+        token: currentToken,
+        method: "PUT",
+        body,
+      });
     } else {
-      await adminFetch("/news/admin", { token: currentToken, method: "POST", body });
+      await adminFetch("/news/admin", {
+        token: currentToken,
+        method: "POST",
+        body,
+      });
     }
     closeModal();
     loadPostsTable();
@@ -750,7 +890,10 @@ async function editPost(id) {
 async function deletePost(id) {
   if (!confirm("Delete this post?")) return;
   try {
-    await adminFetch(`/news/admin/${id}`, { token: currentToken, method: "DELETE" });
+    await adminFetch(`/news/admin/${id}`, {
+      token: currentToken,
+      method: "DELETE",
+    });
     loadPostsTable();
   } catch (e) {
     showToast(e.message, "error");
@@ -773,7 +916,9 @@ async function loadGalleryTable() {
         <td>${img.category}</td>
         <td>${img.photographer || ""}</td>
         <td class="admin-actions-cell"><div class="admin-actions">
-          <button class="admin-btn admin-btn-danger" onclick="deleteGalleryImage('${img.id}')">Delete</button>
+          <button class="admin-btn admin-btn-danger" onclick="deleteGalleryImage('${
+            img.id
+          }')">Delete</button>
         </div></td>
       </tr>
     `
@@ -792,16 +937,18 @@ function showGalleryUpload() {
         <form id="galleryUploadForm" onsubmit="uploadGalleryImages(event)">
           <div class="admin-form-group">
             <label>Image Files</label>
-            <input name="image" type="file" accept="image/*" multiple required onchange="updateGalleryFileCount(this)" />
+            <input name="image" type="file" accept="image/*" multiple required onchange="updateGalleryFileCount(this)" id="galleryFileInput" />
             <p id="galleryFileCount" style="font-size:0.75rem;color:var(--text-muted);margin-top:4px"></p>
+            <button type="button" class="admin-btn" style="font-size:0.7rem;padding:3px 10px;margin-top:4px" onclick="resizeGalleryFirstImage()">&#128260; Resize First Image</button>
           </div>
           <div class="admin-form-group"><label>Title</label><input name="title" placeholder="Applied to every photo in this batch" /></div>
           <div class="admin-form-group"><label>Description</label><textarea name="description" rows="3"></textarea></div>
           <div class="admin-form-row">
             <div class="admin-form-group"><label>Category</label><select name="category">
-              <option value="general">General</option>
-              <option value="performances">Performances</option>
-              <option value="classes">Classes</option>
+              <option value="Productions">Productions</option>
+              <option value="Performances">Performances</option>
+              <option value="Class">Class</option>
+              <option value="General">General</option>
             </select></div>
             <div class="admin-form-group"><label>Photographer</label><input name="photographer" /></div>
           </div>
@@ -832,6 +979,28 @@ function updateGalleryFileCount(input) {
   if (!el) return;
   const n = input.files?.length || 0;
   el.textContent = n > 0 ? `${n} photo${n === 1 ? "" : "s"} selected` : "";
+}
+
+function resizeGalleryFirstImage() {
+  const input = document.getElementById("galleryFileInput");
+  if (!input || !input.files || !input.files[0]) {
+    showToast("Select image files first, then click Resize.", "error");
+    return;
+  }
+  openImageResizeModal(input.files[0], (resizedFile) => {
+    const dt = new DataTransfer();
+    dt.items.add(resizedFile);
+    // Keep any remaining files after the first
+    for (let i = 1; i < input.files.length; i++) {
+      dt.items.add(input.files[i]);
+    }
+    input.files = dt.files;
+    updateGalleryFileCount(input);
+    showToast(
+      "Image resized. It will be uploaded as the first photo.",
+      "success"
+    );
+  });
 }
 
 async function uploadGalleryImages(e) {
@@ -907,7 +1076,9 @@ async function loadStoriesTable() {
         <td><span class="status-badge ${s.status}">${s.status}</span></td>
         <td class="admin-actions-cell"><div class="admin-actions">
           <button class="admin-btn" onclick="editStory('${s.id}')">Edit</button>
-          <button class="admin-btn admin-btn-danger" onclick="deleteStory('${s.id}')">Delete</button>
+          <button class="admin-btn admin-btn-danger" onclick="deleteStory('${
+            s.id
+          }')">Delete</button>
         </div></td>
       </tr>
     `
@@ -1041,12 +1212,18 @@ async function loadLeadershipTable() {
       <tr>
         <td><div class="admin-table-title">${l.name}</div></td>
         <td>${l.role}</td>
-        <td><span class="status-badge ${l.category === "director" ? "published" : "pending"}">${l.category === "director" ? "Director" : "Team"}</span></td>
+        <td><span class="status-badge ${
+          l.category === "director" ? "published" : "pending"
+        }">${l.category === "director" ? "Director" : "Team"}</span></td>
         <td><span class="status-badge ${l.status}">${l.status}</span></td>
         <td>${l.sort_order}</td>
         <td class="admin-actions-cell"><div class="admin-actions">
-          <button class="admin-btn" onclick="editLeader('${l.id}')">Edit</button>
-          <button class="admin-btn admin-btn-danger" onclick="deleteLeader('${l.id}')">Delete</button>
+          <button class="admin-btn" onclick="editLeader('${
+            l.id
+          }')">Edit</button>
+          <button class="admin-btn admin-btn-danger" onclick="deleteLeader('${
+            l.id
+          }')">Delete</button>
         </div></td>
       </tr>
     `
@@ -1064,7 +1241,9 @@ function showLeaderModal(leader = null) {
     <div class="admin-modal-overlay" onclick="closeModal(event)">
       <div class="admin-modal" onclick="event.stopPropagation()">
         <h2>${isEdit ? "Edit Person" : "Add Person"}</h2>
-        <form id="leaderForm" onsubmit="saveLeader(event, ${isEdit ? `'${leader.id}'` : "null"})">
+        <form id="leaderForm" onsubmit="saveLeader(event, ${
+          isEdit ? `'${leader.id}'` : "null"
+        })">
 
           <div class="admin-form-group">
             <label>Photo</label>
@@ -1074,9 +1253,11 @@ function showLeaderModal(leader = null) {
                 background:var(--bg-elevated);border:2px solid var(--border);
                 display:flex;align-items:center;justify-content:center;flex-shrink:0;
               ">
-                ${currentPhoto
-                  ? `<img id="photoPreview" src="${currentPhoto}" style="width:100%;height:100%;object-fit:cover" />`
-                  : `<span id="photoPreview" style="font-size:1.8rem;color:var(--text-tertiary)">&#128100;</span>`}
+                ${
+                  currentPhoto
+                    ? `<img id="photoPreview" src="${currentPhoto}" style="width:100%;height:100%;object-fit:cover" />`
+                    : `<span id="photoPreview" style="font-size:1.8rem;color:var(--text-tertiary)">&#128100;</span>`
+                }
               </div>
               <div style="flex:1">
                 <input type="file" id="photoFileInput" accept="image/*" style="font-size:0.8rem;width:100%" onchange="previewLeaderPhoto(this)" />
@@ -1087,26 +1268,46 @@ function showLeaderModal(leader = null) {
             <input type="hidden" name="photo_url" id="photoUrlInput" value="${currentPhoto}" />
           </div>
 
-          <div class="admin-form-group"><label>Full Name</label><input name="name" value="${leader?.name || ""}" required /></div>
-          <div class="admin-form-group"><label>Role / Title</label><input name="role" value="${leader?.role || ""}" required placeholder="e.g. President, Cultural Director" /></div>
-          <div class="admin-form-group"><label>About them</label><textarea name="bio" rows="4" placeholder="A short bio...">${leader?.bio || ""}</textarea></div>
-          <div class="admin-form-group"><label>What they do</label><textarea name="contribution" rows="3" placeholder="Their key contribution or focus area...">${leader?.contribution || ""}</textarea></div>
+          <div class="admin-form-group"><label>Full Name</label><input name="name" value="${
+            leader?.name || ""
+          }" required /></div>
+          <div class="admin-form-group"><label>Role / Title</label><input name="role" value="${
+            leader?.role || ""
+          }" required placeholder="e.g. President, Cultural Director" /></div>
+          <div class="admin-form-group"><label>About them</label><textarea name="bio" rows="4" placeholder="A short bio...">${
+            leader?.bio || ""
+          }</textarea></div>
+          <div class="admin-form-group"><label>What they do</label><textarea name="contribution" rows="3" placeholder="Their key contribution or focus area...">${
+            leader?.contribution || ""
+          }</textarea></div>
           <div class="admin-form-row">
             <div class="admin-form-group"><label>Category</label><select name="category">
-              <option value="director" ${leader?.category === "director" ? "selected" : ""}>Director</option>
-              <option value="team" ${leader?.category !== "director" ? "selected" : ""}>Team</option>
+              <option value="director" ${
+                leader?.category === "director" ? "selected" : ""
+              }>Director</option>
+              <option value="team" ${
+                leader?.category !== "director" ? "selected" : ""
+              }>Team</option>
             </select></div>
             <div class="admin-form-group"><label>Status</label><select name="status">
-              <option value="active" ${leader?.status === "active" ? "selected" : ""}>Visible</option>
-              <option value="inactive" ${leader?.status === "inactive" ? "selected" : ""}>Hidden</option>
+              <option value="active" ${
+                leader?.status === "active" ? "selected" : ""
+              }>Visible</option>
+              <option value="inactive" ${
+                leader?.status === "inactive" ? "selected" : ""
+              }>Hidden</option>
             </select></div>
           </div>
           <div class="admin-form-row">
-            <div class="admin-form-group"><label>Display Order</label><input name="sort_order" type="number" value="${leader?.sort_order || 0}" /></div>
+            <div class="admin-form-group"><label>Display Order</label><input name="sort_order" type="number" value="${
+              leader?.sort_order || 0
+            }" /></div>
           </div>
           <div class="admin-form-actions">
             <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary btn-sm" id="leaderSaveBtn">${isEdit ? "Update" : "Add Person"}</button>
+            <button type="submit" class="btn btn-primary btn-sm" id="leaderSaveBtn">${
+              isEdit ? "Update" : "Add Person"
+            }</button>
           </div>
         </form>
       </div>
@@ -1131,7 +1332,9 @@ function enhanceLeaderPhoto(btn) {
     getUrl: () => document.getElementById("photoUrlInput")?.value || "",
     setUrl: (u) => {
       document.getElementById("photoUrlInput").value = u;
-      document.getElementById("photoPreviewWrap").innerHTML = `<img id="photoPreview" src="${u}" style="width:100%;height:100%;object-fit:cover" />`;
+      document.getElementById(
+        "photoPreviewWrap"
+      ).innerHTML = `<img id="photoPreview" src="${u}" style="width:100%;height:100%;object-fit:cover" />`;
     },
     uploadUrl: "/leadership/admin/photo",
     uploadField: "photo",
@@ -1171,9 +1374,17 @@ async function saveLeader(e, id) {
     if (photo_url) body.photo_url = photo_url;
 
     if (id) {
-      await adminFetch(`/leadership/admin/${id}`, { token: currentToken, method: "PUT", body });
+      await adminFetch(`/leadership/admin/${id}`, {
+        token: currentToken,
+        method: "PUT",
+        body,
+      });
     } else {
-      await adminFetch("/leadership/admin", { token: currentToken, method: "POST", body });
+      await adminFetch("/leadership/admin", {
+        token: currentToken,
+        method: "POST",
+        body,
+      });
     }
     closeModal();
     loadLeadershipTable();
@@ -1213,18 +1424,28 @@ async function loadSponsorsTable() {
   const tbody = document.getElementById("sponsorsTableBody");
   tbody.innerHTML = skeletonRows(5);
   try {
-    const data = await adminFetch("/sponsors/admin/all", { token: currentToken });
+    const data = await adminFetch("/sponsors/admin/all", {
+      token: currentToken,
+    });
     tbody.innerHTML = (data.sponsors || [])
       .map(
         (s) => `
       <tr>
-        <td>${s.logo_url ? `<img src="${s.logo_url}" style="width:64px;height:48px;object-fit:contain;border-radius:4px;border:1px solid var(--border);background:#fff" />` : "—"}</td>
+        <td>${
+          s.logo_url
+            ? `<img src="${s.logo_url}" style="width:64px;height:48px;object-fit:contain;border-radius:4px;border:1px solid var(--border);background:#fff" />`
+            : "—"
+        }</td>
         <td><div class="admin-table-title">${s.name}</div></td>
         <td><span class="status-badge ${s.status}">${s.status}</span></td>
         <td>${s.sort_order}</td>
         <td class="admin-actions-cell"><div class="admin-actions">
-          <button class="admin-btn" onclick="editSponsor('${s.id}')">Edit</button>
-          <button class="admin-btn admin-btn-danger" onclick="deleteSponsor('${s.id}')">Delete</button>
+          <button class="admin-btn" onclick="editSponsor('${
+            s.id
+          }')">Edit</button>
+          <button class="admin-btn admin-btn-danger" onclick="deleteSponsor('${
+            s.id
+          }')">Delete</button>
         </div></td>
       </tr>
     `
@@ -1242,7 +1463,9 @@ function showSponsorModal(sponsor = null) {
     <div class="admin-modal-overlay" onclick="closeModal(event)">
       <div class="admin-modal" onclick="event.stopPropagation()">
         <h2>${isEdit ? "Edit Sponsor" : "Add Sponsor"}</h2>
-        <form id="sponsorForm" onsubmit="saveSponsor(event, ${isEdit ? `'${sponsor.id}'` : "null"})">
+        <form id="sponsorForm" onsubmit="saveSponsor(event, ${
+          isEdit ? `'${sponsor.id}'` : "null"
+        })">
 
           <div class="admin-form-group">
             <label>Logo</label>
@@ -1252,9 +1475,11 @@ function showSponsorModal(sponsor = null) {
                 background:#fff;border:2px solid var(--border);
                 display:flex;align-items:center;justify-content:center;flex-shrink:0;
               ">
-                ${currentLogo
-                  ? `<img id="sponsorLogoPreview" src="${currentLogo}" style="width:100%;height:100%;object-fit:contain" />`
-                  : `<span id="sponsorLogoPreview" style="font-size:1.4rem;color:var(--text-tertiary)">&#127970;</span>`}
+                ${
+                  currentLogo
+                    ? `<img id="sponsorLogoPreview" src="${currentLogo}" style="width:100%;height:100%;object-fit:contain" />`
+                    : `<span id="sponsorLogoPreview" style="font-size:1.4rem;color:var(--text-tertiary)">&#127970;</span>`
+                }
               </div>
               <div style="flex:1">
                 <input type="file" id="sponsorLogoFileInput" accept="image/*" style="font-size:0.8rem;width:100%" onchange="previewSponsorLogo(this)" />
@@ -1265,18 +1490,30 @@ function showSponsorModal(sponsor = null) {
             <input type="hidden" name="logo_url" id="sponsorLogoUrlInput" value="${currentLogo}" />
           </div>
 
-          <div class="admin-form-group"><label>Name</label><input name="name" value="${sponsor?.name || ""}" required /></div>
-          <div class="admin-form-group"><label>Website URL</label><input name="website_url" type="url" value="${sponsor?.website_url || ""}" placeholder="https://" /></div>
+          <div class="admin-form-group"><label>Name</label><input name="name" value="${
+            sponsor?.name || ""
+          }" required /></div>
+          <div class="admin-form-group"><label>Website URL</label><input name="website_url" type="url" value="${
+            sponsor?.website_url || ""
+          }" placeholder="https://" /></div>
           <div class="admin-form-row">
-            <div class="admin-form-group"><label>Display Order</label><input name="sort_order" type="number" value="${sponsor?.sort_order || 0}" /></div>
+            <div class="admin-form-group"><label>Display Order</label><input name="sort_order" type="number" value="${
+              sponsor?.sort_order || 0
+            }" /></div>
             <div class="admin-form-group"><label>Status</label><select name="status">
-              <option value="active" ${sponsor?.status === "active" ? "selected" : ""}>Visible</option>
-              <option value="inactive" ${sponsor?.status === "inactive" ? "selected" : ""}>Hidden</option>
+              <option value="active" ${
+                sponsor?.status === "active" ? "selected" : ""
+              }>Visible</option>
+              <option value="inactive" ${
+                sponsor?.status === "inactive" ? "selected" : ""
+              }>Hidden</option>
             </select></div>
           </div>
           <div class="admin-form-actions">
             <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary btn-sm" id="sponsorSaveBtn">${isEdit ? "Update" : "Add Sponsor"}</button>
+            <button type="submit" class="btn btn-primary btn-sm" id="sponsorSaveBtn">${
+              isEdit ? "Update" : "Add Sponsor"
+            }</button>
           </div>
         </form>
       </div>
@@ -1301,7 +1538,9 @@ function enhanceSponsorLogo(btn) {
     getUrl: () => document.getElementById("sponsorLogoUrlInput")?.value || "",
     setUrl: (u) => {
       document.getElementById("sponsorLogoUrlInput").value = u;
-      document.getElementById("sponsorLogoPreviewWrap").innerHTML = `<img id="sponsorLogoPreview" src="${u}" style="width:100%;height:100%;object-fit:contain" />`;
+      document.getElementById(
+        "sponsorLogoPreviewWrap"
+      ).innerHTML = `<img id="sponsorLogoPreview" src="${u}" style="width:100%;height:100%;object-fit:contain" />`;
     },
     uploadUrl: "/sponsors/admin/logo",
     uploadField: "logo",
@@ -1340,9 +1579,17 @@ async function saveSponsor(e, id) {
     if (logo_url) body.logo_url = logo_url;
 
     if (id) {
-      await adminFetch(`/sponsors/admin/${id}`, { token: currentToken, method: "PUT", body });
+      await adminFetch(`/sponsors/admin/${id}`, {
+        token: currentToken,
+        method: "PUT",
+        body,
+      });
     } else {
-      await adminFetch("/sponsors/admin", { token: currentToken, method: "POST", body });
+      await adminFetch("/sponsors/admin", {
+        token: currentToken,
+        method: "POST",
+        body,
+      });
     }
     closeModal();
     loadSponsorsTable();
@@ -1354,7 +1601,9 @@ async function saveSponsor(e, id) {
 
 async function editSponsor(id) {
   try {
-    const data = await adminFetch("/sponsors/admin/all", { token: currentToken });
+    const data = await adminFetch("/sponsors/admin/all", {
+      token: currentToken,
+    });
     const sponsor = data.sponsors.find((s) => s.id === id);
     if (sponsor) showSponsorModal(sponsor);
   } catch (e) {
@@ -1365,7 +1614,10 @@ async function editSponsor(id) {
 async function deleteSponsor(id) {
   if (!confirm("Delete this sponsor?")) return;
   try {
-    await adminFetch(`/sponsors/admin/${id}`, { token: currentToken, method: "DELETE" });
+    await adminFetch(`/sponsors/admin/${id}`, {
+      token: currentToken,
+      method: "DELETE",
+    });
     loadSponsorsTable();
   } catch (e) {
     showToast(e.message, "error");
@@ -1377,18 +1629,34 @@ async function loadProgrammesTable() {
   const tbody = document.getElementById("programmesTableBody");
   tbody.innerHTML = skeletonRows(5);
   try {
-    const data = await adminFetch("/programmes/admin/all", { token: currentToken });
+    const data = await adminFetch("/programmes/admin/all", {
+      token: currentToken,
+    });
     tbody.innerHTML = (data.programmes || [])
       .map(
         (p) => `
       <tr>
-        <td>${p.cover_image ? `<img src="${p.cover_image}" style="width:64px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--border)" />` : "—"}</td>
-        <td><div class="admin-table-title">${p.name}</div><div class="admin-table-subtitle">/programmes/${p.slug}</div></td>
-        <td><span class="status-badge ${p.status === "active" ? "published" : "pending"}">${p.status}</span></td>
+        <td>${
+          p.cover_image
+            ? `<img src="${p.cover_image}" style="width:64px;height:48px;object-fit:cover;border-radius:4px;border:1px solid var(--border)" />`
+            : "—"
+        }</td>
+        <td><div class="admin-table-title">${
+          p.name
+        }</div><div class="admin-table-subtitle">/programmes/${
+          p.slug
+        }</div></td>
+        <td><span class="status-badge ${
+          p.status === "active" ? "published" : "pending"
+        }">${p.status}</span></td>
         <td>${p.sort_order}</td>
         <td class="admin-actions-cell"><div class="admin-actions">
-          <button class="admin-btn" onclick="editProgramme('${p.id}')">Edit</button>
-          <button class="admin-btn admin-btn-danger" onclick="deleteProgramme('${p.id}')">Delete</button>
+          <button class="admin-btn" onclick="editProgramme('${
+            p.id
+          }')">Edit</button>
+          <button class="admin-btn admin-btn-danger" onclick="deleteProgramme('${
+            p.id
+          }')">Delete</button>
         </div></td>
       </tr>
     `
@@ -1406,7 +1674,9 @@ function showProgrammeModal(programme = null) {
     <div class="admin-modal-overlay" onclick="closeModal(event)">
       <div class="admin-modal" onclick="event.stopPropagation()">
         <h2>${isEdit ? "Edit Programme" : "Add Programme"}</h2>
-        <form id="programmeForm" onsubmit="saveProgramme(event, ${isEdit ? `'${programme.id}'` : "null"})">
+        <form id="programmeForm" onsubmit="saveProgramme(event, ${
+          isEdit ? `'${programme.id}'` : "null"
+        })">
 
           <div class="admin-form-group">
             <label>Cover Image</label>
@@ -1416,9 +1686,11 @@ function showProgrammeModal(programme = null) {
                 background:var(--bg-elevated);border:2px solid var(--border);
                 display:flex;align-items:center;justify-content:center;flex-shrink:0;
               ">
-                ${currentCover
-                  ? `<img id="programmeCoverPreview" src="${currentCover}" style="width:100%;height:100%;object-fit:cover" />`
-                  : `<span id="programmeCoverPreview" style="font-size:1.4rem;color:var(--text-tertiary)">&#127925;</span>`}
+                ${
+                  currentCover
+                    ? `<img id="programmeCoverPreview" src="${currentCover}" style="width:100%;height:100%;object-fit:cover" />`
+                    : `<span id="programmeCoverPreview" style="font-size:1.4rem;color:var(--text-tertiary)">&#127925;</span>`
+                }
               </div>
               <div style="flex:1">
                 <input type="file" id="programmeCoverFileInput" accept="image/*" style="font-size:0.8rem;width:100%" onchange="previewProgrammeCover(this)" />
@@ -1429,19 +1701,33 @@ function showProgrammeModal(programme = null) {
             <input type="hidden" name="cover_image" id="programmeCoverUrlInput" value="${currentCover}" />
           </div>
 
-          <div class="admin-form-group"><label>Name</label><input name="name" value="${programme?.name || ""}" required oninput="if(!document.getElementById('programmeSlugInput').dataset.touched) document.getElementById('programmeSlugInput').value = slugifyClient(this.value)" /></div>
-          <div class="admin-form-group"><label>Slug (URL)</label><input name="slug" id="programmeSlugInput" value="${programme?.slug || ""}" placeholder="auto-generated from name" oninput="this.dataset.touched = 'true'" /></div>
-          <div class="admin-form-group"><label>Description</label><textarea name="description" rows="3">${programme?.description || ""}</textarea></div>
+          <div class="admin-form-group"><label>Name</label><input name="name" value="${
+            programme?.name || ""
+          }" required oninput="if(!document.getElementById('programmeSlugInput').dataset.touched) document.getElementById('programmeSlugInput').value = slugifyClient(this.value)" /></div>
+          <div class="admin-form-group"><label>Slug (URL)</label><input name="slug" id="programmeSlugInput" value="${
+            programme?.slug || ""
+          }" placeholder="auto-generated from name" oninput="this.dataset.touched = 'true'" /></div>
+          <div class="admin-form-group"><label>Description</label><textarea name="description" rows="3">${
+            programme?.description || ""
+          }</textarea></div>
           <div class="admin-form-row">
-            <div class="admin-form-group"><label>Display Order</label><input name="sort_order" type="number" value="${programme?.sort_order || 0}" /></div>
+            <div class="admin-form-group"><label>Display Order</label><input name="sort_order" type="number" value="${
+              programme?.sort_order || 0
+            }" /></div>
             <div class="admin-form-group"><label>Status</label><select name="status">
-              <option value="active" ${programme?.status === "active" ? "selected" : ""}>Active</option>
-              <option value="inactive" ${programme?.status === "inactive" ? "selected" : ""}>Inactive</option>
+              <option value="active" ${
+                programme?.status === "active" ? "selected" : ""
+              }>Active</option>
+              <option value="inactive" ${
+                programme?.status === "inactive" ? "selected" : ""
+              }>Inactive</option>
             </select></div>
           </div>
           <div class="admin-form-actions">
             <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary btn-sm" id="programmeSaveBtn">${isEdit ? "Update" : "Add Programme"}</button>
+            <button type="submit" class="btn btn-primary btn-sm" id="programmeSaveBtn">${
+              isEdit ? "Update" : "Add Programme"
+            }</button>
           </div>
         </form>
       </div>
@@ -1463,10 +1749,13 @@ function enhanceProgrammeCover(btn) {
   runImageEnhance({
     btn,
     fileInput: document.getElementById("programmeCoverFileInput"),
-    getUrl: () => document.getElementById("programmeCoverUrlInput")?.value || "",
+    getUrl: () =>
+      document.getElementById("programmeCoverUrlInput")?.value || "",
     setUrl: (u) => {
       document.getElementById("programmeCoverUrlInput").value = u;
-      document.getElementById("programmeCoverPreviewWrap").innerHTML = `<img id="programmeCoverPreview" src="${u}" style="width:100%;height:100%;object-fit:cover" />`;
+      document.getElementById(
+        "programmeCoverPreviewWrap"
+      ).innerHTML = `<img id="programmeCoverPreview" src="${u}" style="width:100%;height:100%;object-fit:cover" />`;
     },
     uploadUrl: "/programmes/admin/cover",
     uploadField: "cover",
@@ -1480,7 +1769,8 @@ async function saveProgramme(e, id) {
   setBtnLoading(btn, true);
 
   try {
-    let cover_image = document.getElementById("programmeCoverUrlInput")?.value || "";
+    let cover_image =
+      document.getElementById("programmeCoverUrlInput")?.value || "";
     const fileInput = document.getElementById("programmeCoverFileInput");
 
     if (fileInput && fileInput.files && fileInput.files[0]) {
@@ -1505,9 +1795,17 @@ async function saveProgramme(e, id) {
     if (cover_image) body.cover_image = cover_image;
 
     if (id) {
-      await adminFetch(`/programmes/admin/${id}`, { token: currentToken, method: "PUT", body });
+      await adminFetch(`/programmes/admin/${id}`, {
+        token: currentToken,
+        method: "PUT",
+        body,
+      });
     } else {
-      await adminFetch("/programmes/admin", { token: currentToken, method: "POST", body });
+      await adminFetch("/programmes/admin", {
+        token: currentToken,
+        method: "POST",
+        body,
+      });
     }
     closeModal();
     loadProgrammesTable();
@@ -1519,7 +1817,9 @@ async function saveProgramme(e, id) {
 
 async function editProgramme(id) {
   try {
-    const data = await adminFetch("/programmes/admin/all", { token: currentToken });
+    const data = await adminFetch("/programmes/admin/all", {
+      token: currentToken,
+    });
     const programme = data.programmes.find((p) => p.id === id);
     if (programme) showProgrammeModal(programme);
   } catch (e) {
@@ -1528,9 +1828,13 @@ async function editProgramme(id) {
 }
 
 async function deleteProgramme(id) {
-  if (!confirm("Delete this programme? Its classes will be deleted too.")) return;
+  if (!confirm("Delete this programme? Its classes will be deleted too."))
+    return;
   try {
-    await adminFetch(`/programmes/admin/${id}`, { token: currentToken, method: "DELETE" });
+    await adminFetch(`/programmes/admin/${id}`, {
+      token: currentToken,
+      method: "DELETE",
+    });
     loadProgrammesTable();
   } catch (e) {
     showToast(e.message, "error");
@@ -1539,9 +1843,16 @@ async function deleteProgramme(id) {
 
 async function programmeOptionsHtml(selectedId) {
   try {
-    const data = await adminFetch("/programmes/admin/all", { token: currentToken });
+    const data = await adminFetch("/programmes/admin/all", {
+      token: currentToken,
+    });
     return (data.programmes || [])
-      .map((p) => `<option value="${p.id}" ${selectedId === p.id ? "selected" : ""}>${p.name}</option>`)
+      .map(
+        (p) =>
+          `<option value="${p.id}" ${selectedId === p.id ? "selected" : ""}>${
+            p.name
+          }</option>`
+      )
       .join("");
   } catch (e) {
     return "";
@@ -1558,13 +1869,19 @@ async function loadTutorsTable() {
       .map(
         (t) => `
       <tr>
-        <td>${t.photo_url ? `<img src="${t.photo_url}" style="width:48px;height:48px;object-fit:cover;border-radius:50%;border:1px solid var(--border)" />` : "—"}</td>
+        <td>${
+          t.photo_url
+            ? `<img src="${t.photo_url}" style="width:48px;height:48px;object-fit:cover;border-radius:50%;border:1px solid var(--border)" />`
+            : "—"
+        }</td>
         <td><div class="admin-table-title">${t.name}</div></td>
         <td><span class="status-badge ${t.status}">${t.status}</span></td>
         <td>${t.sort_order}</td>
         <td class="admin-actions-cell"><div class="admin-actions">
           <button class="admin-btn" onclick="editTutor('${t.id}')">Edit</button>
-          <button class="admin-btn admin-btn-danger" onclick="deleteTutor('${t.id}')">Delete</button>
+          <button class="admin-btn admin-btn-danger" onclick="deleteTutor('${
+            t.id
+          }')">Delete</button>
         </div></td>
       </tr>
     `
@@ -1582,7 +1899,9 @@ function showTutorModal(tutor = null) {
     <div class="admin-modal-overlay" onclick="closeModal(event)">
       <div class="admin-modal" onclick="event.stopPropagation()">
         <h2>${isEdit ? "Edit Tutor" : "Add Tutor"}</h2>
-        <form id="tutorForm" onsubmit="saveTutor(event, ${isEdit ? `'${tutor.id}'` : "null"})">
+        <form id="tutorForm" onsubmit="saveTutor(event, ${
+          isEdit ? `'${tutor.id}'` : "null"
+        })">
 
           <div class="admin-form-group">
             <label>Photo</label>
@@ -1592,9 +1911,11 @@ function showTutorModal(tutor = null) {
                 background:var(--bg-elevated);border:2px solid var(--border);
                 display:flex;align-items:center;justify-content:center;flex-shrink:0;
               ">
-                ${currentPhoto
-                  ? `<img id="tutorPhotoPreview" src="${currentPhoto}" style="width:100%;height:100%;object-fit:cover" />`
-                  : `<span id="tutorPhotoPreview" style="font-size:1.8rem;color:var(--text-tertiary)">&#128100;</span>`}
+                ${
+                  currentPhoto
+                    ? `<img id="tutorPhotoPreview" src="${currentPhoto}" style="width:100%;height:100%;object-fit:cover" />`
+                    : `<span id="tutorPhotoPreview" style="font-size:1.8rem;color:var(--text-tertiary)">&#128100;</span>`
+                }
               </div>
               <div style="flex:1">
                 <input type="file" id="tutorPhotoFileInput" accept="image/*" style="font-size:0.8rem;width:100%" onchange="previewTutorPhoto(this)" />
@@ -1605,18 +1926,30 @@ function showTutorModal(tutor = null) {
             <input type="hidden" name="photo_url" id="tutorPhotoUrlInput" value="${currentPhoto}" />
           </div>
 
-          <div class="admin-form-group"><label>Full Name</label><input name="name" value="${tutor?.name || ""}" required /></div>
-          <div class="admin-form-group"><label>Bio</label><textarea name="bio" rows="3">${tutor?.bio || ""}</textarea></div>
+          <div class="admin-form-group"><label>Full Name</label><input name="name" value="${
+            tutor?.name || ""
+          }" required /></div>
+          <div class="admin-form-group"><label>Bio</label><textarea name="bio" rows="3">${
+            tutor?.bio || ""
+          }</textarea></div>
           <div class="admin-form-row">
-            <div class="admin-form-group"><label>Display Order</label><input name="sort_order" type="number" value="${tutor?.sort_order || 0}" /></div>
+            <div class="admin-form-group"><label>Display Order</label><input name="sort_order" type="number" value="${
+              tutor?.sort_order || 0
+            }" /></div>
             <div class="admin-form-group"><label>Status</label><select name="status">
-              <option value="active" ${tutor?.status === "active" ? "selected" : ""}>Visible</option>
-              <option value="inactive" ${tutor?.status === "inactive" ? "selected" : ""}>Hidden</option>
+              <option value="active" ${
+                tutor?.status === "active" ? "selected" : ""
+              }>Visible</option>
+              <option value="inactive" ${
+                tutor?.status === "inactive" ? "selected" : ""
+              }>Hidden</option>
             </select></div>
           </div>
           <div class="admin-form-actions">
             <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary btn-sm" id="tutorSaveBtn">${isEdit ? "Update" : "Add Tutor"}</button>
+            <button type="submit" class="btn btn-primary btn-sm" id="tutorSaveBtn">${
+              isEdit ? "Update" : "Add Tutor"
+            }</button>
           </div>
         </form>
       </div>
@@ -1641,7 +1974,9 @@ function enhanceTutorPhoto(btn) {
     getUrl: () => document.getElementById("tutorPhotoUrlInput")?.value || "",
     setUrl: (u) => {
       document.getElementById("tutorPhotoUrlInput").value = u;
-      document.getElementById("tutorPhotoPreviewWrap").innerHTML = `<img id="tutorPhotoPreview" src="${u}" style="width:100%;height:100%;object-fit:cover" />`;
+      document.getElementById(
+        "tutorPhotoPreviewWrap"
+      ).innerHTML = `<img id="tutorPhotoPreview" src="${u}" style="width:100%;height:100%;object-fit:cover" />`;
     },
     uploadUrl: "/tutors/admin/photo",
     uploadField: "photo",
@@ -1680,9 +2015,17 @@ async function saveTutor(e, id) {
     if (photo_url) body.photo_url = photo_url;
 
     if (id) {
-      await adminFetch(`/tutors/admin/${id}`, { token: currentToken, method: "PUT", body });
+      await adminFetch(`/tutors/admin/${id}`, {
+        token: currentToken,
+        method: "PUT",
+        body,
+      });
     } else {
-      await adminFetch("/tutors/admin", { token: currentToken, method: "POST", body });
+      await adminFetch("/tutors/admin", {
+        token: currentToken,
+        method: "POST",
+        body,
+      });
     }
     closeModal();
     loadTutorsTable();
@@ -1705,7 +2048,10 @@ async function editTutor(id) {
 async function deleteTutor(id) {
   if (!confirm("Delete this tutor?")) return;
   try {
-    await adminFetch(`/tutors/admin/${id}`, { token: currentToken, method: "DELETE" });
+    await adminFetch(`/tutors/admin/${id}`, {
+      token: currentToken,
+      method: "DELETE",
+    });
     loadTutorsTable();
   } catch (e) {
     showToast(e.message, "error");
@@ -1717,7 +2063,9 @@ async function loadClassesTable() {
   const tbody = document.getElementById("classesTableBody");
   tbody.innerHTML = skeletonRows(6);
   try {
-    const data = await adminFetch("/programme-classes/admin/all", { token: currentToken });
+    const data = await adminFetch("/programme-classes/admin/all", {
+      token: currentToken,
+    });
     tbody.innerHTML = (data.classes || [])
       .map(
         (c) => `
@@ -1726,10 +2074,14 @@ async function loadClassesTable() {
         <td><div class="admin-table-title">${c.name}</div></td>
         <td>${c.age_group || "—"}</td>
         <td>${c.schedule || "—"}</td>
-        <td>${c.fee_amount != null ? `$${c.fee_amount} / ${c.fee_period}` : "—"}</td>
+        <td>${
+          c.fee_amount != null ? `$${c.fee_amount} / ${c.fee_period}` : "—"
+        }</td>
         <td class="admin-actions-cell"><div class="admin-actions">
           <button class="admin-btn" onclick="editClass('${c.id}')">Edit</button>
-          <button class="admin-btn admin-btn-danger" onclick="deleteClass('${c.id}')">Delete</button>
+          <button class="admin-btn admin-btn-danger" onclick="deleteClass('${
+            c.id
+          }')">Delete</button>
         </div></td>
       </tr>
     `
@@ -1746,34 +2098,62 @@ async function showClassModal(cls = null) {
     <div class="admin-modal-overlay" onclick="closeModal(event)">
       <div class="admin-modal" onclick="event.stopPropagation()">
         <h2>${isEdit ? "Edit Class" : "Add Class"}</h2>
-        <form id="classForm" onsubmit="saveClass(event, ${isEdit ? `'${cls.id}'` : "null"})">
+        <form id="classForm" onsubmit="saveClass(event, ${
+          isEdit ? `'${cls.id}'` : "null"
+        })">
           <div class="admin-form-group"><label>Programme</label><select name="programme_id" id="classProgrammeSelect" required><option value="">Loading...</option></select></div>
-          <div class="admin-form-group"><label>Level Name</label><input name="name" value="${cls?.name || ""}" required placeholder="e.g. Beginners" /></div>
+          <div class="admin-form-group"><label>Level Name</label><input name="name" value="${
+            cls?.name || ""
+          }" required placeholder="e.g. Beginners" /></div>
           <div class="admin-form-row">
-            <div class="admin-form-group"><label>Age Group</label><input name="age_group" value="${cls?.age_group || ""}" placeholder="e.g. 5-8 years" /></div>
-            <div class="admin-form-group"><label>Location</label><input name="location" value="${cls?.location || ""}" /></div>
+            <div class="admin-form-group"><label>Age Group</label><input name="age_group" value="${
+              cls?.age_group || ""
+            }" placeholder="e.g. 5-8 years" /></div>
+            <div class="admin-form-group"><label>Location</label><input name="location" value="${
+              cls?.location || ""
+            }" /></div>
           </div>
-          <div class="admin-form-group"><label>Schedule / Timetable</label><input name="schedule" value="${cls?.schedule || ""}" placeholder="e.g. Every Wed, 5:30-6:30 PM" /></div>
+          <div class="admin-form-group"><label>Schedule / Timetable</label><input name="schedule" value="${
+            cls?.schedule || ""
+          }" placeholder="e.g. Every Wed, 5:30-6:30 PM" /></div>
           <div class="admin-form-row">
-            <div class="admin-form-group"><label>Fee Amount</label><input name="fee_amount" type="number" step="0.01" value="${cls?.fee_amount ?? ""}" /></div>
+            <div class="admin-form-group"><label>Fee Amount</label><input name="fee_amount" type="number" step="0.01" value="${
+              cls?.fee_amount ?? ""
+            }" /></div>
             <div class="admin-form-group"><label>Fee Period</label><select name="fee_period">
-              <option value="term" ${!cls || cls?.fee_period === "term" ? "selected" : ""}>per term</option>
-              <option value="month" ${cls?.fee_period === "month" ? "selected" : ""}>per month</option>
-              <option value="year" ${cls?.fee_period === "year" ? "selected" : ""}>per year</option>
-              <option value="once" ${cls?.fee_period === "once" ? "selected" : ""}>one-off</option>
+              <option value="term" ${
+                !cls || cls?.fee_period === "term" ? "selected" : ""
+              }>per term</option>
+              <option value="month" ${
+                cls?.fee_period === "month" ? "selected" : ""
+              }>per month</option>
+              <option value="year" ${
+                cls?.fee_period === "year" ? "selected" : ""
+              }>per year</option>
+              <option value="once" ${
+                cls?.fee_period === "once" ? "selected" : ""
+              }>one-off</option>
             </select></div>
           </div>
           <div class="admin-form-group"><label>Tutors</label><div id="classTutorsChecklist">Loading...</div></div>
           <div class="admin-form-row">
-            <div class="admin-form-group"><label>Display Order</label><input name="sort_order" type="number" value="${cls?.sort_order || 0}" /></div>
+            <div class="admin-form-group"><label>Display Order</label><input name="sort_order" type="number" value="${
+              cls?.sort_order || 0
+            }" /></div>
             <div class="admin-form-group"><label>Status</label><select name="status">
-              <option value="active" ${!cls || cls?.status === "active" ? "selected" : ""}>Active</option>
-              <option value="inactive" ${cls?.status === "inactive" ? "selected" : ""}>Inactive</option>
+              <option value="active" ${
+                !cls || cls?.status === "active" ? "selected" : ""
+              }>Active</option>
+              <option value="inactive" ${
+                cls?.status === "inactive" ? "selected" : ""
+              }>Inactive</option>
             </select></div>
           </div>
           <div class="admin-form-actions">
             <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary btn-sm" id="classSaveBtn">${isEdit ? "Update" : "Add Class"}</button>
+            <button type="submit" class="btn btn-primary btn-sm" id="classSaveBtn">${
+              isEdit ? "Update" : "Add Class"
+            }</button>
           </div>
         </form>
       </div>
@@ -1789,15 +2169,19 @@ async function showClassModal(cls = null) {
     const selectedIds = new Set(cls?.tutor_ids || []);
     const checklist = document.getElementById("classTutorsChecklist");
     if (checklist) {
-      checklist.innerHTML = (data.tutors || [])
-        .map(
-          (t) => `
+      checklist.innerHTML =
+        (data.tutors || [])
+          .map(
+            (t) => `
         <label style="display:flex;align-items:center;gap:8px;padding:4px 0">
-          <input type="checkbox" name="tutor_ids" value="${t.id}" ${selectedIds.has(t.id) ? "checked" : ""} />
+          <input type="checkbox" name="tutor_ids" value="${t.id}" ${
+              selectedIds.has(t.id) ? "checked" : ""
+            } />
           ${t.name}
         </label>`
-        )
-        .join("") || '<span style="color:var(--text-muted);font-size:0.85rem">No tutors yet.</span>';
+          )
+          .join("") ||
+        '<span style="color:var(--text-muted);font-size:0.85rem">No tutors yet.</span>';
     }
   } catch (e) {
     const checklist = document.getElementById("classTutorsChecklist");
@@ -1815,12 +2199,22 @@ async function saveClass(e, id) {
     const body = Object.fromEntries(form.entries());
     body.sort_order = parseInt(body.sort_order) || 0;
     body.fee_amount = body.fee_amount ? parseFloat(body.fee_amount) : null;
-    body.tutor_ids = Array.from(e.target.querySelectorAll('input[name="tutor_ids"]:checked')).map((el) => el.value);
+    body.tutor_ids = Array.from(
+      e.target.querySelectorAll('input[name="tutor_ids"]:checked')
+    ).map((el) => el.value);
 
     if (id) {
-      await adminFetch(`/programme-classes/admin/${id}`, { token: currentToken, method: "PUT", body });
+      await adminFetch(`/programme-classes/admin/${id}`, {
+        token: currentToken,
+        method: "PUT",
+        body,
+      });
     } else {
-      await adminFetch("/programme-classes/admin", { token: currentToken, method: "POST", body });
+      await adminFetch("/programme-classes/admin", {
+        token: currentToken,
+        method: "POST",
+        body,
+      });
     }
     closeModal();
     loadClassesTable();
@@ -1832,7 +2226,9 @@ async function saveClass(e, id) {
 
 async function editClass(id) {
   try {
-    const data = await adminFetch("/programme-classes/admin/all", { token: currentToken });
+    const data = await adminFetch("/programme-classes/admin/all", {
+      token: currentToken,
+    });
     const cls = data.classes.find((c) => c.id === id);
     if (cls) showClassModal(cls);
   } catch (e) {
@@ -1843,7 +2239,10 @@ async function editClass(id) {
 async function deleteClass(id) {
   if (!confirm("Delete this class?")) return;
   try {
-    await adminFetch(`/programme-classes/admin/${id}`, { token: currentToken, method: "DELETE" });
+    await adminFetch(`/programme-classes/admin/${id}`, {
+      token: currentToken,
+      method: "DELETE",
+    });
     loadClassesTable();
   } catch (e) {
     showToast(e.message, "error");
@@ -1859,29 +2258,59 @@ function formatDueDate(d) {
 let allMemberships = [];
 let currentMembershipFilter = "all";
 const programLabels = { dancing: "Dancing", vocals: "Vocals", both: "Both" };
-const ageLabels = { "16_and_under": "16 and below", "16_and_over": "16 and over" };
+const ageLabels = {
+  "16_and_under": "16 and below",
+  "16_and_over": "16 and over",
+};
 
 function renderMembershipTable() {
   const tbody = document.getElementById("membershipTableBody");
-  const filtered = currentMembershipFilter === "all"
-    ? allMemberships
-    : allMemberships.filter((m) => m.display_status === currentMembershipFilter);
+  const filtered =
+    currentMembershipFilter === "all"
+      ? allMemberships
+      : allMemberships.filter(
+          (m) => m.display_status === currentMembershipFilter
+        );
   tbody.innerHTML = filtered
     .map(
       (m) => `
     <tr>
-      <td><div class="admin-table-title" style="cursor:pointer;color:var(--accent)" onclick="showMembershipProfile('${m.id}')">${m.full_name}</div><div class="admin-table-subtitle">${m.email} · ${m.phone}</div></td>
+      <td><div class="admin-table-title" style="cursor:pointer;color:var(--accent)" onclick="showMembershipProfile('${
+        m.id
+      }')">${m.full_name}</div><div class="admin-table-subtitle">${m.email} · ${
+        m.phone
+      }</div></td>
       <td>${programLabels[m.program] || m.program}</td>
       <td>${ageLabels[m.age_group] || m.age_group}</td>
-      <td><span class="status-badge ${m.payment_status === "paid" ? "published" : "pending"}">${m.payment_status}</span></td>
-      <td><span class="status-badge ${m.display_status}">${m.display_status}</span></td>
+      <td><span class="status-badge ${
+        m.payment_status === "paid" ? "published" : "pending"
+      }">${m.payment_status}</span></td>
+      <td><span class="status-badge ${m.display_status}">${
+        m.display_status
+      }</span></td>
       <td>${formatDueDate(m.next_due_date)}</td>
       <td class="admin-actions-cell"><div class="admin-actions">
-        <button class="admin-btn" onclick="markMembershipPaid('${m.id}')">${m.display_status === "expired" ? "Renew" : "Mark Paid"}</button>
-        ${m.status !== "active" ? `<button class="admin-btn" onclick="activateMembership('${m.id}')">Activate</button>` : ""}
-        ${m.status === "pending" ? `<button class="admin-btn" onclick="waitlistMembership('${m.id}')">Waitlist</button>` : ""}
-        ${m.status !== "rejected" ? `<button class="admin-btn" onclick="rejectMembership('${m.id}')">Reject</button>` : ""}
-        <button class="admin-btn admin-btn-danger" onclick="deleteMembership('${m.id}')">Delete</button>
+        <button class="admin-btn" onclick="markMembershipPaid('${m.id}')">${
+        m.display_status === "expired" ? "Renew" : "Mark Paid"
+      }</button>
+        ${
+          m.status !== "active"
+            ? `<button class="admin-btn" onclick="activateMembership('${m.id}')">Activate</button>`
+            : ""
+        }
+        ${
+          m.status === "pending"
+            ? `<button class="admin-btn" onclick="waitlistMembership('${m.id}')">Waitlist</button>`
+            : ""
+        }
+        ${
+          m.status !== "rejected"
+            ? `<button class="admin-btn" onclick="rejectMembership('${m.id}')">Reject</button>`
+            : ""
+        }
+        <button class="admin-btn admin-btn-danger" onclick="deleteMembership('${
+          m.id
+        }')">Delete</button>
       </div></td>
     </tr>
   `
@@ -1893,7 +2322,9 @@ async function loadMembershipTable() {
   const tbody = document.getElementById("membershipTableBody");
   tbody.innerHTML = skeletonRows(7);
   try {
-    const data = await adminFetch("/membership/admin/all", { token: currentToken });
+    const data = await adminFetch("/membership/admin/all", {
+      token: currentToken,
+    });
     allMemberships = data.memberships || [];
     renderMembershipTable();
   } catch (e) {
@@ -1906,7 +2337,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!filters) return;
   filters.querySelectorAll(".gallery-filter").forEach((btn) => {
     btn.addEventListener("click", () => {
-      filters.querySelectorAll(".gallery-filter").forEach((b) => b.classList.remove("active"));
+      filters
+        .querySelectorAll(".gallery-filter")
+        .forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       currentMembershipFilter = btn.dataset.status;
       renderMembershipTable();
@@ -1927,7 +2360,12 @@ async function markMembershipPaid(id) {
 }
 
 async function activateMembership(id) {
-  if (!confirm("Activate this membership? The next payment will be due in one month.")) return;
+  if (
+    !confirm(
+      "Activate this membership? The next payment will be due in one month."
+    )
+  )
+    return;
   try {
     await adminFetch(`/membership/admin/${id}/activate`, {
       token: currentToken,
@@ -1942,7 +2380,10 @@ async function activateMembership(id) {
 async function rejectMembership(id) {
   if (!confirm("Reject this application?")) return;
   try {
-    await adminFetch(`/membership/admin/${id}/reject`, { token: currentToken, method: "PUT" });
+    await adminFetch(`/membership/admin/${id}/reject`, {
+      token: currentToken,
+      method: "PUT",
+    });
     loadMembershipTable();
   } catch (e) {
     showToast(e.message, "error");
@@ -1952,7 +2393,10 @@ async function rejectMembership(id) {
 async function waitlistMembership(id) {
   if (!confirm("Move this application to the waitlist?")) return;
   try {
-    await adminFetch(`/membership/admin/${id}/waitlist`, { token: currentToken, method: "PUT" });
+    await adminFetch(`/membership/admin/${id}/waitlist`, {
+      token: currentToken,
+      method: "PUT",
+    });
     loadMembershipTable();
   } catch (e) {
     showToast(e.message, "error");
@@ -1979,24 +2423,42 @@ async function showMembershipProfile(id) {
     <div class="admin-modal-overlay" onclick="closeModal(event)">
       <div class="admin-modal" onclick="event.stopPropagation()">
         <h2>${m.full_name}</h2>
-        <div class="admin-form-group"><label>Contact</label><div>${m.email} · ${m.phone}</div></div>
+        <div class="admin-form-group"><label>Contact</label><div>${m.email} · ${
+    m.phone
+  }</div></div>
         <div class="admin-form-row">
-          <div class="admin-form-group"><label>Programme</label><div>${programLabels[m.program] || m.program}</div></div>
-          <div class="admin-form-group"><label>Age Group</label><div>${ageLabels[m.age_group] || m.age_group}</div></div>
+          <div class="admin-form-group"><label>Programme</label><div>${
+            programLabels[m.program] || m.program
+          }</div></div>
+          <div class="admin-form-group"><label>Age Group</label><div>${
+            ageLabels[m.age_group] || m.age_group
+          }</div></div>
         </div>
         <div class="admin-form-row">
-          <div class="admin-form-group"><label>Guardian Name</label><div>${m.guardian_name || "—"}</div></div>
-          <div class="admin-form-group"><label>Guardian Phone</label><div>${m.guardian_phone || "—"}</div></div>
+          <div class="admin-form-group"><label>Guardian Name</label><div>${
+            m.guardian_name || "—"
+          }</div></div>
+          <div class="admin-form-group"><label>Guardian Phone</label><div>${
+            m.guardian_phone || "—"
+          }</div></div>
         </div>
-        <div class="admin-form-group"><label>Medical Notes</label><div>${m.medical_notes || "—"}</div></div>
-        <div class="admin-form-group"><label>Consent Given</label><div>${m.consent_given ? "Yes" : "No"}</div></div>
-        <div class="admin-form-group"><label>Membership Status</label><div>${m.display_status}</div></div>
+        <div class="admin-form-group"><label>Medical Notes</label><div>${
+          m.medical_notes || "—"
+        }</div></div>
+        <div class="admin-form-group"><label>Consent Given</label><div>${
+          m.consent_given ? "Yes" : "No"
+        }</div></div>
+        <div class="admin-form-group"><label>Membership Status</label><div>${
+          m.display_status
+        }</div></div>
 
         <div class="admin-form-group">
           <label>Payment History</label>
           <div id="membershipPaymentsList">Loading...</div>
         </div>
-        <form onsubmit="recordMembershipPayment(event, '${m.id}')" class="admin-form-row">
+        <form onsubmit="recordMembershipPayment(event, '${
+          m.id
+        }')" class="admin-form-row">
           <div class="admin-form-group"><label>Amount</label><input name="amount" type="number" step="0.01" placeholder="optional" /></div>
           <div class="admin-form-group"><label>Note</label><input name="note" placeholder="optional" /></div>
           <div class="admin-form-actions" style="align-self:flex-end">
@@ -2015,15 +2477,26 @@ async function showMembershipProfile(id) {
 async function loadMembershipPayments(id) {
   const list = document.getElementById("membershipPaymentsList");
   try {
-    const data = await adminFetch(`/membership/admin/${id}/payments`, { token: currentToken });
+    const data = await adminFetch(`/membership/admin/${id}/payments`, {
+      token: currentToken,
+    });
     const payments = data.payments || [];
-    list.innerHTML = payments.length === 0
-      ? '<span style="color:var(--text-muted);font-size:0.85rem">No payments recorded yet.</span>'
-      : payments
-          .map((p) => `<div style="font-size:0.85rem;padding:4px 0;border-bottom:1px solid var(--border)">${formatDueDate(p.paid_at)} — ${p.amount ? "$" + p.amount : "no amount"}${p.note ? " · " + p.note : ""}</div>`)
-          .join("");
+    list.innerHTML =
+      payments.length === 0
+        ? '<span style="color:var(--text-muted);font-size:0.85rem">No payments recorded yet.</span>'
+        : payments
+            .map(
+              (p) =>
+                `<div style="font-size:0.85rem;padding:4px 0;border-bottom:1px solid var(--border)">${formatDueDate(
+                  p.paid_at
+                )} — ${p.amount ? "$" + p.amount : "no amount"}${
+                  p.note ? " · " + p.note : ""
+                }</div>`
+            )
+            .join("");
   } catch (e) {
-    list.innerHTML = '<span style="color:var(--text-muted);font-size:0.85rem">Could not load payments.</span>';
+    list.innerHTML =
+      '<span style="color:var(--text-muted);font-size:0.85rem">Could not load payments.</span>';
   }
 }
 
@@ -2032,7 +2505,11 @@ async function recordMembershipPayment(e, id) {
   const form = new FormData(e.target);
   const body = Object.fromEntries(form.entries());
   try {
-    await adminFetch(`/membership/admin/${id}/payment`, { token: currentToken, method: "PUT", body });
+    await adminFetch(`/membership/admin/${id}/payment`, {
+      token: currentToken,
+      method: "PUT",
+      body,
+    });
     e.target.reset();
     loadMembershipPayments(id);
     loadMembershipTable();
@@ -2072,18 +2549,32 @@ function showVideoModal(video = null) {
     <div class="admin-modal-overlay" onclick="closeModal(event)">
       <div class="admin-modal" onclick="event.stopPropagation()">
         <h2>${isEdit ? "Edit Video" : "Add Video"}</h2>
-        <form id="videoForm" onsubmit="saveVideo(event, ${isEdit ? `'${video.id}'` : "null"})">
+        <form id="videoForm" onsubmit="saveVideo(event, ${
+          isEdit ? `'${video.id}'` : "null"
+        })">
           <div class="admin-form-group"><label>Title</label><input name="title" value="${
             video?.title || ""
           }" required /></div>
           <div class="admin-form-group"><label>YouTube URL</label><input name="youtube_url" value="${
             video?.youtube_url || ""
           }" placeholder="https://www.youtube.com/watch?v=..." required /></div>
+          <div class="admin-form-group"><label>Date</label><input name="date" type="date" value="${toDateInputValue(
+            video?.date
+          )}" /></div>
           <div class="admin-form-row">
             <div class="admin-form-group"><label>Category</label><select name="category">
-              <option value="general" ${!video || video?.category === "general" ? "selected" : ""}>General</option>
-              <option value="performances" ${video?.category === "performances" ? "selected" : ""}>Performances</option>
-              <option value="classes" ${video?.category === "classes" ? "selected" : ""}>Classes</option>
+              <option value="Productions" ${
+                video?.category === "Productions" ? "selected" : ""
+              }>Productions</option>
+              <option value="Performances" ${
+                video?.category === "Performances" ? "selected" : ""
+              }>Performances</option>
+              <option value="Class" ${
+                video?.category === "Class" ? "selected" : ""
+              }>Class</option>
+              <option value="General" ${
+                !video || video?.category === "General" ? "selected" : ""
+              }>General</option>
             </select></div>
             <div class="admin-form-group"><label>Link to Production</label><select name="production_id" id="videoProductionSelect"><option value="">Loading...</option></select></div>
           </div>
@@ -2110,9 +2601,17 @@ async function saveVideo(e, id) {
   const body = Object.fromEntries(form.entries());
   try {
     if (id) {
-      await adminFetch(`/videos/admin/${id}`, { token: currentToken, method: "PUT", body });
+      await adminFetch(`/videos/admin/${id}`, {
+        token: currentToken,
+        method: "PUT",
+        body,
+      });
     } else {
-      await adminFetch("/videos/admin", { token: currentToken, method: "POST", body });
+      await adminFetch("/videos/admin", {
+        token: currentToken,
+        method: "POST",
+        body,
+      });
     }
     closeModal();
     loadVideosTable();
@@ -2135,7 +2634,10 @@ async function editVideo(id) {
 async function deleteVideo(id) {
   if (!confirm("Delete this video?")) return;
   try {
-    await adminFetch(`/videos/admin/${id}`, { token: currentToken, method: "DELETE" });
+    await adminFetch(`/videos/admin/${id}`, {
+      token: currentToken,
+      method: "DELETE",
+    });
     loadVideosTable();
   } catch (e) {
     showToast(e.message, "error");
@@ -2147,19 +2649,33 @@ async function loadEnquiriesTable() {
   const tbody = document.getElementById("enquiriesTableBody");
   tbody.innerHTML = skeletonRows(5);
   try {
-    const data = await adminFetch("/contact/admin/all", { token: currentToken });
+    const data = await adminFetch("/contact/admin/all", {
+      token: currentToken,
+    });
     tbody.innerHTML = (data.enquiries || [])
       .map(
         (q) => `
       <tr>
-        <td><div class="admin-table-title">${q.name}</div><div class="admin-table-subtitle">${q.email}</div></td>
+        <td><div class="admin-table-title">${
+          q.name
+        }</div><div class="admin-table-subtitle">${q.email}</div></td>
         <td>${q.subject || "—"}</td>
-        <td><span class="status-badge ${q.status === "completed" ? "published" : "pending"}">${q.status}</span></td>
+        <td><span class="status-badge ${
+          q.status === "completed" ? "published" : "pending"
+        }">${q.status}</span></td>
         <td>${new Date(q.created_at).toLocaleDateString("en-NZ")}</td>
         <td class="admin-actions-cell"><div class="admin-actions">
-          <button class="admin-btn" onclick="viewEnquiry('${q.id}')">View</button>
-          ${q.status !== "completed" ? `<button class="admin-btn" onclick="updateEnquiryStatus('${q.id}', 'completed')">Mark Completed</button>` : ""}
-          <button class="admin-btn admin-btn-danger" onclick="deleteEnquiry('${q.id}')">Delete</button>
+          <button class="admin-btn" onclick="viewEnquiry('${
+            q.id
+          }')">View</button>
+          ${
+            q.status !== "completed"
+              ? `<button class="admin-btn" onclick="updateEnquiryStatus('${q.id}', 'completed')">Mark Completed</button>`
+              : ""
+          }
+          <button class="admin-btn admin-btn-danger" onclick="deleteEnquiry('${
+            q.id
+          }')">Delete</button>
         </div></td>
       </tr>
     `
@@ -2172,10 +2688,16 @@ async function loadEnquiriesTable() {
 
 async function viewEnquiry(id) {
   try {
-    const data = await adminFetch("/contact/admin/all", { token: currentToken });
+    const data = await adminFetch("/contact/admin/all", {
+      token: currentToken,
+    });
     const enquiry = data.enquiries.find((q) => q.id === id);
     if (!enquiry) return;
-    alert(`From: ${enquiry.name} <${enquiry.email}>\nSubject: ${enquiry.subject || "—"}\n\n${enquiry.message}`);
+    alert(
+      `From: ${enquiry.name} <${enquiry.email}>\nSubject: ${
+        enquiry.subject || "—"
+      }\n\n${enquiry.message}`
+    );
     if (enquiry.status === "new") updateEnquiryStatus(id, "read", true);
   } catch (e) {
     showToast(e.message, "error");
@@ -2198,7 +2720,10 @@ async function updateEnquiryStatus(id, status, silent) {
 async function deleteEnquiry(id) {
   if (!confirm("Delete this enquiry?")) return;
   try {
-    await adminFetch(`/contact/admin/${id}`, { token: currentToken, method: "DELETE" });
+    await adminFetch(`/contact/admin/${id}`, {
+      token: currentToken,
+      method: "DELETE",
+    });
     loadEnquiriesTable();
   } catch (e) {
     showToast(e.message, "error");
@@ -2254,7 +2779,9 @@ async function loadSettings() {
 }
 
 async function saveSettings() {
-  const btn = document.querySelector("#section-settings .admin-header-actions button");
+  const btn = document.querySelector(
+    "#section-settings .admin-header-actions button"
+  );
   setBtnLoading(btn, true);
   const inputs = document.querySelectorAll(".setting-input");
   const settings = Array.from(inputs).map((inp) => ({
@@ -2279,16 +2806,29 @@ async function saveSettings() {
 // --- Hero Banner (homepage) ---
 const HERO_BANNER_SLOTS = [1, 2, 3, 4, 5, 6, 7, 8];
 const HERO_BANNER_SLOT_KEYS = Object.fromEntries(
-  HERO_BANNER_SLOTS.map((slot) => [slot, slot === 1 ? "hero_banner_url" : `hero_banner_url_${slot}`])
+  HERO_BANNER_SLOTS.map((slot) => [
+    slot,
+    slot === 1 ? "hero_banner_url" : `hero_banner_url_${slot}`,
+  ])
 );
 const HERO_BANNER_POSITION_KEYS = Object.fromEntries(
-  HERO_BANNER_SLOTS.map((slot) => [slot, slot === 1 ? "hero_banner_position" : `hero_banner_position_${slot}`])
+  HERO_BANNER_SLOTS.map((slot) => [
+    slot,
+    slot === 1 ? "hero_banner_position" : `hero_banner_position_${slot}`,
+  ])
 );
 const HERO_BANNER_POSITION_X_KEYS = Object.fromEntries(
-  HERO_BANNER_SLOTS.map((slot) => [slot, slot === 1 ? "hero_banner_position_x" : `hero_banner_position_x_${slot}`])
+  HERO_BANNER_SLOTS.map((slot) => [
+    slot,
+    slot === 1 ? "hero_banner_position_x" : `hero_banner_position_x_${slot}`,
+  ])
 );
-const heroBannerPositions = Object.fromEntries(HERO_BANNER_SLOTS.map((slot) => [slot, 50]));
-const heroBannerPositionsX = Object.fromEntries(HERO_BANNER_SLOTS.map((slot) => [slot, 50]));
+const heroBannerPositions = Object.fromEntries(
+  HERO_BANNER_SLOTS.map((slot) => [slot, 50])
+);
+const heroBannerPositionsX = Object.fromEntries(
+  HERO_BANNER_SLOTS.map((slot) => [slot, 50])
+);
 
 function generateHeroBannerExtraSlots() {
   const container = document.getElementById("heroBannerExtraSlots");
@@ -2330,18 +2870,34 @@ async function loadHeroBannerSetting() {
     const data = await adminFetch("/settings/admin", { token: currentToken });
     const settings = data.settings || [];
     for (const slot of HERO_BANNER_SLOTS) {
-      const posSetting = settings.find((s) => s.key === HERO_BANNER_POSITION_KEYS[slot]);
-      heroBannerPositions[slot] = posSetting?.value ? parseFloat(posSetting.value) : 50;
-      const posXSetting = settings.find((s) => s.key === HERO_BANNER_POSITION_X_KEYS[slot]);
-      heroBannerPositionsX[slot] = posXSetting?.value ? parseFloat(posXSetting.value) : 50;
-      const urlSetting = settings.find((s) => s.key === HERO_BANNER_SLOT_KEYS[slot]);
+      const posSetting = settings.find(
+        (s) => s.key === HERO_BANNER_POSITION_KEYS[slot]
+      );
+      heroBannerPositions[slot] = posSetting?.value
+        ? parseFloat(posSetting.value)
+        : 50;
+      const posXSetting = settings.find(
+        (s) => s.key === HERO_BANNER_POSITION_X_KEYS[slot]
+      );
+      heroBannerPositionsX[slot] = posXSetting?.value
+        ? parseFloat(posXSetting.value)
+        : 50;
+      const urlSetting = settings.find(
+        (s) => s.key === HERO_BANNER_SLOT_KEYS[slot]
+      );
       renderHeroBannerPreview(urlSetting?.value || "", slot);
     }
 
-    const transitionSetting = settings.find((s) => s.key === "hero_banner_transition");
-    const durationSetting = settings.find((s) => s.key === "hero_banner_duration");
-    document.getElementById("heroBannerTransition").value = transitionSetting?.value || "fade";
-    document.getElementById("heroBannerDuration").value = durationSetting?.value || "6";
+    const transitionSetting = settings.find(
+      (s) => s.key === "hero_banner_transition"
+    );
+    const durationSetting = settings.find(
+      (s) => s.key === "hero_banner_duration"
+    );
+    document.getElementById("heroBannerTransition").value =
+      transitionSetting?.value || "fade";
+    document.getElementById("heroBannerDuration").value =
+      durationSetting?.value || "6";
 
     refreshHeroLivePreview();
   } catch (e) {
@@ -2406,7 +2962,9 @@ function enhanceHeroBannerSlot(slot, btn) {
   runImageEnhance({
     btn,
     fileInput: document.getElementById(`heroBannerFileInput${suffix}`),
-    getUrl: () => document.getElementById(`heroBannerPreviewWrap${suffix}`)?.dataset.url || "",
+    getUrl: () =>
+      document.getElementById(`heroBannerPreviewWrap${suffix}`)?.dataset.url ||
+      "",
     setUrl: (u) => {
       renderHeroBannerPreview(u, slot);
       refreshHeroLivePreview();
@@ -2453,8 +3011,14 @@ function bindHeroPositionDrag(el, slot, paintEl, onUpdate) {
     const rect = el.getBoundingClientRect();
     const deltaX = clientX - startX;
     const deltaY = clientY - startY;
-    heroBannerPositionsX[slot] = Math.min(100, Math.max(0, startPosX - (deltaX / (rect.width || 1)) * 100));
-    heroBannerPositions[slot] = Math.min(100, Math.max(0, startPosY - (deltaY / (rect.height || 1)) * 100));
+    heroBannerPositionsX[slot] = Math.min(
+      100,
+      Math.max(0, startPosX - (deltaX / (rect.width || 1)) * 100)
+    );
+    heroBannerPositions[slot] = Math.min(
+      100,
+      Math.max(0, startPosY - (deltaY / (rect.height || 1)) * 100)
+    );
     paintEl.style.backgroundPosition = `${heroBannerPositionsX[slot]}% ${heroBannerPositions[slot]}%`;
     if (onUpdate) onUpdate();
   };
@@ -2466,8 +3030,16 @@ function bindHeroPositionDrag(el, slot, paintEl, onUpdate) {
   el.addEventListener("mousedown", (e) => onDown(e.clientX, e.clientY));
   window.addEventListener("mousemove", (e) => onMove(e.clientX, e.clientY));
   window.addEventListener("mouseup", onUp);
-  el.addEventListener("touchstart", (e) => onDown(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
-  el.addEventListener("touchmove", (e) => onMove(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+  el.addEventListener(
+    "touchstart",
+    (e) => onDown(e.touches[0].clientX, e.touches[0].clientY),
+    { passive: true }
+  );
+  el.addEventListener(
+    "touchmove",
+    (e) => onMove(e.touches[0].clientX, e.touches[0].clientY),
+    { passive: true }
+  );
   el.addEventListener("touchend", onUp);
 }
 
@@ -2516,7 +3088,9 @@ function openHeroCropAdjust(slot) {
 
   const quickPreview = document.getElementById("heroCropQuickPreview");
   quickPreview.dataset.url = url;
-  bindHeroPositionDrag(quickPreview, slot, quickPreview, () => renderHeroCropFrame(slot));
+  bindHeroPositionDrag(quickPreview, slot, quickPreview, () =>
+    renderHeroCropFrame(slot)
+  );
 
   const img = document.getElementById("heroCropFullImg");
   if (img.complete && img.naturalWidth) {
@@ -2558,8 +3132,10 @@ function renderHeroCropFrame(slot) {
     frameH = frameW / targetRatio;
   }
 
-  const frameLeft = renderOffsetX + (renderedW - frameW) * (heroBannerPositionsX[slot] / 100);
-  const frameTop = renderOffsetY + (renderedH - frameH) * (heroBannerPositions[slot] / 100);
+  const frameLeft =
+    renderOffsetX + (renderedW - frameW) * (heroBannerPositionsX[slot] / 100);
+  const frameTop =
+    renderOffsetY + (renderedH - frameH) * (heroBannerPositions[slot] / 100);
 
   frame.style.left = `${frameLeft}px`;
   frame.style.top = `${frameTop}px`;
@@ -2568,7 +3144,8 @@ function renderHeroCropFrame(slot) {
 }
 
 function closeHeroCropAdjust(e) {
-  if (e && e.target && !e.target.classList.contains("admin-modal-overlay")) return;
+  if (e && e.target && !e.target.classList.contains("admin-modal-overlay"))
+    return;
   const slot = heroCropActiveSlot;
   heroCropActiveSlot = null;
   window.removeEventListener("resize", heroCropResizeHandler);
@@ -2602,7 +3179,15 @@ async function saveHeroBanner() {
   setBtnLoading(btn, true);
   try {
     const transition = document.getElementById("heroBannerTransition").value;
-    const duration = String(Math.max(2, Math.min(30, parseInt(document.getElementById("heroBannerDuration").value, 10) || 6)));
+    const duration = String(
+      Math.max(
+        2,
+        Math.min(
+          30,
+          parseInt(document.getElementById("heroBannerDuration").value, 10) || 6
+        )
+      )
+    );
     const settings = [
       { key: "hero_banner_transition", value: transition },
       { key: "hero_banner_duration", value: duration },
@@ -2618,8 +3203,14 @@ async function saveHeroBanner() {
         fileInput.value = "";
       }
       settings.push({ key: HERO_BANNER_SLOT_KEYS[slot], value: url });
-      settings.push({ key: HERO_BANNER_POSITION_KEYS[slot], value: String(Math.round(heroBannerPositions[slot])) });
-      settings.push({ key: HERO_BANNER_POSITION_X_KEYS[slot], value: String(Math.round(heroBannerPositionsX[slot])) });
+      settings.push({
+        key: HERO_BANNER_POSITION_KEYS[slot],
+        value: String(Math.round(heroBannerPositions[slot])),
+      });
+      settings.push({
+        key: HERO_BANNER_POSITION_X_KEYS[slot],
+        value: String(Math.round(heroBannerPositionsX[slot])),
+      });
     }
     await adminFetch("/settings/admin", {
       token: currentToken,
@@ -2641,11 +3232,18 @@ let heroPreviewTimer = null;
 function refreshHeroLivePreview() {
   const slides = HERO_BANNER_SLOTS.map((slot) => {
     const suffix = slot === 1 ? "" : String(slot);
-    const url = document.getElementById(`heroBannerPreviewWrap${suffix}`)?.dataset.url || "";
-    return { url, positionX: heroBannerPositionsX[slot], positionY: heroBannerPositions[slot] };
+    const url =
+      document.getElementById(`heroBannerPreviewWrap${suffix}`)?.dataset.url ||
+      "";
+    return {
+      url,
+      positionX: heroBannerPositionsX[slot],
+      positionY: heroBannerPositions[slot],
+    };
   }).filter((s) => s.url);
   const transition = document.getElementById("heroBannerTransition").value;
-  const duration = parseInt(document.getElementById("heroBannerDuration").value, 10) || 6;
+  const duration =
+    parseInt(document.getElementById("heroBannerDuration").value, 10) || 6;
   startHeroLivePreview(slides, transition, duration);
 }
 
@@ -2658,7 +3256,9 @@ function startHeroLivePreview(slides, transition, durationSec) {
     clearInterval(heroPreviewTimer);
     heroPreviewTimer = null;
   }
-  stage.querySelectorAll(".hero-preview-slide, .hero-preview-track").forEach((el) => el.remove());
+  stage
+    .querySelectorAll(".hero-preview-slide, .hero-preview-track")
+    .forEach((el) => el.remove());
 
   if (slides.length === 0) {
     if (empty) empty.style.display = "flex";
@@ -2671,10 +3271,14 @@ function startHeroLivePreview(slides, transition, durationSec) {
   if (transition === "scroll") {
     const track = document.createElement("div");
     track.className = "hero-preview-track";
-    track.style.cssText = `display:flex;height:100%;width:${slides.length * 100}%;transition:transform 1s ease-in-out;transform:translateX(0)`;
+    track.style.cssText = `display:flex;height:100%;width:${
+      slides.length * 100
+    }%;transition:transform 1s ease-in-out;transform:translateX(0)`;
     slides.forEach(({ url, positionX, positionY }) => {
       const slide = document.createElement("div");
-      slide.style.cssText = `width:${100 / slides.length}%;height:100%;background:#1a1a1a url('${url}') ${positionX}% ${positionY}% / cover no-repeat;flex-shrink:0`;
+      slide.style.cssText = `width:${
+        100 / slides.length
+      }%;height:100%;background:#1a1a1a url('${url}') ${positionX}% ${positionY}% / cover no-repeat;flex-shrink:0`;
       track.appendChild(slide);
     });
     stage.appendChild(track);
@@ -2686,7 +3290,9 @@ function startHeroLivePreview(slides, transition, durationSec) {
     slides.forEach(({ url, positionX, positionY }, i) => {
       const slide = document.createElement("div");
       slide.className = "hero-preview-slide";
-      slide.style.cssText = `position:absolute;inset:0;background:#1a1a1a url('${url}') ${positionX}% ${positionY}% / cover no-repeat;transition:opacity 1s ease-in-out;opacity:${i === 0 ? 1 : 0}`;
+      slide.style.cssText = `position:absolute;inset:0;background:#1a1a1a url('${url}') ${positionX}% ${positionY}% / cover no-repeat;transition:opacity 1s ease-in-out;opacity:${
+        i === 0 ? 1 : 0
+      }`;
       stage.appendChild(slide);
     });
     if (slides.length > 1) {
@@ -2714,11 +3320,17 @@ async function loadAdminUsersTable() {
       .map(
         (a) => `
       <tr>
-        <td><div class="admin-table-title">${a.name}${a.id === myId ? " (you)" : ""}</div></td>
+        <td><div class="admin-table-title">${a.name}${
+          a.id === myId ? " (you)" : ""
+        }</div></td>
         <td>${a.email}</td>
         <td>${formatDueDate(a.created_at)}</td>
         <td class="admin-actions-cell"><div class="admin-actions">
-          ${a.id === myId ? "" : `<button class="admin-btn admin-btn-danger" onclick="deleteAdminUser('${a.id}')">Delete</button>`}
+          ${
+            a.id === myId
+              ? ""
+              : `<button class="admin-btn admin-btn-danger" onclick="deleteAdminUser('${a.id}')">Delete</button>`
+          }
         </div></td>
       </tr>
     `
@@ -2754,7 +3366,11 @@ async function saveAdminUser(e) {
   try {
     const form = new FormData(e.target);
     const body = Object.fromEntries(form.entries());
-    await adminFetch("/admins/admin", { token: currentToken, method: "POST", body });
+    await adminFetch("/admins/admin", {
+      token: currentToken,
+      method: "POST",
+      body,
+    });
     closeModal();
     loadAdminUsersTable();
   } catch (err) {
@@ -2766,7 +3382,10 @@ async function saveAdminUser(e) {
 async function deleteAdminUser(id) {
   if (!confirm("Delete this admin account?")) return;
   try {
-    await adminFetch(`/admins/admin/${id}`, { token: currentToken, method: "DELETE" });
+    await adminFetch(`/admins/admin/${id}`, {
+      token: currentToken,
+      method: "DELETE",
+    });
     loadAdminUsersTable();
   } catch (e) {
     showToast(e.message, "error");
@@ -2778,7 +3397,8 @@ async function loadAccountSection() {
   try {
     const data = await adminFetch("/auth/profile", { token: currentToken });
     document.getElementById("accountNameInput").value = data.admin?.name || "";
-    document.getElementById("accountEmailInput").value = data.admin?.email || "";
+    document.getElementById("accountEmailInput").value =
+      data.admin?.email || "";
   } catch (e) {
     console.error(e);
   }
@@ -2795,9 +3415,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await adminFetch("/auth/update-profile", {
           token: currentToken,
           method: "PUT",
-          body: { name: document.getElementById("accountNameInput").value.trim() },
+          body: {
+            name: document.getElementById("accountNameInput").value.trim(),
+          },
         });
-        document.getElementById("adminProfile").textContent = `Signed in as ${data.admin?.name || "Admin"}`;
+        document.getElementById("adminProfile").textContent = `Signed in as ${
+          data.admin?.name || "Admin"
+        }`;
         msg.textContent = "Saved!";
         msg.style.color = "var(--accent)";
       } catch (err) {
@@ -2840,6 +3464,95 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// --- Image Resize ---
+function openImageResizeModal(file, onResized) {
+  if (!file || !file.type.startsWith("image/")) {
+    showToast("Please select an image file to resize.", "error");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const origW = img.naturalWidth;
+      const origH = img.naturalHeight;
+      document.getElementById("modalContainer").innerHTML = `
+        <div class="admin-modal-overlay" onclick="closeModal(event)">
+          <div class="admin-modal" onclick="event.stopPropagation()" style="max-width:700px">
+            <h2>Resize Image</h2>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:12px">Original: ${origW} × ${origH}px — choose a new width (height scales proportionally).</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+              <div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em">Original</div>
+                <img src="${e.target.result}" style="width:100%;border-radius:8px;display:block;background:#111;max-height:300px;object-fit:contain" />
+              </div>
+              <div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em">Preview</div>
+                <canvas id="resizePreview" style="width:100%;border-radius:8px;display:block;background:#111;max-height:300px;object-fit:contain"></canvas>
+              </div>
+            </div>
+            <div class="admin-form-row" style="margin-top:16px">
+              <div class="admin-form-group"><label>Width (px)</label><input type="number" id="resizeWidth" value="${origW}" min="1" max="4096" oninput="updateResizePreview()" /></div>
+              <div class="admin-form-group"><label>Height (px)</label><input type="number" id="resizeHeight" value="${origH}" min="1" max="4096" disabled style="opacity:0.6" /></div>
+            </div>
+            <div class="admin-form-actions">
+              <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="applyImageResize()">Apply Resize</button>
+            </div>
+          </div>
+        </div>`;
+      window._resizeImg = img;
+      window._resizeFile = file;
+      window._resizeOrigW = origW;
+      window._resizeOrigH = origH;
+      window._resizeOnResized = onResized;
+      const canvas = document.getElementById("resizePreview");
+      canvas.width = origW;
+      canvas.height = origH;
+      canvas.getContext("2d").drawImage(img, 0, 0, origW, origH);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateResizePreview() {
+  const w = parseInt(document.getElementById("resizeWidth").value) || 0;
+  if (w <= 0) return;
+  const h = Math.round(w * (window._resizeOrigH / window._resizeOrigW));
+  document.getElementById("resizeHeight").value = h;
+  const canvas = document.getElementById("resizePreview");
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext("2d").drawImage(window._resizeImg, 0, 0, w, h);
+}
+
+function applyImageResize() {
+  const w =
+    parseInt(document.getElementById("resizeWidth").value) ||
+    window._resizeOrigW;
+  const h =
+    parseInt(document.getElementById("resizeHeight").value) ||
+    window._resizeOrigH;
+  const canvas = document.getElementById("resizePreview");
+  canvas.toBlob(
+    (blob) => {
+      if (!blob) {
+        showToast("Resize failed", "error");
+        return;
+      }
+      const ext = window._resizeFile.name.split(".").pop() || "jpg";
+      const resizedFile = new File([blob], `resized.${ext}`, {
+        type: blob.type,
+      });
+      closeModal();
+      window._resizeOnResized(resizedFile);
+    },
+    window._resizeFile.type || "image/jpeg",
+    0.92
+  );
+}
 
 // --- Modal ---
 function closeModal(e) {

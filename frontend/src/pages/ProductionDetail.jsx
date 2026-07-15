@@ -62,9 +62,10 @@ export default function ProductionDetail() {
                 {production.location}
               </div>
             )}
-            <p className="whitespace-pre-line text-sm leading-relaxed text-text-dark-soft">
-              {production.full_description || production.description}
-            </p>
+            <div
+              className="text-sm leading-relaxed text-text-dark-soft prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: production.full_description || production.description }}
+            />
           </div>
         </div>
       </section>

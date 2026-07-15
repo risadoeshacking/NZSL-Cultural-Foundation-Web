@@ -15,8 +15,8 @@ const BROWSE_TABS = [
   { id: "all", label: "All" },
   { id: "productions", label: "Productions" },
   { id: "events", label: "Events" },
-  { id: "performances", label: "Performances" },
-  { id: "classes", label: "Classes" },
+  { id: "Performances", label: "Performances" },
+  { id: "Class", label: "Class" },
   { id: "year", label: "By Year" },
 ];
 
@@ -50,8 +50,8 @@ export default function Gallery() {
   const query = useMemo(() => {
     const params = new URLSearchParams();
     params.set("limit", "100");
-    if (browse === "performances") params.set("category", "performances");
-    else if (browse === "classes") params.set("category", "classes");
+    if (browse === "Performances") params.set("category", "Performances");
+    else if (browse === "Class") params.set("category", "Class");
     else if (browse === "productions") params.set("production_id", productionId || "any");
     else if (browse === "events") params.set("event_id", eventId || "any");
     else if (browse === "year" && year) params.set("year", year);
