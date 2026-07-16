@@ -939,7 +939,10 @@ function showGalleryUpload() {
             <label>Image Files</label>
             <input name="image" type="file" accept="image/*" multiple required onchange="updateGalleryFileCount(this)" id="galleryFileInput" />
             <p id="galleryFileCount" style="font-size:0.75rem;color:var(--text-muted);margin-top:4px"></p>
-            <button type="button" class="admin-btn" style="font-size:0.7rem;padding:3px 10px;margin-top:4px" onclick="resizeGalleryFirstImage()">&#128260; Resize First Image</button>
+            <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
+              <button type="button" class="admin-btn" style="font-size:0.7rem;padding:3px 10px" onclick="resizeGalleryFirstImage()">&#128260; Resize</button>
+              <button type="button" class="admin-btn" style="font-size:0.7rem;padding:3px 10px" onclick="aiExtendGalleryFirstImage()">&#10024; AI Extend</button>
+            </div>
           </div>
           <div class="admin-form-group"><label>Title</label><input name="title" placeholder="Applied to every photo in this batch" /></div>
           <div class="admin-form-group"><label>Description</label><textarea name="description" rows="3"></textarea></div>
@@ -990,7 +993,6 @@ function resizeGalleryFirstImage() {
   openImageResizeModal(input.files[0], (resizedFile) => {
     const dt = new DataTransfer();
     dt.items.add(resizedFile);
-    // Keep any remaining files after the first
     for (let i = 1; i < input.files.length; i++) {
       dt.items.add(input.files[i]);
     }
@@ -1000,6 +1002,39 @@ function resizeGalleryFirstImage() {
       "Image resized. It will be uploaded as the first photo.",
       "success"
     );
+  });
+}
+
+function aiExtendGalleryFirstImage() {
+  const input = document.getElementById("galleryFileInput");
+  if (!input || !input.files || !input.files[0]) {
+    showToast("Select image files first, then click AI Extend.", "error");
+    return;
+  }
+  openAiExtendModal(input.files[0], (extendedUrl) => {
+    // Create a new File from the extended URL by fetching it
+    fetch(extendedUrl)
+      .then((r) => r.blob())
+      .then((blob) => {
+        const ext = input.files[0].name.split(".").pop() || "jpg";
+        const extendedFile = new File([blob], `extended.${ext}`, {
+          type: blob.type || "image/jpeg",
+        });
+        const dt = new DataTransfer();
+        dt.items.add(extendedFile);
+        for (let i = 1; i < input.files.length; i++) {
+          dt.items.add(input.files[i]);
+        }
+        input.files = dt.files;
+        updateGalleryFileCount(input);
+        showToast(
+          "Image AI-extended. It will be uploaded as the first photo.",
+          "success"
+        );
+      })
+      .catch(() =>
+        showToast("Could not download the extended image.", "error")
+      );
   });
 }
 
@@ -3464,6 +3499,195 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+// --- AI Extend (Generative Fill via Cloudinary) ---
+function openAiExtendModal(file, onExtended) {
+  if (!file || !file.type.startsWith("image/")) {
+    showToast("Please select an image file first.", "error");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const origW = img.naturalWidth;
+      const origH = img.naturalHeight;
+      const aspectPresets = [
+        { label: "16:9 (Landscape)", ratio: 16 / 9 },
+        { label: "21:9 (Ultra-wide)", ratio: 21 / 9 },
+        { label: "4:3 (Landscape)", ratio: 4 / 3 },
+        { label: "1:1 (Square)", ratio: 1 },
+        { label: "3:4 (Portrait)", ratio: 3 / 4 },
+        { label: "9:16 (Portrait)", ratio: 9 / 16 },
+      ];
+      const presetOptions = aspectPresets
+        .map((p, i) => `<option value="${i}">${p.label}</option>`)
+        .join("");
+
+      document.getElementById("modalContainer").innerHTML = `
+        <div class="admin-modal-overlay" onclick="closeModal(event)">
+          <div class="admin-modal" onclick="event.stopPropagation()" style="max-width:750px">
+            <h2>&#x2728; AI Extend Image</h2>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:12px">
+              Original: ${origW} × ${origH}px — Choose a target aspect ratio and AI will fill the extra space with generated content.
+            </p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+              <div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em">Original</div>
+                <img src="${e.target.result}" style="width:100%;border-radius:8px;display:block;background:#111;max-height:280px;object-fit:contain" />
+              </div>
+              <div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em">Extended (AI Fill)</div>
+                <div id="aiExtendPreview" style="
+                  width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;
+                  background:#111;display:flex;align-items:center;justify-content:center;
+                  border:1px solid var(--border);position:relative;
+                ">
+                  <div style="color:var(--text-muted);font-size:0.8rem" id="aiExtendPlaceholder">Select a ratio below</div>
+                </div>
+              </div>
+            </div>
+            <div class="admin-form-row" style="margin-top:16px;align-items:end">
+              <div class="admin-form-group" style="flex:2">
+                <label>Target Aspect Ratio</label>
+                <select id="aiExtendPreset" style="width:100%;font-size:0.85rem;padding:6px 8px" onchange="previewAiExtend('${e.target.result}', ${origW}, ${origH})">
+                  ${presetOptions}
+                </select>
+              </div>
+              <div class="admin-form-group" style="flex:1">
+                <label>Max Width (px)</label>
+                <input type="number" id="aiExtendMaxW" value="1920" min="200" max="4096" style="font-size:0.85rem;padding:6px 8px;width:100%" />
+              </div>
+            </div>
+            <div class="admin-form-actions">
+              <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
+              <button type="button" class="btn btn-primary btn-sm" id="aiExtendBtn" onclick="applyAiExtend('${file.name}', ${origW}, ${origH}, '${file.type}', onExtended)">
+                &#x2728; Generate with AI
+              </button>
+            </div>
+          </div>
+        </div>`;
+      window._aiExtendImg = img;
+      window._aiExtendOrigW = origW;
+      window._aiExtendOrigH = origH;
+      window._aiExtendFile = file;
+      window._aiExtendOnExtended = onExtended;
+      window._aiExtendOriginalSrc = e.target.result;
+
+      // Auto-select first preset
+      previewAiExtend(e.target.result, origW, origH);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function previewAiExtend(origSrc, origW, origH) {
+  const presetIdx =
+    parseInt(document.getElementById("aiExtendPreset").value) || 0;
+  const presets = [
+    { label: "16:9", ratio: 16 / 9 },
+    { label: "21:9", ratio: 21 / 9 },
+    { label: "4:3", ratio: 4 / 3 },
+    { label: "1:1", ratio: 1 },
+    { label: "3:4", ratio: 3 / 4 },
+    { label: "9:16", ratio: 9 / 16 },
+  ];
+  const preset = presets[presetIdx];
+  const preview = document.getElementById("aiExtendPreview");
+  const placeholder = document.getElementById("aiExtendPlaceholder");
+  if (!preview) return;
+  preview.style.aspectRatio = preset.ratio;
+  if (origSrc) {
+    if (placeholder) placeholder.remove();
+    preview.innerHTML = `<img src="${origSrc}" style="width:100%;height:100%;object-fit:contain;opacity:0.7;border:2px dashed var(--accent);border-radius:8px" />`;
+  }
+}
+
+async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
+  const btn = document.getElementById("aiExtendBtn");
+  if (!btn) return;
+  setBtnLoading(btn, true);
+
+  try {
+    const presetIdx =
+      parseInt(document.getElementById("aiExtendPreset").value) || 0;
+    const maxW =
+      parseInt(document.getElementById("aiExtendMaxW").value) || 1920;
+    const presets = [
+      { ratio: 16 / 9 },
+      { ratio: 21 / 9 },
+      { ratio: 4 / 3 },
+      { ratio: 1 },
+      { ratio: 3 / 4 },
+      { ratio: 9 / 16 },
+    ];
+    const preset = presets[presetIdx];
+    const targetW = maxW;
+    const targetH = Math.round(targetW / preset.ratio);
+
+    // Upload the original file first
+    const fd = new FormData();
+    fd.append("image", window._aiExtendFile);
+    const uploadRes = await fetch(`${API_BASE}/settings/admin/hero-banner`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${currentToken}` },
+      body: fd,
+    });
+    if (!uploadRes.ok) {
+      const errData = await uploadRes.json().catch(() => ({}));
+      throw new Error(errData.error || "Upload failed");
+    }
+    const uploadData = await uploadRes.json();
+    let originalUrl = uploadData.url;
+
+    // Check if it's a Cloudinary URL
+    if (!originalUrl || !originalUrl.includes("res.cloudinary.com")) {
+      throw new Error(
+        "AI extend requires Cloudinary storage. Please configure CLOUDINARY_URL on the server."
+      );
+    }
+
+    // Build Cloudinary generative fill URL
+    // Insert transformations after /upload/
+    const marker = "/upload/";
+    const markerIdx = originalUrl.indexOf(marker);
+    if (markerIdx === -1) throw new Error("Invalid image URL");
+
+    const baseUrl = originalUrl.substring(0, markerIdx + marker.length);
+    const imagePath = originalUrl.substring(markerIdx + marker.length);
+    // Remove any existing transformations and extension
+    const pathParts = imagePath.split("/");
+    const publicIdWithExt = pathParts[pathParts.length - 1];
+    const publicId = publicIdWithExt.replace(/\.[^.]+$/, "");
+    const ext = publicIdWithExt.split(".").pop() || "jpg";
+
+    const transformUrl = `${baseUrl}c_pad,w_${targetW},h_${targetH},g_gen_fill/${publicId}.${ext}`;
+
+    // Verify the generated image loads
+    const testImg = new Image();
+    testImg.crossOrigin = "anonymous";
+    await new Promise((resolve, reject) => {
+      testImg.onload = resolve;
+      testImg.onerror = () =>
+        reject(
+          new Error(
+            "AI generation failed. The image may not support generative fill."
+          )
+        );
+      testImg.src = transformUrl;
+      setTimeout(() => reject(new Error("AI generation timed out")), 30000);
+    });
+
+    closeModal();
+    onExtended(transformUrl);
+    showToast(`AI extended to ${targetW}×${targetH}px`, "success");
+  } catch (err) {
+    showToast(err.message || "AI extend failed", "error");
+  } finally {
+    if (btn) setBtnLoading(btn, false, "✨ Generate with AI");
+  }
+}
 
 // --- Image Resize ---
 function openImageResizeModal(file, onResized) {
