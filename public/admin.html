@@ -78,7 +78,9 @@
           <li><a href="#" data-section="stories">Stories</a></li>
           <li class="admin-sidebar-section">People</li>
           <li><a href="#" data-section="leadership">About — People</a></li>
-          <li><a href="#" data-section="sponsors">Partners &amp; Sponsors</a></li>
+          <li>
+            <a href="#" data-section="sponsors">Partners &amp; Sponsors</a>
+          </li>
           <li class="admin-sidebar-section">Programmes</li>
           <li><a href="#" data-section="programmes">Programmes</a></li>
           <li><a href="#" data-section="classes">Classes</a></li>
@@ -88,7 +90,9 @@
           <li><a href="#" data-section="videos">Videos</a></li>
           <li><a href="#" data-section="enquiries">Enquiries</a></li>
           <li class="admin-sidebar-section">Settings</li>
-          <li><a href="#" data-section="settings">Social Media &amp; Settings</a></li>
+          <li>
+            <a href="#" data-section="settings">Social Media &amp; Settings</a>
+          </li>
           <li><a href="#" data-section="adminusers">Admin Users</a></li>
           <li><a href="#" data-section="account">My Account</a></li>
         </ul>
@@ -155,41 +159,70 @@
             </div>
           </div>
 
-          <h2 style="font-size: 1.1rem; margin: 2rem 0 1rem; font-weight: 600">Quick Actions</h2>
+          <h2 style="font-size: 1.1rem; margin: 2rem 0 1rem; font-weight: 600">
+            Quick Actions
+          </h2>
           <div class="stats-grid" id="quickActionsGrid">
-            <div class="stat-card quick-action" onclick="switchSection('events')">
+            <div
+              class="stat-card quick-action"
+              onclick="switchSection('events')"
+            >
               <div class="stat-card-icon events">📅</div>
               <div class="stat-card-label">Events</div>
             </div>
-            <div class="stat-card quick-action" onclick="switchSection('productions')">
+            <div
+              class="stat-card quick-action"
+              onclick="switchSection('productions')"
+            >
               <div class="stat-card-icon gallery">🎭</div>
               <div class="stat-card-label">Productions</div>
             </div>
-            <div class="stat-card quick-action" onclick="switchSection('programmes')">
+            <div
+              class="stat-card quick-action"
+              onclick="switchSection('programmes')"
+            >
               <div class="stat-card-icon stories">🎓</div>
               <div class="stat-card-label">Programmes</div>
             </div>
-            <div class="stat-card quick-action" onclick="switchSection('gallery')">
+            <div
+              class="stat-card quick-action"
+              onclick="switchSection('gallery')"
+            >
               <div class="stat-card-icon gallery">🖼️</div>
               <div class="stat-card-label">Gallery</div>
             </div>
-            <div class="stat-card quick-action" onclick="switchSection('videos')">
+            <div
+              class="stat-card quick-action"
+              onclick="switchSection('videos')"
+            >
               <div class="stat-card-icon news">🎬</div>
               <div class="stat-card-label">Videos</div>
             </div>
-            <div class="stat-card quick-action" onclick="switchSection('membership')">
+            <div
+              class="stat-card quick-action"
+              onclick="switchSection('membership')"
+            >
               <div class="stat-card-icon events">🎓</div>
               <div class="stat-card-label">Enrolments &amp; Students</div>
             </div>
-            <div class="stat-card quick-action" onclick="switchSection('enquiries')">
+            <div
+              class="stat-card quick-action"
+              onclick="switchSection('enquiries')"
+            >
               <div class="stat-card-icon stories">✉️</div>
               <div class="stat-card-label">Enquiries</div>
             </div>
-            <div class="stat-card quick-action" onclick="switchSection('posts')">
+            <div
+              class="stat-card quick-action"
+              onclick="switchSection('posts')"
+            >
               <div class="stat-card-icon news">📰</div>
               <div class="stat-card-label">Posts</div>
             </div>
-            <div class="stat-card quick-action" onclick="switchSection('leadership')">
+            <div
+              class="stat-card quick-action"
+              onclick="switchSection('leadership')"
+            >
               <div class="stat-card-icon gallery">🧑‍🤝‍🧑</div>
               <div class="stat-card-label">About — People</div>
             </div>
@@ -223,11 +256,18 @@
         </div>
 
         <!-- Productions Section -->
-        <div id="section-productions" class="admin-section" style="display: none">
+        <div
+          id="section-productions"
+          class="admin-section"
+          style="display: none"
+        >
           <div class="admin-header">
             <h1>Productions</h1>
             <div class="admin-header-actions">
-              <button class="btn btn-primary btn-sm" onclick="showProductionModal()">
+              <button
+                class="btn btn-primary btn-sm"
+                onclick="showProductionModal()"
+              >
                 + Add Production
               </button>
             </div>
@@ -367,7 +407,10 @@
           <div class="admin-header">
             <h1>Partners &amp; Sponsors</h1>
             <div class="admin-header-actions">
-              <button class="btn btn-primary btn-sm" onclick="showSponsorModal()">
+              <button
+                class="btn btn-primary btn-sm"
+                onclick="showSponsorModal()"
+              >
                 + Add Sponsor
               </button>
             </div>
@@ -389,11 +432,18 @@
         </div>
 
         <!-- Programmes Section -->
-        <div id="section-programmes" class="admin-section" style="display: none">
+        <div
+          id="section-programmes"
+          class="admin-section"
+          style="display: none"
+        >
           <div class="admin-header">
             <h1>Programmes</h1>
             <div class="admin-header-actions">
-              <button class="btn btn-primary btn-sm" onclick="showProgrammeModal()">
+              <button
+                class="btn btn-primary btn-sm"
+                onclick="showProgrammeModal()"
+              >
                 + Add Programme
               </button>
             </div>
@@ -476,13 +526,25 @@
           <div class="admin-header">
             <h1>Enrolments &amp; Students</h1>
           </div>
-          <div class="gallery-filters" id="membershipFilters" style="margin-bottom: 1rem">
+          <div
+            class="gallery-filters"
+            id="membershipFilters"
+            style="margin-bottom: 1rem"
+          >
             <button class="gallery-filter active" data-status="all">All</button>
-            <button class="gallery-filter" data-status="pending">Pending</button>
+            <button class="gallery-filter" data-status="pending">
+              Pending
+            </button>
             <button class="gallery-filter" data-status="active">Active</button>
-            <button class="gallery-filter" data-status="waitlisted">Waitlisted</button>
-            <button class="gallery-filter" data-status="rejected">Rejected</button>
-            <button class="gallery-filter" data-status="expired">Expired</button>
+            <button class="gallery-filter" data-status="waitlisted">
+              Waitlisted
+            </button>
+            <button class="gallery-filter" data-status="rejected">
+              Rejected
+            </button>
+            <button class="gallery-filter" data-status="expired">
+              Expired
+            </button>
           </div>
           <div class="admin-table-container">
             <table class="admin-table">
@@ -558,63 +620,259 @@
             </div>
           </div>
           <div class="admin-table-container" style="margin-bottom: 1.5rem">
-            <div class="admin-table-header" style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border)">
+            <div
+              class="admin-table-header"
+              style="
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid var(--border);
+              "
+            >
               <h2 style="font-size: 1rem; margin: 0">Homepage Hero Banner</h2>
             </div>
             <div style="padding: 1.5rem">
-              <div id="heroBannerPreviewWrap" style="
-                width: 100%; aspect-ratio: 21 / 9; border-radius: 8px; overflow: hidden;
-                background: #1a1a1a center 50% / cover no-repeat; border: 1px solid var(--border);
-                cursor: grab; position: relative; user-select: none;
-              ">
-                <div id="heroBannerEmptyState" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.85rem">No banner uploaded yet</div>
-                <button type="button" id="heroBannerRemoveBtn" onclick="clearHeroBannerSlot(1)" onmousedown="event.stopPropagation()" title="Remove photo" style="
-                  display:none; position:absolute; top:8px; right:8px; width:28px; height:28px; border-radius:50%;
-                  background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.3); color:#fff; font-size:16px;
-                  line-height:1; cursor:pointer; align-items:center; justify-content:center;
-                ">×</button>
-                <button type="button" id="heroBannerAdjustBtn" onclick="openHeroCropAdjust(1)" onmousedown="event.stopPropagation()" title="Adjust crop" style="
-                  display:none; position:absolute; bottom:8px; right:8px; padding:5px 12px; border-radius:20px;
-                  background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.3); color:#fff; font-size:12px;
-                  line-height:1.6; cursor:pointer;
-                ">Adjust crop</button>
+              <div
+                id="heroBannerPreviewWrap"
+                style="
+                  width: 100%;
+                  aspect-ratio: 21 / 9;
+                  border-radius: 8px;
+                  overflow: hidden;
+                  background: #1a1a1a center 50% / cover no-repeat;
+                  border: 1px solid var(--border);
+                  cursor: grab;
+                  position: relative;
+                  user-select: none;
+                "
+              >
+                <div
+                  id="heroBannerEmptyState"
+                  style="
+                    position: absolute;
+                    inset: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: var(--text-muted);
+                    font-size: 0.85rem;
+                  "
+                >
+                  No banner uploaded yet
+                </div>
+                <button
+                  type="button"
+                  id="heroBannerRemoveBtn"
+                  onclick="clearHeroBannerSlot(1)"
+                  onmousedown="event.stopPropagation()"
+                  title="Remove photo"
+                  style="
+                    display: none;
+                    position: absolute;
+                    top: 8px;
+                    right: 8px;
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 50%;
+                    background: rgba(0, 0, 0, 0.65);
+                    border: 1px solid rgba(255, 255, 255, 0.3);
+                    color: #fff;
+                    font-size: 16px;
+                    line-height: 1;
+                    cursor: pointer;
+                    align-items: center;
+                    justify-content: center;
+                  "
+                >
+                  ×
+                </button>
+                <button
+                  type="button"
+                  id="heroBannerAdjustBtn"
+                  onclick="openHeroCropAdjust(1)"
+                  onmousedown="event.stopPropagation()"
+                  title="Adjust crop"
+                  style="
+                    display: none;
+                    position: absolute;
+                    bottom: 8px;
+                    right: 8px;
+                    padding: 5px 12px;
+                    border-radius: 20px;
+                    background: rgba(0, 0, 0, 0.65);
+                    border: 1px solid rgba(255, 255, 255, 0.3);
+                    color: #fff;
+                    font-size: 12px;
+                    line-height: 1.6;
+                    cursor: pointer;
+                  "
+                >
+                  Adjust crop
+                </button>
               </div>
-              <p style="font-size:0.75rem;color:var(--text-muted);margin-top:8px">
-                Drag the preview to reposition the image, or click "Adjust crop" to see the full photo and exactly what will show in the banner. Recommended size: 1600×600px or larger (landscape), JPG/PNG/WebP, max 10MB.
+              <p
+                style="
+                  font-size: 0.75rem;
+                  color: var(--text-muted);
+                  margin-top: 8px;
+                "
+              >
+                Drag the preview to reposition the image, or click "Adjust crop"
+                to see the full photo and exactly what will show in the banner.
+                Recommended size: 1600×600px or larger (landscape),
+                JPG/PNG/WebP, max 10MB.
               </p>
-              <div style="display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap">
-                <input type="file" id="heroBannerFileInput" accept="image/*" style="font-size:0.8rem" onchange="previewHeroBanner(this)" />
-                <button type="button" class="admin-btn" style="font-size:0.75rem;padding:4px 10px" onclick="enhanceHeroBannerSlot(1, this)">&#10024; Enhance</button>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                  margin-top: 12px;
+                  flex-wrap: wrap;
+                "
+              >
+                <input
+                  type="file"
+                  id="heroBannerFileInput"
+                  accept="image/*"
+                  style="font-size: 0.8rem"
+                  onchange="previewHeroBanner(this)"
+                />
+                <button
+                  type="button"
+                  class="admin-btn"
+                  style="font-size: 0.75rem; padding: 4px 10px"
+                  onclick="enhanceHeroBannerSlot(1, this)"
+                >
+                  &#10024; Enhance
+                </button>
+                <button
+                  type="button"
+                  class="admin-btn"
+                  style="font-size: 0.75rem; padding: 4px 10px"
+                  onclick="aiExtendHeroBannerSlot(1)"
+                >
+                  &#10024; AI Extend
+                </button>
               </div>
 
-              <p style="font-size:0.8rem;color:var(--text-muted);margin-top:20px;margin-bottom:8px">
-                Add up to 7 more photos (8 total) to rotate through automatically on the homepage banner. It loops back to the first once it reaches the last. Drag any photo to reposition it, or hover a photo and click "Adjust" for a bigger, easier view — each photo keeps its own crop.
+              <p
+                style="
+                  font-size: 0.8rem;
+                  color: var(--text-muted);
+                  margin-top: 20px;
+                  margin-bottom: 8px;
+                "
+              >
+                Add up to 7 more photos (8 total) to rotate through
+                automatically on the homepage banner. It loops back to the first
+                once it reaches the last. Drag any photo to reposition it, or
+                hover a photo and click "Adjust" for a bigger, easier view —
+                each photo keeps its own crop.
               </p>
-              <div id="heroBannerExtraSlots" style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px"></div>
+              <div
+                id="heroBannerExtraSlots"
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(4, 1fr);
+                  gap: 12px;
+                "
+              ></div>
 
-              <div style="display:flex;flex-wrap:wrap;gap:20px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)">
+              <div
+                style="
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 20px;
+                  margin-top: 20px;
+                  padding-top: 16px;
+                  border-top: 1px solid var(--border);
+                "
+              >
                 <div>
-                  <label style="font-size:0.8rem;color:var(--text-muted);display:block;margin-bottom:4px">Transition</label>
-                  <select id="heroBannerTransition" style="font-size:0.85rem;padding:6px 8px">
+                  <label
+                    style="
+                      font-size: 0.8rem;
+                      color: var(--text-muted);
+                      display: block;
+                      margin-bottom: 4px;
+                    "
+                    >Transition</label
+                  >
+                  <select
+                    id="heroBannerTransition"
+                    style="font-size: 0.85rem; padding: 6px 8px"
+                  >
                     <option value="fade">Fade</option>
                     <option value="scroll">Scroll left</option>
                   </select>
                 </div>
                 <div>
-                  <label style="font-size:0.8rem;color:var(--text-muted);display:block;margin-bottom:4px">Seconds per photo</label>
-                  <input type="number" id="heroBannerDuration" min="2" max="30" step="1" value="6" style="font-size:0.85rem;padding:6px 8px;width:80px" />
+                  <label
+                    style="
+                      font-size: 0.8rem;
+                      color: var(--text-muted);
+                      display: block;
+                      margin-bottom: 4px;
+                    "
+                    >Seconds per photo</label
+                  >
+                  <input
+                    type="number"
+                    id="heroBannerDuration"
+                    min="2"
+                    max="30"
+                    step="1"
+                    value="6"
+                    style="font-size: 0.85rem; padding: 6px 8px; width: 80px"
+                  />
                 </div>
               </div>
 
-              <button type="button" class="btn btn-primary btn-sm" id="heroBannerSaveBtn" style="margin-top:16px" onclick="saveHeroBanner()">Save Banner Photos</button>
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                id="heroBannerSaveBtn"
+                style="margin-top: 16px"
+                onclick="saveHeroBanner()"
+              >
+                Save Banner Photos
+              </button>
 
-              <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
-                <h3 style="font-size:0.9rem;margin:0 0 10px">Live Preview</h3>
-                <div id="heroBannerLivePreview" style="
-                  width: 100%; aspect-ratio: 21 / 9; border-radius: 8px; overflow: hidden;
-                  background: #1a1a1a; border: 1px solid var(--border); position: relative;
-                ">
-                  <div id="heroBannerLivePreviewEmpty" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.85rem">Save some photos to see the preview</div>
+              <div
+                style="
+                  margin-top: 24px;
+                  padding-top: 20px;
+                  border-top: 1px solid var(--border);
+                "
+              >
+                <h3 style="font-size: 0.9rem; margin: 0 0 10px">
+                  Live Preview
+                </h3>
+                <div
+                  id="heroBannerLivePreview"
+                  style="
+                    width: 100%;
+                    aspect-ratio: 21 / 9;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    background: #1a1a1a;
+                    border: 1px solid var(--border);
+                    position: relative;
+                  "
+                >
+                  <div
+                    id="heroBannerLivePreviewEmpty"
+                    style="
+                      position: absolute;
+                      inset: 0;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      color: var(--text-muted);
+                      font-size: 0.85rem;
+                    "
+                  >
+                    Save some photos to see the preview
+                  </div>
                 </div>
               </div>
             </div>
@@ -624,11 +882,18 @@
         </div>
 
         <!-- Admin Users Section -->
-        <div id="section-adminusers" class="admin-section" style="display: none">
+        <div
+          id="section-adminusers"
+          class="admin-section"
+          style="display: none"
+        >
           <div class="admin-header">
             <h1>Admin Users</h1>
             <div class="admin-header-actions">
-              <button class="btn btn-primary btn-sm" onclick="showAdminUserModal()">
+              <button
+                class="btn btn-primary btn-sm"
+                onclick="showAdminUserModal()"
+              >
                 + Add Admin
               </button>
             </div>
@@ -655,7 +920,13 @@
           </div>
 
           <div class="admin-table-container" style="margin-bottom: 1.5rem">
-            <div class="admin-table-header" style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border)">
+            <div
+              class="admin-table-header"
+              style="
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid var(--border);
+              "
+            >
               <h2 style="font-size: 1rem; margin: 0">Profile</h2>
             </div>
             <div style="padding: 1.5rem; max-width: 420px">
@@ -668,14 +939,25 @@
                   <label>Email</label>
                   <input id="accountEmailInput" disabled />
                 </div>
-                <button type="submit" class="btn btn-primary btn-sm">Save Name</button>
-                <span id="accountNameMsg" style="font-size: 0.8rem; margin-left: 0.75rem"></span>
+                <button type="submit" class="btn btn-primary btn-sm">
+                  Save Name
+                </button>
+                <span
+                  id="accountNameMsg"
+                  style="font-size: 0.8rem; margin-left: 0.75rem"
+                ></span>
               </form>
             </div>
           </div>
 
           <div class="admin-table-container">
-            <div class="admin-table-header" style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border)">
+            <div
+              class="admin-table-header"
+              style="
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid var(--border);
+              "
+            >
               <h2 style="font-size: 1rem; margin: 0">Change Password</h2>
             </div>
             <div style="padding: 1.5rem; max-width: 420px">
@@ -686,14 +968,29 @@
                 </div>
                 <div class="admin-form-group">
                   <label>New Password</label>
-                  <input name="newPassword" type="password" required minlength="8" />
+                  <input
+                    name="newPassword"
+                    type="password"
+                    required
+                    minlength="8"
+                  />
                 </div>
                 <div class="admin-form-group">
                   <label>Confirm New Password</label>
-                  <input name="confirmPassword" type="password" required minlength="8" />
+                  <input
+                    name="confirmPassword"
+                    type="password"
+                    required
+                    minlength="8"
+                  />
                 </div>
-                <button type="submit" class="btn btn-primary btn-sm">Update Password</button>
-                <span id="accountPasswordMsg" style="font-size: 0.8rem; margin-left: 0.75rem"></span>
+                <button type="submit" class="btn btn-primary btn-sm">
+                  Update Password
+                </button>
+                <span
+                  id="accountPasswordMsg"
+                  style="font-size: 0.8rem; margin-left: 0.75rem"
+                ></span>
               </form>
             </div>
           </div>

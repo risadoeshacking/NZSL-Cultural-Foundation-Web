@@ -2891,7 +2891,10 @@ function generateHeroBannerExtraSlots() {
         ">Adjust</button>
       </div>
       <input type="file" id="heroBannerFileInput${slot}" accept="image/*" style="font-size:0.7rem;margin-top:6px;width:100%" onchange="previewHeroBannerSlot(this, ${slot})" />
-      <button type="button" class="admin-btn" style="font-size:0.65rem;padding:3px 6px;margin-top:4px;width:100%" onclick="enhanceHeroBannerSlot(${slot}, this)">&#10024; Enhance</button>
+      <div style="display:flex;gap:4px;margin-top:4px">
+        <button type="button" class="admin-btn" style="font-size:0.6rem;padding:3px 5px;flex:1" onclick="enhanceHeroBannerSlot(${slot}, this)">&#10024; Enhance</button>
+        <button type="button" class="admin-btn" style="font-size:0.6rem;padding:3px 5px;flex:1" onclick="aiExtendHeroBannerSlot(${slot})">&#10024; AI Extend</button>
+      </div>
     </div>
   `
     )
@@ -2990,6 +2993,48 @@ function previewHeroBannerSlot(input, slot) {
     renderHeroBannerPreview(e.target.result, slot);
   };
   reader.readAsDataURL(input.files[0]);
+}
+
+function aiExtendHeroBannerSlot(slot) {
+  const suffix = slot === 1 ? "" : String(slot);
+  const fileInput = document.getElementById(`heroBannerFileInput${suffix}`);
+  const wrap = document.getElementById(`heroBannerPreviewWrap${suffix}`);
+  const file = fileInput && fileInput.files && fileInput.files[0];
+  const existingUrl = wrap?.dataset?.url;
+
+  if (!file && !existingUrl) {
+    showToast("Upload a photo first, then click AI Extend.", "error");
+    return;
+  }
+
+  // If there's a file, use it directly; otherwise upload existing URL
+  if (file) {
+    openAiExtendModal(file, (extendedUrl) => {
+      heroBannerPositions[slot] = 50;
+      heroBannerPositionsX[slot] = 50;
+      renderHeroBannerPreview(extendedUrl, slot);
+      refreshHeroLivePreview();
+    });
+  } else {
+    // Fetch the existing URL as a blob and open the extend modal
+    fetch(existingUrl)
+      .then((r) => r.blob())
+      .then((blob) => {
+        const ext = existingUrl.split(".").pop() || "jpg";
+        const fakeFile = new File([blob], `banner.${ext}`, {
+          type: blob.type || "image/jpeg",
+        });
+        openAiExtendModal(fakeFile, (extendedUrl) => {
+          heroBannerPositions[slot] = 50;
+          heroBannerPositionsX[slot] = 50;
+          renderHeroBannerPreview(extendedUrl, slot);
+          refreshHeroLivePreview();
+        });
+      })
+      .catch(() =>
+        showToast("Could not load the current banner image.", "error")
+      );
+  }
 }
 
 function enhanceHeroBannerSlot(slot, btn) {
