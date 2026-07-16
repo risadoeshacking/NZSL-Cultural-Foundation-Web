@@ -3701,11 +3701,16 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
 
     const baseUrl = originalUrl.substring(0, markerIdx + marker.length);
     const imagePath = originalUrl.substring(markerIdx + marker.length);
-    // Remove any existing transformations and extension
-    const pathParts = imagePath.split("/");
-    const publicIdWithExt = pathParts[pathParts.length - 1];
+
+    // Some Cloudinary URLs may already include transformations (path segments
+    // after /upload/ that look like c_fill,w_...,g_...), which breaks our
+    // naive public_id parsing. Strip everything before the final public_id.
+    const pathParts = imagePath.split("/").filter(Boolean);
+    const publicIdWithExt = pathParts[pathParts.length - 1] || "";
+
+    // Remove extension
     const publicId = publicIdWithExt.replace(/\.[^.]+$/, "");
-    const ext = publicIdWithExt.split(".").pop() || "jpg";
+    const ext = (publicIdWithExt.split(".").pop() || "jpg").toLowerCase();
 
     const transformUrl = `${baseUrl}c_pad,w_${targetW},h_${targetH},g_gen_fill/${publicId}.${ext}`;
 

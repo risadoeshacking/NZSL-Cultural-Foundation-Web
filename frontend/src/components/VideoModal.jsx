@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { X } from "lucide-react";
 
 export default function VideoModal({ video, onClose }) {
+  const [autoplay, setAutoplay] = useState(true);
   if (!video) return null;
   return (
     <div
@@ -18,10 +20,14 @@ export default function VideoModal({ video, onClose }) {
       <div className="aspect-video w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
         <iframe
           className="h-full w-full rounded-lg"
-          src={`https://www.youtube-nocookie.com/embed/${video.video_id}?autoplay=1`}
+          src={
+            `https://www.youtube-nocookie.com/embed/${video.video_id}?autoplay=${autoplay ? 1 : 0}&rel=0&playsinline=1`
+          }
           title={video.title}
+          referrerPolicy="strict-origin-when-cross-origin"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
+          onError={() => setAutoplay(false)}
         />
       </div>
     </div>
