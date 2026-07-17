@@ -3673,7 +3673,7 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
 
     // Upload the original file first
     const fd = new FormData();
-    fd.append("image", window._aiExtendFile);
+    fd.append("banner", window._aiExtendFile);
     const uploadRes = await fetch(`${API_BASE}/settings/admin/hero-banner`, {
       method: "POST",
       headers: { Authorization: `Bearer ${currentToken}` },
