@@ -17,17 +17,29 @@ export default function YouTubePlayer({
   const [shouldRender, setShouldRender] = useState(false);
   const iframeRef = useRef(null);
 
-  const embedBase = useMemo(() => buildYouTubeEmbedUrl(normalizedVideoId), [normalizedVideoId]);
+  const origin = useMemo(() => {
+    if (typeof window !== "undefined") return window.location.origin;
+    return null;
+  }, []);
+
+  const embedBase = useMemo(
+    () => buildYouTubeEmbedUrl(normalizedVideoId, origin),
+    [normalizedVideoId, origin],
+  );
 
   const embedSrc = useMemo(() => {
     if (!embedBase) return null;
+    // If buildYouTubeEmbedUrl already added the origin as a query string,
+    // we need to append additional params with '&' instead of '?'.
+    const separator = embedBase.includes("?") ? "&" : "?";
     const params = new URLSearchParams();
     if (autoplay) params.set("autoplay", "1");
     else params.set("autoplay", "0");
+    params.set("enablejsapi", "1");
     params.set("rel", "0");
     params.set("playsinline", "1");
     params.set("modestbranding", "1");
-    return `${embedBase}?${params.toString()}`;
+    return `${embedBase}${separator}${params.toString()}`;
   }, [embedBase, autoplay]);
 
   useEffect(() => {
