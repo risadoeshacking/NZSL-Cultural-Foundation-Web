@@ -1490,13 +1490,12 @@ def create_app():
                          "so it can't be embedded here (YouTube 'Error 153'). Please choose a different video."
             }), 400
         rows = db.query(
-            "INSERT INTO videos (title, youtube_url, video_id, date, sort_order, production_id, category, created_by) "
-            "VALUES (%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *",
+            "INSERT INTO videos (title, youtube_url, video_id, sort_order, production_id, category, created_by) "
+            "VALUES (%s,%s,%s,%s,%s,%s,%s) RETURNING *",
             [
                 sanitize_text(title),
                 youtube_url.strip(),
                 video_id,
-                data.get("date") or None,
                 int(data.get("sort_order") or 0),
                 data.get("production_id") or None,
                 data.get("category") or None,
@@ -1526,7 +1525,6 @@ def create_app():
             "title = COALESCE(%s, title), "
             "youtube_url = COALESCE(%s, youtube_url), "
             "video_id = COALESCE(%s, video_id), "
-            "date = %s, "
             "sort_order = COALESCE(%s, sort_order), "
             "production_id = COALESCE(%s, production_id), "
             "category = COALESCE(%s, category), "
@@ -1536,7 +1534,6 @@ def create_app():
                 sanitize_text(data["title"]) if data.get("title") else None,
                 data.get("youtube_url") or None,
                 video_id,
-                data.get("date") if "date" in data else None,
                 int(data["sort_order"]) if "sort_order" in data else None,
                 (data.get("production_id")
                  or None) if "production_id" in data else None,
