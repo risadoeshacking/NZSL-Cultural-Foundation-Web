@@ -55,8 +55,12 @@ export function extractYouTubeVideoId(inputUrl) {
 export function buildYouTubeEmbedUrl(videoId) {
   if (!videoId || typeof videoId !== "string") return null;
   if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) return null;
-  // Always use /embed/VIDEO_ID — no origin param (causes Error 153 on iOS WebKit)
-  return `https://www.youtube.com/embed/${videoId}`;
+  // Minimal safe params for iOS/WebKit:
+  //   - playsinline=1  → keeps playback inside the iframe on iOS (no fullscreen hijack)
+  //   - rel=0          → suppresses unrelated suggested videos
+  //   - modestbranding → reduces YouTube branding
+  // NO origin, enablejsapi, referrerPolicy, or loading="lazy" — all trigger Error 153 on iOS.
+  return `https://www.youtube.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1`;
 }
 
 /**

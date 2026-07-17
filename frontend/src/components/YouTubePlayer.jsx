@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { extractYouTubeVideoId, buildYouTubeEmbedUrl, isMobileDevice } from "../utils/youtube";
+import { useEffect, useMemo, useRef } from "react";
+import { extractYouTubeVideoId, buildYouTubeEmbedUrl } from "../utils/youtube";
 
 
 /**
  * YouTube iframe player — iOS/WebKit safe.
  *
- * Features:
- *   - referrerPolicy="strict-origin-when-cross-origin" for proper referrer handling
- *   - frameBorder="0" for clean rendering
- *   - Error fallback: shows "Watch on YouTube" button if iframe fails to load
- *   - Mobile fallback: if on mobile and iframe errors, offers external link
+ * Key rules to avoid Error 153 on mobile:
+ *   - NO referrerPolicy (strips referrer on iOS cross-origin, triggers Error 153)
+ *   - NO loading="lazy" (WebKit lazy-load handling breaks YouTube init on iOS)
+ *   - NO origin= param (causes Error 153 on iOS WebKit)
+ *   - NO enablejsapi= param (can trigger cookie/consent issues on mobile)
+ *   - playsinline=1 in URL keeps playback inside the iframe on iOS
+ *   - allowFullScreen for fullscreen support
  */
 export default function YouTubePlayer({
   youtubeUrl,
@@ -26,23 +28,13 @@ export default function YouTubePlayer({
 
   const iframeRef = useRef(null);
 
-
   const embedSrc = useMemo(() => {
-    // iOS Error 153 is very sensitive to iframe query params.
-    // Must match the safest template: exactly https://www.youtube.com/embed/VIDEO_ID
     return buildYouTubeEmbedUrl(normalizedVideoId);
   }, [normalizedVideoId]);
 
 
-  // Keep minimal logic. iOS Error 153 is not reliably catchable via onError,
-  // so we don't attempt to swap UI on error.
+  // Stop playback when popup closes/unmounts.
   useEffect(() => {
-    if (!embedSrc) return;
-  }, [embedSrc]);
-
-
-  useEffect(() => {
-    // Stop playback when popup closes/unmounts.
     return () => {
       try {
         if (iframeRef.current) iframeRef.current.src = "about:blank";
@@ -60,15 +52,9 @@ export default function YouTubePlayer({
     );
   }
 
-  // Intentionally do not switch UI on iframe error.
+  // Intentionally do NOT switch UI on iframe error.
   // On iOS, Error 153 can be triggered during initialization; swapping DOM can
   // prevent the iframe from retrying. Keep the iframe mounted.
-  // if (loadError && watchUrl) { ... }
-  void loadError;
-  void watchUrl;
-
-
-
   return (
     <iframe
       ref={iframeRef}
@@ -76,10 +62,8 @@ export default function YouTubePlayer({
       className={className}
       src={embedSrc}
       frameBorder="0"
-      referrerPolicy="strict-origin-when-cross-origin"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
       allowFullScreen
-      onError={handleIframeError}
     />
   );
 }

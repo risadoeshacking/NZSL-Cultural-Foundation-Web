@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { X, Play } from "lucide-react";
 import YouTubePlayer from "./YouTubePlayer";
 import { extractYouTubeVideoId } from "../utils/youtube";
