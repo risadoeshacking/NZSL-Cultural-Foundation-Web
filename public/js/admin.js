@@ -3712,25 +3712,53 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
     const publicId = publicIdWithExt.replace(/\.[^.]+$/, "");
     const ext = (publicIdWithExt.split(".").pop() || "jpg").toLowerCase();
 
-    const transformUrl = `${baseUrl}c_pad,w_${targetW},h_${targetH},g_gen_fill/${publicId}.${ext}`;
+    const genFillUrl = `${baseUrl}c_pad,w_${targetW},h_${targetH},g_gen_fill/${publicId}.${ext}`;
+    const fallbackUrl = `${baseUrl}c_pad,w_${targetW},h_${targetH},g_auto/${publicId}.${ext}`;
 
-    // Verify the generated image loads
-    const testImg = new Image();
-    testImg.crossOrigin = "anonymous";
-    await new Promise((resolve, reject) => {
-      testImg.onload = resolve;
-      testImg.onerror = () =>
-        reject(
-          new Error(
-            "AI generation failed. The image may not support generative fill."
-          )
+    // Helper: test if a Cloudinary URL loads successfully
+    function testCloudinaryUrl(url, timeoutMs) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(url);
+        img.onerror = () => reject(new Error("load_error"));
+        img.src = url;
+        setTimeout(() => reject(new Error("timeout")), timeoutMs || 15000);
+      });
+    }
+
+    let finalUrl;
+    try {
+      // Try generative fill first
+      finalUrl = await testCloudinaryUrl(genFillUrl, 15000);
+    } catch (e1) {
+      // Generative fill failed — try fallback (auto-gravity fill)
+      try {
+        finalUrl = await testCloudinaryUrl(fallbackUrl, 15000);
+        showToast(
+          "Generative fill unavailable — used auto-fill instead. Image resized to " +
+            targetW +
+            "×" +
+            targetH +
+            "px.",
+          "success"
         );
-      testImg.src = transformUrl;
-      setTimeout(() => reject(new Error("AI generation timed out")), 30000);
-    });
+        closeModal();
+        onExtended(finalUrl);
+        return;
+      } catch (e2) {
+        // Both failed
+        throw new Error(
+          "Cloudinary could not process this image. " +
+            "Generative fill (g_gen_fill) returned an error, and the auto-fill " +
+            "fallback also failed. Please try a different image or check your " +
+            "Cloudinary plan settings."
+        );
+      }
+    }
 
     closeModal();
-    onExtended(transformUrl);
+    onExtended(finalUrl);
     showToast(`AI extended to ${targetW}×${targetH}px`, "success");
   } catch (err) {
     showToast(err.message || "AI extend failed", "error");
