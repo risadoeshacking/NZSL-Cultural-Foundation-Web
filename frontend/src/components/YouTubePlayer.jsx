@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef } from "react";
-import { extractYouTubeVideoId, buildYouTubeEmbedUrl } from "../utils/youtube";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { extractYouTubeVideoId, buildYouTubeEmbedUrl, isMobileDevice } from "../utils/youtube";
+
 
 /**
  * YouTube iframe player — iOS/WebKit safe.
@@ -17,41 +18,28 @@ export default function YouTubePlayer({
   autoplay = false,
   className = "w-full h-full",
 }) {
+
   const normalizedVideoId = useMemo(() => {
     if (videoId) return extractYouTubeVideoId(videoId) || videoId;
     return extractYouTubeVideoId(youtubeUrl);
   }, [youtubeUrl, videoId]);
 
   const iframeRef = useRef(null);
-  const [loadError, setLoadError] = useState(false);
+
 
   const embedSrc = useMemo(() => {
     // iOS Error 153 is very sensitive to iframe query params.
     // Must match the safest template: exactly https://www.youtube.com/embed/VIDEO_ID
-    const base = buildYouTubeEmbedUrl(normalizedVideoId);
-    return base;
+    return buildYouTubeEmbedUrl(normalizedVideoId);
   }, [normalizedVideoId]);
 
-  const watchUrl = useMemo(
-    () => (normalizedVideoId ? getYouTubeWatchUrl(normalizedVideoId) : null),
-    [normalizedVideoId]
-  );
 
-  // Detect iframe load failures (e.g. Error 153 on mobile).
-  // We use a timeout: if the iframe hasn't loaded meaningful content
-  // within 5 s on mobile, treat it as a failure.
+  // Keep minimal logic. iOS Error 153 is not reliably catchable via onError,
+  // so we don't attempt to swap UI on error.
   useEffect(() => {
-    if (!embedSrc || !isMobileDevice()) return;
-    const timer = setTimeout(() => {
-      // If the iframe is still present but the user hasn't interacted,
-      // we don't set error — only set on explicit error event.
-    }, 5000);
-    return () => clearTimeout(timer);
+    if (!embedSrc) return;
   }, [embedSrc]);
 
-  const handleIframeError = useCallback(() => {
-    setLoadError(true);
-  }, []);
 
   useEffect(() => {
     // Stop playback when popup closes/unmounts.
@@ -79,9 +67,7 @@ export default function YouTubePlayer({
   void loadError;
   void watchUrl;
 
-  // Debugging: log the final iframe URL to compare mobile vs desktop.
-  // eslint-disable-next-line no-console
-  console.log("[YouTubePlayer]", { normalizedVideoId, embedSrc });
+
 
   return (
     <iframe
