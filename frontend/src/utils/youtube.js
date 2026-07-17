@@ -52,11 +52,9 @@ export function extractYouTubeVideoId(inputUrl) {
   return null;
 }
 
-export function buildYouTubeEmbedUrl(videoId, origin) {
+export function buildYouTubeEmbedUrl(videoId) {
   if (!videoId || typeof videoId !== "string") return null;
   if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) return null;
-  // Always use /embed/VIDEO_ID
-  const base = `https://www.youtube.com/embed/${videoId}`;
-  if (origin) return `${base}?origin=${encodeURIComponent(origin)}`;
-  return base;
+  // Always use /embed/VIDEO_ID — no origin param (causes Error 153 on iOS WebKit)
+  return `https://www.youtube.com/embed/${videoId}`;
 }

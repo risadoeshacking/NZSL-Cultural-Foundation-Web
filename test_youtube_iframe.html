@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube Error 153 — iPhone Chrome Test</title>
+    <style>
+      body {
+        font-family: -apple-system, sans-serif;
+        padding: 20px;
+        background: #111;
+        color: #eee;
+      }
+      h1 {
+        font-size: 18px;
+        margin-bottom: 4px;
+      }
+      .subtitle {
+        font-size: 13px;
+        color: #999;
+        margin-bottom: 20px;
+      }
+      .test {
+        margin: 20px 0;
+        padding: 16px;
+        background: #222;
+        border-radius: 8px;
+        border: 1px solid #444;
+      }
+      .test h2 {
+        font-size: 14px;
+        margin: 0 0 4px;
+      }
+      .test p {
+        font-size: 12px;
+        color: #aaa;
+        margin: 4px 0;
+      }
+      .ok {
+        color: #4caf50;
+      }
+      .fail {
+        color: #f44336;
+      }
+      .label {
+        font-weight: bold;
+        color: #ccc;
+      }
+      iframe {
+        border: 0;
+        display: block;
+      }
+      .result {
+        margin: 8px 0;
+        padding: 8px;
+        background: #333;
+        border-radius: 4px;
+        font-size: 11px;
+        word-break: break-all;
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>YouTube Error 153 — iPhone Chrome Test</h1>
+    <p class="subtitle">
+      Open on iPhone Chrome AND Desktop Chrome. All tests should work on both.
+      If Test A works but Tests B-E fail, the removed attributes are the cause.
+    </p>
+
+    <!-- TEST A: iOS-SAFE (matches fixed component) -->
+    <div class="test">
+      <h2 class="ok">Test A — iOS-Safe (matches fixed component) ✅</h2>
+      <p>No lazy loading, no referrerPolicy, no origin param, no enablejsapi</p>
+      <div class="result">
+        https://www.youtube.com/embed/MiGrTWGoSeg?autoplay=0&rel=0&playsinline=1&modestbranding=1
+      </div>
+      <iframe
+        src="https://www.youtube.com/embed/MiGrTWGoSeg?autoplay=0&rel=0&playsinline=1&modestbranding=1"
+        width="100%"
+        height="400"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+      ></iframe>
+    </div>
+
+    <!-- TEST B: Bare minimum (absolute simplest) -->
+    <div class="test">
+      <h2>Test B — Bare minimum (simplest possible)</h2>
+      <p>Just src + dimensions + allowfullscreen</p>
+      <div class="result">https://www.youtube.com/embed/MiGrTWGoSeg</div>
+      <iframe
+        src="https://www.youtube.com/embed/MiGrTWGoSeg"
+        width="100%"
+        height="400"
+        allowfullscreen
+      ></iframe>
+    </div>
+
+    <!-- TEST C: With loading="lazy" (KNOWN iOS ISSUE) -->
+    <div class="test">
+      <h2 class="fail">Test C — With loading="lazy" ⚠️</h2>
+      <p>May fail on iPhone Chrome due to WebKit lazy-load handling</p>
+      <div class="result">
+        https://www.youtube.com/embed/MiGrTWGoSeg?autoplay=0&rel=0&playsinline=1&modestbranding=1
+      </div>
+      <iframe
+        loading="lazy"
+        src="https://www.youtube.com/embed/MiGrTWGoSeg?autoplay=0&rel=0&playsinline=1&modestbranding=1"
+        width="100%"
+        height="400"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+      ></iframe>
+    </div>
+
+    <!-- TEST D: With referrerPolicy (KNOWN iOS ISSUE) -->
+    <div class="test">
+      <h2 class="fail">Test D — With referrerPolicy ⚠️</h2>
+      <p>May fail on iPhone Chrome — strips referrer on iOS cross-origin</p>
+      <div class="result">
+        https://www.youtube.com/embed/MiGrTWGoSeg?autoplay=0&rel=0&playsinline=1&modestbranding=1
+      </div>
+      <iframe
+        src="https://www.youtube.com/embed/MiGrTWGoSeg?autoplay=0&rel=0&playsinline=1&modestbranding=1"
+        width="100%"
+        height="400"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+        referrerpolicy="strict-origin-when-cross-origin"
+      ></iframe>
+    </div>
+
+    <!-- TEST E: With origin param (KNOWN iOS ISSUE) -->
+    <div class="test">
+      <h2 class="fail">Test E — With origin param ⚠️</h2>
+      <p>May fail on iPhone Chrome — origin validation mismatch</p>
+      <div class="result">
+        https://www.youtube.com/embed/MiGrTWGoSeg?origin=https://www.nzslcf.org.nz&autoplay=0&rel=0&playsinline=1&modestbranding=1
+      </div>
+      <iframe
+        src="https://www.youtube.com/embed/MiGrTWGoSeg?origin=https://www.nzslcf.org.nz&autoplay=0&rel=0&playsinline=1&modestbranding=1"
+        width="100%"
+        height="400"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+      ></iframe>
+    </div>
+
+    <!-- TEST F: OLD component (all problematic attrs combined) -->
+    <div class="test">
+      <h2 class="fail">Test F — OLD component (all bad attrs) ⚠️</h2>
+      <p>
+        Exact replica of the old broken component — should fail on iPhone Chrome
+      </p>
+      <div class="result">
+        https://www.youtube.com/embed/MiGrTWGoSeg?origin=https://www.nzslcf.org.nz&autoplay=0&enablejsapi=1&rel=0&playsinline=1&modestbranding=1
+      </div>
+      <iframe
+        loading="lazy"
+        src="https://www.youtube.com/embed/MiGrTWGoSeg?origin=https://www.nzslcf.org.nz&autoplay=0&enablejsapi=1&rel=0&playsinline=1&modestbranding=1"
+        width="100%"
+        height="400"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+        referrerpolicy="strict-origin-when-cross-origin"
+      ></iframe>
+    </div>
+
+    <script>
+      // Log results
+      document.querySelectorAll(".test iframe").forEach((iframe, i) => {
+        const label = String.fromCharCode(65 + i);
+        iframe.addEventListener("load", () => {
+          console.log(`Test ${label}: LOADED ✓`);
+        });
+        iframe.addEventListener("error", () => {
+          console.error(`Test ${label}: FAILED ✗`);
+        });
+      });
+    </script>
+  </body>
+</html>

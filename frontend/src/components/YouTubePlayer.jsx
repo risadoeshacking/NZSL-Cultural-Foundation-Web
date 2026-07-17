@@ -1,52 +1,40 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { extractYouTubeVideoId, buildYouTubeEmbedUrl } from "../utils/youtube";
 
+/**
+ * YouTube iframe player — iOS/WebKit safe.
+ *
+ * Removed (all cause Error 153 on iPhone Chrome / Safari):
+ *   - loading="lazy"          → WebKit mishandles lazy iframes in dynamic modals
+ *   - referrerPolicy           → strips referrer on iOS cross-origin, YouTube rejects
+ *   - origin query param       → causes validation mismatch on iOS WebKit
+ *   - enablejsapi=1            → JS-API handshake fails on iOS with above issues
+ *   - setTimeout src delay     → race condition on iOS WebKit
+ */
 export default function YouTubePlayer({
   youtubeUrl,
   videoId,
   title = "YouTube video",
   autoplay = false,
   className = "w-full h-full",
-  onRequestClose,
 }) {
   const normalizedVideoId = useMemo(() => {
     if (videoId) return extractYouTubeVideoId(videoId) || videoId;
     return extractYouTubeVideoId(youtubeUrl);
   }, [youtubeUrl, videoId]);
 
-  const [shouldRender, setShouldRender] = useState(false);
   const iframeRef = useRef(null);
 
-  const origin = useMemo(() => {
-    if (typeof window !== "undefined") return window.location.origin;
-    return null;
-  }, []);
-
-  const embedBase = useMemo(
-    () => buildYouTubeEmbedUrl(normalizedVideoId, origin),
-    [normalizedVideoId, origin],
-  );
-
   const embedSrc = useMemo(() => {
-    if (!embedBase) return null;
-    // If buildYouTubeEmbedUrl already added the origin as a query string,
-    // we need to append additional params with '&' instead of '?'.
-    const separator = embedBase.includes("?") ? "&" : "?";
+    const base = buildYouTubeEmbedUrl(normalizedVideoId);
+    if (!base) return null;
     const params = new URLSearchParams();
-    if (autoplay) params.set("autoplay", "1");
-    else params.set("autoplay", "0");
-    params.set("enablejsapi", "1");
+    params.set("autoplay", autoplay ? "1" : "0");
     params.set("rel", "0");
     params.set("playsinline", "1");
     params.set("modestbranding", "1");
-    return `${embedBase}${separator}${params.toString()}`;
-  }, [embedBase, autoplay]);
-
-  useEffect(() => {
-    // Lazy-load iframe when component mounts.
-    const t = window.setTimeout(() => setShouldRender(true), 50);
-    return () => window.clearTimeout(t);
-  }, []);
+    return `${base}?${params.toString()}`;
+  }, [normalizedVideoId, autoplay]);
 
   useEffect(() => {
     // Stop playback when popup closes/unmounts.
@@ -70,13 +58,11 @@ export default function YouTubePlayer({
   return (
     <iframe
       ref={iframeRef}
-      loading="lazy"
       title={title}
       className={className}
-      src={shouldRender ? embedSrc : undefined}
+      src={embedSrc}
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
       allowFullScreen
-      referrerPolicy="strict-origin-when-cross-origin"
     />
   );
 }
