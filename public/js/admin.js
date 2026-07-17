@@ -3606,7 +3606,7 @@ function openAiExtendModal(file, onExtended) {
             </div>
             <div class="admin-form-actions">
               <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
-              <button type="button" class="btn btn-primary btn-sm" id="aiExtendBtn" onclick="applyAiExtend('${file.name}', ${origW}, ${origH}, '${file.type}', onExtended)">
+              <button type="button" class="btn btn-primary btn-sm" id="aiExtendBtn" onclick="applyAiExtend('${file.name}', ${origW}, ${origH}, '${file.type}', window._aiExtendOnExtended)">
                 &#x2728; Generate with AI
               </button>
             </div>
