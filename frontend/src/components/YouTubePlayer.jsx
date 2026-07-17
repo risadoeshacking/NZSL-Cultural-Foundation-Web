@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { extractYouTubeVideoId, buildYouTubeEmbedUrl, isMobileDevice, getYouTubeWatchUrl } from "../utils/youtube";
+import { useEffect, useMemo, useRef } from "react";
+import { extractYouTubeVideoId, buildYouTubeEmbedUrl } from "../utils/youtube";
 
 /**
  * YouTube iframe player — iOS/WebKit safe.
@@ -26,18 +26,11 @@ export default function YouTubePlayer({
   const [loadError, setLoadError] = useState(false);
 
   const embedSrc = useMemo(() => {
-    // Keep the iframe src as close as possible to the canonical embed format
-    // to avoid iOS/WebKit "Error 153" configuration issues.
-    // Canonical: https://www.youtube.com/embed/VIDEO_ID
+    // iOS Error 153 is very sensitive to iframe query params.
+    // Must match the safest template: exactly https://www.youtube.com/embed/VIDEO_ID
     const base = buildYouTubeEmbedUrl(normalizedVideoId);
-    if (!base) return null;
-    if (!autoplay) return base;
-
-    // Only add autoplay when explicitly requested.
-    const params = new URLSearchParams();
-    params.set("autoplay", "1");
-    return `${base}?${params.toString()}`;
-  }, [normalizedVideoId, autoplay]);
+    return base;
+  }, [normalizedVideoId]);
 
   const watchUrl = useMemo(
     () => (normalizedVideoId ? getYouTubeWatchUrl(normalizedVideoId) : null),
