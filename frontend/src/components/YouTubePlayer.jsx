@@ -26,13 +26,16 @@ export default function YouTubePlayer({
   const [loadError, setLoadError] = useState(false);
 
   const embedSrc = useMemo(() => {
+    // Keep the iframe src as close as possible to the canonical embed format
+    // to avoid iOS/WebKit "Error 153" configuration issues.
+    // Canonical: https://www.youtube.com/embed/VIDEO_ID
     const base = buildYouTubeEmbedUrl(normalizedVideoId);
     if (!base) return null;
+    if (!autoplay) return base;
+
+    // Only add autoplay when explicitly requested.
     const params = new URLSearchParams();
-    params.set("autoplay", autoplay ? "1" : "0");
-    params.set("rel", "0");
-    params.set("playsinline", "1");
-    params.set("modestbranding", "1");
+    params.set("autoplay", "1");
     return `${base}?${params.toString()}`;
   }, [normalizedVideoId, autoplay]);
 
@@ -107,6 +110,10 @@ export default function YouTubePlayer({
       </div>
     );
   }
+
+  // Debugging: log the final iframe URL to compare mobile vs desktop.
+  // eslint-disable-next-line no-console
+  console.log("[YouTubePlayer]", { normalizedVideoId, embedSrc });
 
   return (
     <iframe
