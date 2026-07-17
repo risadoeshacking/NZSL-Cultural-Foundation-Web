@@ -1,22 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import YouTubePlayer from "./YouTubePlayer";
 
 export default function VideoModal({ video, onClose }) {
-  const [autoplay, setAutoplay] = useState(true);
+  // Start with autoplay=0 on mobile to avoid failed reload that breaks the iframe.
+  // Desktop browsers support autoplay; mobile browsers block it, so starting with
+  // autoplay=1 causes a 3.5-second delay then a full iframe reload which often
+  // fails on mobile Safari/Chrome.
+  const [autoplay] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !/Mobi|Android|iPhone|iPad|iPod/i.test(window.navigator.userAgent);
+  });
+  const overlayRef = useRef(null);
 
-  // If autoplay doesn't start, swap to autoplay=0 after a short delay.
-  useEffect(() => {
-    if (!video) return;
-    if (!autoplay) return;
-
-    const t = setTimeout(() => {
-      setAutoplay(false);
-    }, 3500);
-
-    return () => clearTimeout(t);
-  }, [video, autoplay]);
-
+  // Prevent body scrolling behind the modal
   useEffect(() => {
     if (!video) return;
     const prev = document.body.style.overflow;
@@ -30,7 +27,8 @@ export default function VideoModal({ video, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/90 p-3 sm:p-6"
+      ref={overlayRef}
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black/90 p-3 sm:p-6"
       onClick={onClose}
     >
       <button
@@ -43,14 +41,14 @@ export default function VideoModal({ video, onClose }) {
       </button>
 
       <div
-        className="aspect-video my-auto w-full max-w-3xl overflow-hidden rounded-lg"
+        className="relative w-full max-w-3xl overflow-hidden rounded-lg"
+        style={{ aspectRatio: "16 / 9", maxHeight: "calc(100vh - 24px)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <YouTubePlayer
-          className="h-full w-full"
+          className="absolute inset-0 h-full w-full"
           title={video.title}
           autoplay={autoplay}
-          // video.video_id is expected, but we also support if the backend sends youtube_url.
           videoId={video.video_id}
           youtubeUrl={video.youtube_url}
         />
