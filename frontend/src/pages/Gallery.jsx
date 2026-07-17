@@ -181,13 +181,14 @@ export default function Gallery() {
                     className="group relative mb-3 block w-full break-inside-avoid overflow-hidden rounded-lg"
                     onClick={() => setActiveIndex(i)}
                   >
-                    <img
-                      src={photo.image_url}
-                      alt={photo.title || ""}
-                      loading="lazy"
-                      className="w-full object-cover transition-transform group-hover:scale-105"
-                      style={{ height: `${150 + (i % 3) * 60}px` }}
-                    />
+                    <div className="w-full bg-black/5" style={{ aspectRatio: "4 / 3" }}>
+                      <img
+                        src={photo.image_url}
+                        alt={photo.title || ""}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      />
+                    </div>
                     <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 transition-opacity group-hover:opacity-100">
                       <div className="text-sm font-medium text-white">{photo.title || "Untitled"}</div>
                       {photo.photographer && <div className="text-xs text-white/70">{photo.photographer}</div>}

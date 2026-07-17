@@ -1,25 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import YouTubePlayer from "./YouTubePlayer";
 
 export default function VideoModal({ video, onClose }) {
   const [autoplay, setAutoplay] = useState(true);
-  const [iframeKey, setIframeKey] = useState(0);
 
-  const embedSrc = useMemo(() => {
-    if (!video) return "";
-    const autoplayParam = autoplay ? 1 : 0;
-    return `https://www.youtube-nocookie.com/embed/${video.video_id}?autoplay=${autoplayParam}&rel=0&playsinline=1&modestbranding=1`;
-  }, [video, autoplay]);
-
-  // Some domains/devices reject autoplay (Error 153). If autoplay doesn't start,
-  // swap to autoplay=0 after a short delay.
+  // If autoplay doesn't start, swap to autoplay=0 after a short delay.
   useEffect(() => {
     if (!video) return;
     if (!autoplay) return;
 
     const t = setTimeout(() => {
       setAutoplay(false);
-      setIframeKey((k) => k + 1);
     }, 3500);
 
     return () => clearTimeout(t);
@@ -27,9 +19,12 @@ export default function VideoModal({ video, onClose }) {
 
   useEffect(() => {
     if (!video) return;
-    // Force iframe remount when we change strategy.
-    setIframeKey((k) => k + 1);
-  }, [video?.video_id]);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [video]);
 
   if (!video) return null;
 
@@ -46,19 +41,22 @@ export default function VideoModal({ video, onClose }) {
       >
         <X size={28} />
       </button>
-      <div className="aspect-video w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
-        <iframe
-          key={iframeKey}
-          className="h-full w-full rounded-lg"
-          src={embedSrc}
+
+      <div
+        className="aspect-video w-full max-w-3xl overflow-hidden rounded-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <YouTubePlayer
+          className="h-full w-full"
           title={video.title}
-          referrerPolicy="strict-origin-when-cross-origin"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          sandbox="allow-scripts allow-same-origin allow-presentation"
+          autoplay={autoplay}
+          // video.video_id is expected, but we also support if the backend sends youtube_url.
+          videoId={video.video_id}
+          youtubeUrl={video.youtube_url}
         />
       </div>
     </div>
   );
 }
+
 
