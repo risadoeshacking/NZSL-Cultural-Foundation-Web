@@ -181,7 +181,7 @@ export default function Gallery() {
                     className="group relative mb-3 block w-full break-inside-avoid overflow-hidden rounded-lg"
                     onClick={() => setActiveIndex(i)}
                   >
-                    <div className="w-full bg-black/5" style={{ aspectRatio: "4 / 3" }}>
+                    <div className="w-full bg-black/5 aspect-video">
                       <img
                         src={photo.image_url}
                         alt={photo.title || ""}

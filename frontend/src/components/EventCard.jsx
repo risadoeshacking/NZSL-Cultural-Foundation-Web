@@ -99,7 +99,7 @@ export function LinkCard({ to, image, title, subtitle, ctaLabel = "View More" })
       to={to}
       className="group block overflow-hidden rounded-2xl border border-black/5 bg-white shadow-sm transition-shadow hover:shadow-md"
     >
-      <div className="aspect-[4/3] overflow-hidden bg-gradient-to-br from-maroon to-ink-deep">
+      <div className="aspect-video overflow-hidden bg-gradient-to-br from-maroon to-ink-deep">
         {image && (
           <img
             src={image}

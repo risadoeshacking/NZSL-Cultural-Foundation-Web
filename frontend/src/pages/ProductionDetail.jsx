@@ -51,7 +51,7 @@ export default function ProductionDetail() {
 
       <section className="bg-cream px-5 py-16">
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-10 md:grid-cols-2">
-          <div className="aspect-[4/3] overflow-hidden rounded-2xl bg-gradient-to-br from-maroon to-ink-deep">
+          <div className="aspect-video overflow-hidden rounded-2xl bg-gradient-to-br from-maroon to-ink-deep">
             {production.cover_image && (
               <img src={production.cover_image} alt={production.title} className="h-full w-full object-cover" />
             )}
@@ -79,7 +79,7 @@ export default function ProductionDetail() {
                 <button
                   key={photo.id}
                   type="button"
-                  className="aspect-square overflow-hidden rounded-lg bg-white/5"
+                  className="aspect-video overflow-hidden rounded-lg bg-white/5"
                   onClick={() => setActiveImage(photo)}
                 >
                   <img src={photo.image_url} alt={photo.title || ""} className="h-full w-full object-cover" />

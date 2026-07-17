@@ -53,7 +53,7 @@ export default function GalleryVideosWhatWeDo() {
                 <button
                   key={photo.id}
                   type="button"
-                  className="aspect-square overflow-hidden rounded-lg bg-white/5"
+                  className="aspect-video overflow-hidden rounded-lg bg-white/5"
                   onClick={() => setActiveImage(photo)}
                 >
                   <img
