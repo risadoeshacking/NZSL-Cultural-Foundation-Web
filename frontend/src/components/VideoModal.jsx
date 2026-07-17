@@ -1,17 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import YouTubePlayer from "./YouTubePlayer";
+import { isMobileDevice, getYouTubeWatchUrl } from "../utils/youtube";
 
 export default function VideoModal({ video, onClose }) {
-  // Start with autoplay=0 on mobile to avoid failed reload that breaks the iframe.
-  // Desktop browsers support autoplay; mobile browsers block it, so starting with
-  // autoplay=1 causes a 3.5-second delay then a full iframe reload which often
-  // fails on mobile Safari/Chrome.
-  const [autoplay] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return !/Mobi|Android|iPhone|iPad|iPod/i.test(window.navigator.userAgent);
-  });
   const overlayRef = useRef(null);
+
+  // Mobile: open YouTube externally (app or browser) and close the modal.
+  // Desktop: show the embedded player in a popup.
+  useEffect(() => {
+    if (!video) return;
+    if (isMobileDevice()) {
+      const url = getYouTubeWatchUrl(video.video_id) || video.youtube_url;
+      if (url) window.open(url, "_blank", "noopener,noreferrer");
+      onClose();
+    }
+  }, [video, onClose]);
 
   // Prevent body scrolling behind the modal
   useEffect(() => {
@@ -48,7 +52,6 @@ export default function VideoModal({ video, onClose }) {
         <YouTubePlayer
           className="absolute inset-0 h-full w-full"
           title={video.title}
-          autoplay={autoplay}
           videoId={video.video_id}
           youtubeUrl={video.youtube_url}
         />
@@ -56,5 +59,3 @@ export default function VideoModal({ video, onClose }) {
     </div>
   );
 }
-
-
