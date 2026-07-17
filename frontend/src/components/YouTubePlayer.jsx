@@ -79,37 +79,12 @@ export default function YouTubePlayer({
     );
   }
 
-  // Fallback UI when iframe fails to load (common on mobile Safari/Chrome).
-  if (loadError && watchUrl) {
-    return (
-      <div className="flex h-full w-full flex-col items-center justify-center rounded-lg bg-black p-6 text-center">
-        <svg
-          className="mb-4 h-16 w-16 text-red-500"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-        >
-          <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0C.488 3.45.029 5.804 0 12c.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0C23.512 20.55 23.971 18.196 24 12c-.029-6.185-.484-8.549-4.385-8.816zM9 16V8l8 3.993L9 16z" />
-        </svg>
-        <p className="mb-1 text-sm font-medium text-warm-white">
-          Video can't play in this browser
-        </p>
-        <p className="mb-4 text-xs text-warm-white/60">
-          Tap the button below to watch on YouTube.
-        </p>
-        <a
-          href={watchUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700"
-        >
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0C.488 3.45.029 5.804 0 12c.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0C23.512 20.55 23.971 18.196 24 12c-.029-6.185-.484-8.549-4.385-8.816zM9 16V8l8 3.993L9 16z" />
-          </svg>
-          Watch on YouTube
-        </a>
-      </div>
-    );
-  }
+  // Intentionally do not switch UI on iframe error.
+  // On iOS, Error 153 can be triggered during initialization; swapping DOM can
+  // prevent the iframe from retrying. Keep the iframe mounted.
+  // if (loadError && watchUrl) { ... }
+  void loadError;
+  void watchUrl;
 
   // Debugging: log the final iframe URL to compare mobile vs desktop.
   // eslint-disable-next-line no-console
