@@ -30,20 +30,20 @@ export default function VideoModal({ video, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-6"
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/90 p-3 sm:p-6"
       onClick={onClose}
     >
       <button
         type="button"
         aria-label="Close"
-        className="absolute right-6 top-6 text-white/80 hover:text-white"
+        className="absolute right-3 top-3 z-10 text-white/80 hover:text-white sm:right-6 sm:top-6"
         onClick={onClose}
       >
         <X size={28} />
       </button>
 
       <div
-        className="aspect-video w-full max-w-3xl overflow-hidden rounded-lg"
+        className="aspect-video my-auto w-full max-w-3xl overflow-hidden rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <YouTubePlayer
