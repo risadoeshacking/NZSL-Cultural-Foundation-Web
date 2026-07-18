@@ -291,7 +291,17 @@ def create_app():
     @app.after_request
     def set_security_headers(resp):
         resp.headers.setdefault("X-Content-Type-Options", "nosniff")
-        resp.headers.setdefault("Referrer-Policy", "no-referrer")
+        # strict-origin-when-cross-origin sends the full URL for same-origin,
+        # only the origin for cross-origin (e.g. youtube.com), and nothing for
+        # downgrade. This is required for YouTube iframes to work on iOS —
+        # "no-referrer" strips the referrer entirely, causing Error 153.
+        resp.headers.setdefault(
+            "Referrer-Policy", "strict-origin-when-cross-origin")
+        # Allow YouTube iframe embeds (required by Content-Security-Policy).
+        resp.headers.setdefault(
+            "Content-Security-Policy",
+            "frame-src 'self' https://www.youtube.com https://www.youtube.com/embed;"
+        )
         return resp
 
     # Catch-all: never let an unhandled exception surface as a raw crash
