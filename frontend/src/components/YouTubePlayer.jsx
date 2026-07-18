@@ -55,15 +55,27 @@ export default function YouTubePlayer({
   // Intentionally do NOT switch UI on iframe error.
   // On iOS, Error 153 can be triggered during initialization; swapping DOM can
   // prevent the iframe from retrying. Keep the iframe mounted.
+  //
+  // iOS/WebKit-safe iframe attributes:
+  //   - playsInline: required on iOS to keep video inside the iframe
+  //   - NO referrerPolicy: strips referrer on iOS cross-origin → Error 153
+  //   - NO loading="lazy": WebKit lazy-load breaks YouTube init on iOS
+  //   - NO frameBorder: deprecated; use CSS border:0 instead
+  //   - Minimal allow: fewer permissions = fewer iOS security checks
+  if (import.meta.env.DEV) {
+    console.log("[YouTubePlayer] embedSrc:", embedSrc);
+  }
+
   return (
     <iframe
       ref={iframeRef}
       title={title}
       className={className}
       src={embedSrc}
-      frameBorder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      style={{ border: 0 }}
+      allow="autoplay; encrypted-media; picture-in-picture"
       allowFullScreen
+      playsInline
     />
   );
 }

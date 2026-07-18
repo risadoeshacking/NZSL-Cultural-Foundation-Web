@@ -55,7 +55,7 @@ export default function VideoModal({ video, onClose }) {
         <YouTubePlayer
           className="absolute inset-0 h-full w-full"
           title={video.title}
-          videoId={video.video_id}
+          videoId={videoId}
           youtubeUrl={video.youtube_url}
         />
       </div>
