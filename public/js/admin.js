@@ -1011,7 +1011,7 @@ function aiExtendGalleryFirstImage() {
     showToast("Select image files first, then click AI Extend.", "error");
     return;
   }
-  openAiExtendModal(input.files[0], (extendedUrl) => {
+  openAiCanvasFillModal(input.files[0], (extendedUrl) => {
     // Create a new File from the extended URL by fetching it
     fetch(extendedUrl)
       .then((r) => r.blob())
@@ -3009,7 +3009,7 @@ function aiExtendHeroBannerSlot(slot) {
 
   // If there's a file, use it directly; otherwise upload existing URL
   if (file) {
-    openAiExtendModal(file, (extendedUrl) => {
+    openAiCanvasFillModal(file, (extendedUrl) => {
       heroBannerPositions[slot] = 50;
       heroBannerPositionsX[slot] = 50;
       renderHeroBannerPreview(extendedUrl, slot);
@@ -3024,7 +3024,7 @@ function aiExtendHeroBannerSlot(slot) {
         const fakeFile = new File([blob], `banner.${ext}`, {
           type: blob.type || "image/jpeg",
         });
-        openAiExtendModal(fakeFile, (extendedUrl) => {
+        openAiCanvasFillModal(fakeFile, (extendedUrl) => {
           heroBannerPositions[slot] = 50;
           heroBannerPositionsX[slot] = 50;
           renderHeroBannerPreview(extendedUrl, slot);
@@ -3551,7 +3551,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // For ratio presets the "Max Width" input determines the output size.
 // For fixed presets the dimensions are locked.
 // "Custom" lets the user type any width × height.
-const AI_EXTEND_PRESETS = [
+const CANVAS_FILL_PRESETS = [
   // Ratio-based (output size = maxW × maxW/ratio)
   { label: "1:1 (Square)", ratio: 1 },
   { label: "4:5 (Instagram Portrait)", ratio: 4 / 5 },
@@ -3570,7 +3570,7 @@ const AI_EXTEND_PRESETS = [
   { label: "Custom (width × height)", custom: true },
 ];
 
-function openAiExtendModal(file, onExtended) {
+function openAiCanvasFillModal(file, onFilled) {
   if (!file || !file.type.startsWith("image/")) {
     showToast("Please select an image file first.", "error");
     return;
@@ -3613,26 +3613,26 @@ function openAiExtendModal(file, onExtended) {
             <div class="admin-form-row" style="margin-top:16px;align-items:end">
               <div class="admin-form-group" style="flex:3">
                 <label>Target Canvas</label>
-                <select id="aiExtendPreset" style="width:100%;font-size:0.85rem;padding:6px 8px" onchange="onAiExtendPresetChange('${e.target.result}', ${origW}, ${origH})">
+                <select id="aiExtendPreset" style="width:100%;font-size:0.85rem;padding:6px 8px" onchange="onCanvasFillPresetChange('${e.target.result}', ${origW}, ${origH})">
                   ${presetOptions}
                 </select>
               </div>
               <div class="admin-form-group" style="flex:1" id="aiExtendMaxWGroup">
                 <label>Max Width</label>
-                <input type="number" id="aiExtendMaxW" value="1920" min="200" max="4096" style="font-size:0.85rem;padding:6px 8px;width:100%" oninput="onAiExtendPresetChange('${e.target.result}', ${origW}, ${origH})" />
+                <input type="number" id="aiExtendMaxW" value="1920" min="200" max="4096" style="font-size:0.85rem;padding:6px 8px;width:100%" oninput="onCanvasFillPresetChange('${e.target.result}', ${origW}, ${origH})" />
               </div>
               <div class="admin-form-group" style="flex:1;display:none" id="aiExtendCustomWGroup">
                 <label>Width</label>
-                <input type="number" id="aiExtendCustomW" value="1920" min="200" max="4096" style="font-size:0.85rem;padding:6px 8px;width:100%" oninput="onAiExtendPresetChange('${e.target.result}', ${origW}, ${origH})" />
+                <input type="number" id="aiExtendCustomW" value="1920" min="200" max="4096" style="font-size:0.85rem;padding:6px 8px;width:100%" oninput="onCanvasFillPresetChange('${e.target.result}', ${origW}, ${origH})" />
               </div>
               <div class="admin-form-group" style="flex:1;display:none" id="aiExtendCustomHGroup">
                 <label>Height</label>
-                <input type="number" id="aiExtendCustomH" value="600" min="200" max="4096" style="font-size:0.85rem;padding:6px 8px;width:100%" oninput="onAiExtendPresetChange('${e.target.result}', ${origW}, ${origH})" />
+                <input type="number" id="aiExtendCustomH" value="600" min="200" max="4096" style="font-size:0.85rem;padding:6px 8px;width:100%" oninput="onCanvasFillPresetChange('${e.target.result}', ${origW}, ${origH})" />
               </div>
             </div>
             <div class="admin-form-actions">
               <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
-              <button type="button" class="btn btn-primary btn-sm" id="aiExtendBtn" onclick="applyAiExtend('${file.name}', ${origW}, ${origH}, '${file.type}', window._aiExtendOnExtended)">
+              <button type="button" class="btn btn-primary btn-sm" id="aiExtendBtn" onclick="applyCanvasFill('${file.name}', ${origW}, ${origH}, '${file.type}', window._aiCanvasFillOnFilled)">
                 &#x2728; Generate with AI
               </button>
             </div>
@@ -3642,11 +3642,11 @@ function openAiExtendModal(file, onExtended) {
       window._aiExtendOrigW = origW;
       window._aiExtendOrigH = origH;
       window._aiExtendFile = file;
-      window._aiExtendOnExtended = onExtended;
+      window._aiCanvasFillOnFilled = onFilled;
       window._aiExtendOriginalSrc = e.target.result;
 
       // Auto-select first preset and render preview
-      onAiExtendPresetChange(e.target.result, origW, origH);
+      onCanvasFillPresetChange(e.target.result, origW, origH);
     };
     img.src = e.target.result;
   };
@@ -3654,9 +3654,9 @@ function openAiExtendModal(file, onExtended) {
 }
 
 /** Read the selected preset and compute targetW / targetH, then update the preview. */
-function onAiExtendPresetChange(origSrc, origW, origH) {
+function onCanvasFillPresetChange(origSrc, origW, origH) {
   const idx = parseInt(document.getElementById("aiExtendPreset").value) || 0;
-  const preset = AI_EXTEND_PRESETS[idx];
+  const preset = CANVAS_FILL_PRESETS[idx];
   const isCustom = !!preset.custom;
   const isFixed = !!preset.fixedW;
 
@@ -3704,7 +3704,7 @@ function onAiExtendPresetChange(origSrc, origW, origH) {
  * @deprecated Use onAiExtendPresetChange instead. Kept for any stale inline handlers.
  */
 function previewAiExtend(origSrc, origW, origH) {
-  onAiExtendPresetChange(origSrc, origW, origH);
+  onCanvasFillPresetChange(origSrc, origW, origH);
 }
 
 /**
@@ -3737,22 +3737,22 @@ function testCloudinaryUrl(url, timeoutMs) {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
-      console.log("[AI Extend] Image loaded OK:", url);
+      console.log("[Canvas Fill] Image loaded OK:", url);
       resolve(url);
     };
     img.onerror = () => {
-      console.error("[AI Extend] Image failed to load:", url);
+      console.error("[Canvas Fill] Image failed to load:", url);
       reject(new Error("load_error"));
     };
     img.src = url;
     setTimeout(() => {
-      console.error("[AI Extend] Timeout loading:", url);
+      console.error("[Canvas Fill] Timeout loading:", url);
       reject(new Error("timeout"));
     }, timeoutMs || 20000);
   });
 }
 
-async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
+async function applyCanvasFill(fileName, origW, origH, fileType, onFilled) {
   const btn = document.getElementById("aiExtendBtn");
   if (!btn) return;
   setBtnLoading(btn, true);
@@ -3761,7 +3761,7 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
     // Compute target dimensions from the selected preset
     const presetIdx =
       parseInt(document.getElementById("aiExtendPreset").value) || 0;
-    const preset = AI_EXTEND_PRESETS[presetIdx];
+    const preset = CANVAS_FILL_PRESETS[presetIdx];
     let targetW, targetH;
 
     if (preset.custom) {
@@ -3777,7 +3777,7 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
       targetH = Math.round(targetW / preset.ratio);
     }
 
-    console.log("[AI Canvas Fill] Target:", targetW, "x", targetH);
+    console.log("[Canvas Fill] Target:", targetW, "x", targetH);
 
     // Step 1: Upload the original file
     const fd = new FormData();
@@ -3793,7 +3793,7 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
     }
     const uploadData = await uploadRes.json();
     const originalUrl = uploadData.url;
-    console.log("[AI Canvas Fill] Upload URL:", originalUrl);
+    console.log("[Canvas Fill] Upload URL:", originalUrl);
 
     // Step 2: Validate it's a Cloudinary URL
     if (!originalUrl || !originalUrl.includes("res.cloudinary.com")) {
@@ -3809,34 +3809,40 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
         "Could not extract Cloudinary public_id from URL: " + originalUrl
       );
     }
-    console.log("[AI Canvas Fill] public_id:", publicId);
+    console.log("[Canvas Fill] public_id:", publicId);
 
-    // Step 4: Build transformation URLs with fallback chain.
-    // c_pad creates a canvas of targetW×targetH, fits the image inside (centered),
-    // and leaves empty space. g_gen_fill fills that space with AI content.
+    // Step 4: Build a “fit into canvas, keep original pixels, fill empty regions” transform.
+    // Required behavior:
+    //  - Never stretch/crop the original (fit inside target canvas).
+    //  - Only generate AI content in the empty canvas areas.
+    //
+    // Cloudinary note:
+    //  - c_pad creates a padded canvas of w×h and keeps the original fully visible (no crop).
+    //  - g_gen_fill fills the padded/empty regions around the subject.
+    //
+    // We only try transforms that preserve the fitted/padded region.
     const marker = "/upload/";
     const markerIdx = originalUrl.indexOf(marker);
     const baseUrl = originalUrl.substring(0, markerIdx + marker.length);
 
-    const transforms = [
+    const transformPaths = [
+      // Preferred: pad + generative fill
       {
-        name: "AI generative fill (g_gen_fill)",
+        name: "c_pad + g_gen_fill (AI fill only in empty areas)",
         path: `c_pad,w_${targetW},h_${targetH},g_gen_fill/${publicId}`,
       },
+      // Fallback: pad + generative fill via auto placement (still padded, still no crop)
+      // (We deliberately do NOT include plain b_white or other non-AI fallbacks here.)
       {
-        name: "auto gravity fill (g_auto)",
-        path: `c_pad,w_${targetW},h_${targetH},g_auto/${publicId}`,
-      },
-      {
-        name: "center-padded (c_pad + white bg)",
-        path: `c_pad,w_${targetW},h_${targetH},b_white/${publicId}`,
+        name: "c_pad + g_auto + g_gen_fill (AI fill fallback)",
+        path: `c_pad,w_${targetW},h_${targetH},g_auto,g_gen_fill/${publicId}`,
       },
     ];
 
     let finalUrl = null;
     let usedTransform = null;
 
-    for (const t of transforms) {
+    for (const t of transformPaths) {
       const testUrl = `${baseUrl}${t.path}.jpg`;
       console.log(`[AI Canvas Fill] Trying ${t.name}:`, testUrl);
       try {
@@ -3850,7 +3856,7 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
 
     if (!finalUrl) {
       throw new Error(
-        "All image transforms failed. Please check your Cloudinary account settings and try a different image."
+        "Canvas fill failed: Cloudinary generative fill (g_gen_fill) is not available or not permitted for this resource."
       );
     }
 
@@ -3862,10 +3868,10 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
       "success"
     );
   } catch (err) {
-    console.error("[AI Canvas Fill] Error:", err);
-    showToast(err.message || "AI canvas fill failed", "error");
+    console.error("[Canvas Fill] Error:", err);
+    showToast(err.message || "Canvas fill failed", "error");
     // Show the original image instead of a black image
-    if (window._aiExtendOriginalSrc && onExtended) {
+    if (window._aiExtendOriginalSrc && onFilled) {
       onExtended(window._aiExtendOriginalSrc);
     }
   } finally {
