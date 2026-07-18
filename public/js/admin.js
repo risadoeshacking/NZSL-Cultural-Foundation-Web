@@ -3545,7 +3545,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// --- AI Extend (Generative Fill via Cloudinary) ---
+// --- Image Resize via Cloudinary (standard c_fill — no AI/generative) ---
 function openAiExtendModal(file, onExtended) {
   if (!file || !file.type.startsWith("image/")) {
     showToast("Please select an image file first.", "error");
@@ -3572,9 +3572,9 @@ function openAiExtendModal(file, onExtended) {
       document.getElementById("modalContainer").innerHTML = `
         <div class="admin-modal-overlay" onclick="closeModal(event)">
           <div class="admin-modal" onclick="event.stopPropagation()" style="max-width:750px">
-            <h2>&#x2728; AI Extend Image</h2>
+            <h2>Resize Image</h2>
             <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:12px">
-              Original: ${origW} × ${origH}px — Choose a target aspect ratio and AI will fill the extra space with generated content.
+              Original: ${origW} × ${origH}px — Choose a target aspect ratio and max width. The image will be cropped to fit.
             </p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
               <div>
@@ -3582,7 +3582,7 @@ function openAiExtendModal(file, onExtended) {
                 <img src="${e.target.result}" style="width:100%;border-radius:8px;display:block;background:#111;max-height:280px;object-fit:contain" />
               </div>
               <div>
-                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em">Extended (AI Fill)</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em">Preview</div>
                 <div id="aiExtendPreview" style="
                   width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;
                   background:#111;display:flex;align-items:center;justify-content:center;
@@ -3607,7 +3607,7 @@ function openAiExtendModal(file, onExtended) {
             <div class="admin-form-actions">
               <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
               <button type="button" class="btn btn-primary btn-sm" id="aiExtendBtn" onclick="applyAiExtend('${file.name}', ${origW}, ${origH}, '${file.type}', window._aiExtendOnExtended)">
-                &#x2728; Generate with AI
+                Resize Image
               </button>
             </div>
           </div>
@@ -3689,11 +3689,11 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
     // Check if it's a Cloudinary URL
     if (!originalUrl || !originalUrl.includes("res.cloudinary.com")) {
       throw new Error(
-        "AI extend requires Cloudinary storage. Please configure CLOUDINARY_URL on the server."
+        "Resize requires Cloudinary storage. Please configure CLOUDINARY_URL on the server."
       );
     }
 
-    // Build Cloudinary generative fill URL
+    // Build Cloudinary resize URL (standard transformations only — no AI/generative)
     // Insert transformations after /upload/
     const marker = "/upload/";
     const markerIdx = originalUrl.indexOf(marker);
@@ -3712,58 +3712,17 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
     const publicId = publicIdWithExt.replace(/\.[^.]+$/, "");
     const ext = (publicIdWithExt.split(".").pop() || "jpg").toLowerCase();
 
-    const genFillUrl = `${baseUrl}c_pad,w_${targetW},h_${targetH},g_gen_fill/${publicId}.${ext}`;
-    const fallbackUrl = `${baseUrl}c_pad,w_${targetW},h_${targetH},g_auto/${publicId}.${ext}`;
-
-    // Helper: test if a Cloudinary URL loads successfully
-    function testCloudinaryUrl(url, timeoutMs) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => resolve(url);
-        img.onerror = () => reject(new Error("load_error"));
-        img.src = url;
-        setTimeout(() => reject(new Error("timeout")), timeoutMs || 15000);
-      });
-    }
-
-    let finalUrl;
-    try {
-      // Try generative fill first
-      finalUrl = await testCloudinaryUrl(genFillUrl, 15000);
-    } catch (e1) {
-      // Generative fill failed — try fallback (auto-gravity fill)
-      try {
-        finalUrl = await testCloudinaryUrl(fallbackUrl, 15000);
-        showToast(
-          "Generative fill unavailable — used auto-fill instead. Image resized to " +
-            targetW +
-            "×" +
-            targetH +
-            "px.",
-          "success"
-        );
-        closeModal();
-        onExtended(finalUrl);
-        return;
-      } catch (e2) {
-        // Both failed
-        throw new Error(
-          "Cloudinary could not process this image. " +
-            "Generative fill (g_gen_fill) returned an error, and the auto-fill " +
-            "fallback also failed. Please try a different image or check your " +
-            "Cloudinary plan settings."
-        );
-      }
-    }
+    // Standard Cloudinary transformations: fill crop, auto format, auto quality.
+    // No g_gen_fill (requires paid AI plan) — uses c_fill with auto gravity instead.
+    const finalUrl = `${baseUrl}c_fill,w_${targetW},h_${targetH},f_auto,q_auto/${publicId}.${ext}`;
 
     closeModal();
     onExtended(finalUrl);
-    showToast(`AI extended to ${targetW}×${targetH}px`, "success");
+    showToast(`Resized to ${targetW}×${targetH}px`, "success");
   } catch (err) {
-    showToast(err.message || "AI extend failed", "error");
+    showToast(err.message || "Resize failed", "error");
   } finally {
-    if (btn) setBtnLoading(btn, false, "✨ Generate with AI");
+    if (btn) setBtnLoading(btn, false, "Resize Image");
   }
 }
 
