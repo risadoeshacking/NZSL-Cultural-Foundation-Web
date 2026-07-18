@@ -3545,7 +3545,31 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// --- AI Extend (Generative Fill via Cloudinary) ---
+// --- AI Canvas Fill (fit original image inside target canvas, AI fills empty areas) ---
+//
+// Presets: ratio-based or fixed pixel dimensions.
+// For ratio presets the "Max Width" input determines the output size.
+// For fixed presets the dimensions are locked.
+// "Custom" lets the user type any width × height.
+const AI_EXTEND_PRESETS = [
+  // Ratio-based (output size = maxW × maxW/ratio)
+  { label: "1:1 (Square)", ratio: 1 },
+  { label: "4:5 (Instagram Portrait)", ratio: 4 / 5 },
+  { label: "3:4", ratio: 3 / 4 },
+  { label: "4:3 (Landscape)", ratio: 4 / 3 },
+  { label: "16:9 (Widescreen)", ratio: 16 / 9 },
+  { label: "9:16 (Portrait)", ratio: 9 / 16 },
+  { label: "21:9 (Ultra-wide)", ratio: 21 / 9 },
+  // Fixed pixel sizes
+  { label: "Banner (1600 × 600)", fixedW: 1600, fixedH: 600 },
+  { label: "Facebook Cover (820 × 312)", fixedW: 820, fixedH: 312 },
+  { label: "YouTube Thumbnail (1280 × 720)", fixedW: 1280, fixedH: 720 },
+  { label: "LinkedIn Banner (1584 × 396)", fixedW: 1584, fixedH: 396 },
+  { label: "X / Twitter Header (1500 × 500)", fixedW: 1500, fixedH: 500 },
+  // Custom (last entry — index used to detect custom mode)
+  { label: "Custom (width × height)", custom: true },
+];
+
 function openAiExtendModal(file, onExtended) {
   if (!file || !file.type.startsWith("image/")) {
     showToast("Please select an image file first.", "error");
@@ -3557,24 +3581,17 @@ function openAiExtendModal(file, onExtended) {
     img.onload = () => {
       const origW = img.naturalWidth;
       const origH = img.naturalHeight;
-      const aspectPresets = [
-        { label: "16:9 (Landscape)", ratio: 16 / 9 },
-        { label: "21:9 (Ultra-wide)", ratio: 21 / 9 },
-        { label: "4:3 (Landscape)", ratio: 4 / 3 },
-        { label: "1:1 (Square)", ratio: 1 },
-        { label: "3:4 (Portrait)", ratio: 3 / 4 },
-        { label: "9:16 (Portrait)", ratio: 9 / 16 },
-      ];
-      const presetOptions = aspectPresets
-        .map((p, i) => `<option value="${i}">${p.label}</option>`)
-        .join("");
+      const presetOptions = AI_EXTEND_PRESETS.map(
+        (p, i) => `<option value="${i}">${p.label}</option>`
+      ).join("");
 
       document.getElementById("modalContainer").innerHTML = `
         <div class="admin-modal-overlay" onclick="closeModal(event)">
-          <div class="admin-modal" onclick="event.stopPropagation()" style="max-width:750px">
-            <h2>&#x2728; AI Extend Image</h2>
+          <div class="admin-modal" onclick="event.stopPropagation()" style="max-width:780px">
+            <h2>&#x2728; AI Canvas Fill</h2>
             <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:12px">
-              Original: ${origW} × ${origH}px — Choose a target aspect ratio and AI will fill the extra space.
+              Your image (${origW} × ${origH}px) will be <strong>fitted inside</strong> the target canvas — never cropped or stretched.
+              AI will generate realistic content only in the empty areas around the image.
             </p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
               <div>
@@ -3582,26 +3599,35 @@ function openAiExtendModal(file, onExtended) {
                 <img src="${e.target.result}" style="width:100%;border-radius:8px;display:block;background:#111;max-height:280px;object-fit:contain" />
               </div>
               <div>
-                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em">Extended (AI Fill)</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em">Canvas Preview</div>
                 <div id="aiExtendPreview" style="
                   width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;
-                  background:#111;display:flex;align-items:center;justify-content:center;
+                  background:#1a1a1a;display:flex;align-items:center;justify-content:center;
                   border:1px solid var(--border);position:relative;
                 ">
-                  <div style="color:var(--text-muted);font-size:0.8rem" id="aiExtendPlaceholder">Select a ratio below</div>
+                  <div style="color:var(--text-muted);font-size:0.8rem" id="aiExtendPlaceholder">Select a target below</div>
                 </div>
+                <div id="aiExtendDimensions" style="font-size:0.7rem;color:var(--text-muted);margin-top:4px;text-align:center"></div>
               </div>
             </div>
             <div class="admin-form-row" style="margin-top:16px;align-items:end">
-              <div class="admin-form-group" style="flex:2">
-                <label>Target Aspect Ratio</label>
-                <select id="aiExtendPreset" style="width:100%;font-size:0.85rem;padding:6px 8px" onchange="previewAiExtend('${e.target.result}', ${origW}, ${origH})">
+              <div class="admin-form-group" style="flex:3">
+                <label>Target Canvas</label>
+                <select id="aiExtendPreset" style="width:100%;font-size:0.85rem;padding:6px 8px" onchange="onAiExtendPresetChange('${e.target.result}', ${origW}, ${origH})">
                   ${presetOptions}
                 </select>
               </div>
-              <div class="admin-form-group" style="flex:1">
-                <label>Max Width (px)</label>
-                <input type="number" id="aiExtendMaxW" value="1920" min="200" max="4096" style="font-size:0.85rem;padding:6px 8px;width:100%" />
+              <div class="admin-form-group" style="flex:1" id="aiExtendMaxWGroup">
+                <label>Max Width</label>
+                <input type="number" id="aiExtendMaxW" value="1920" min="200" max="4096" style="font-size:0.85rem;padding:6px 8px;width:100%" oninput="onAiExtendPresetChange('${e.target.result}', ${origW}, ${origH})" />
+              </div>
+              <div class="admin-form-group" style="flex:1;display:none" id="aiExtendCustomWGroup">
+                <label>Width</label>
+                <input type="number" id="aiExtendCustomW" value="1920" min="200" max="4096" style="font-size:0.85rem;padding:6px 8px;width:100%" oninput="onAiExtendPresetChange('${e.target.result}', ${origW}, ${origH})" />
+              </div>
+              <div class="admin-form-group" style="flex:1;display:none" id="aiExtendCustomHGroup">
+                <label>Height</label>
+                <input type="number" id="aiExtendCustomH" value="600" min="200" max="4096" style="font-size:0.85rem;padding:6px 8px;width:100%" oninput="onAiExtendPresetChange('${e.target.result}', ${origW}, ${origH})" />
               </div>
             </div>
             <div class="admin-form-actions">
@@ -3619,34 +3645,66 @@ function openAiExtendModal(file, onExtended) {
       window._aiExtendOnExtended = onExtended;
       window._aiExtendOriginalSrc = e.target.result;
 
-      // Auto-select first preset
-      previewAiExtend(e.target.result, origW, origH);
+      // Auto-select first preset and render preview
+      onAiExtendPresetChange(e.target.result, origW, origH);
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
 
-function previewAiExtend(origSrc, origW, origH) {
-  const presetIdx =
-    parseInt(document.getElementById("aiExtendPreset").value) || 0;
-  const presets = [
-    { label: "16:9", ratio: 16 / 9 },
-    { label: "21:9", ratio: 21 / 9 },
-    { label: "4:3", ratio: 4 / 3 },
-    { label: "1:1", ratio: 1 },
-    { label: "3:4", ratio: 3 / 4 },
-    { label: "9:16", ratio: 9 / 16 },
-  ];
-  const preset = presets[presetIdx];
+/** Read the selected preset and compute targetW / targetH, then update the preview. */
+function onAiExtendPresetChange(origSrc, origW, origH) {
+  const idx = parseInt(document.getElementById("aiExtendPreset").value) || 0;
+  const preset = AI_EXTEND_PRESETS[idx];
+  const isCustom = !!preset.custom;
+  const isFixed = !!preset.fixedW;
+
+  // Show/hide the right inputs
+  document.getElementById("aiExtendMaxWGroup").style.display =
+    isCustom || isFixed ? "none" : "";
+  document.getElementById("aiExtendCustomWGroup").style.display = isCustom
+    ? ""
+    : "none";
+  document.getElementById("aiExtendCustomHGroup").style.display = isCustom
+    ? ""
+    : "none";
+
+  let targetW, targetH;
+  if (isCustom) {
+    targetW =
+      parseInt(document.getElementById("aiExtendCustomW").value) || 1920;
+    targetH = parseInt(document.getElementById("aiExtendCustomH").value) || 600;
+  } else if (isFixed) {
+    targetW = preset.fixedW;
+    targetH = preset.fixedH;
+  } else {
+    targetW = parseInt(document.getElementById("aiExtendMaxW").value) || 1920;
+    targetH = Math.round(targetW / preset.ratio);
+  }
+
+  // Show computed dimensions
+  const dimEl = document.getElementById("aiExtendDimensions");
+  if (dimEl) dimEl.textContent = `${targetW} × ${targetH}px`;
+
+  // Update preview aspect ratio and show the original image centered inside
   const preview = document.getElementById("aiExtendPreview");
   const placeholder = document.getElementById("aiExtendPlaceholder");
   if (!preview) return;
-  preview.style.aspectRatio = preset.ratio;
+  preview.style.aspectRatio = `${targetW} / ${targetH}`;
   if (origSrc) {
     if (placeholder) placeholder.remove();
-    preview.innerHTML = `<img src="${origSrc}" style="width:100%;height:100%;object-fit:contain;opacity:0.7;border:2px dashed var(--accent);border-radius:8px" />`;
+    // The preview uses object-fit:contain so the image is shown fitted inside
+    // the canvas — exactly what the final result will look like (minus AI fill).
+    preview.innerHTML = `<img src="${origSrc}" style="width:100%;height:100%;object-fit:contain;border:2px dashed var(--accent);border-radius:8px" />`;
   }
+}
+
+/**
+ * @deprecated Use onAiExtendPresetChange instead. Kept for any stale inline handlers.
+ */
+function previewAiExtend(origSrc, origW, origH) {
+  onAiExtendPresetChange(origSrc, origW, origH);
 }
 
 /**
@@ -3700,21 +3758,26 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
   setBtnLoading(btn, true);
 
   try {
+    // Compute target dimensions from the selected preset
     const presetIdx =
       parseInt(document.getElementById("aiExtendPreset").value) || 0;
-    const maxW =
-      parseInt(document.getElementById("aiExtendMaxW").value) || 1920;
-    const presets = [
-      { ratio: 16 / 9 },
-      { ratio: 21 / 9 },
-      { ratio: 4 / 3 },
-      { ratio: 1 },
-      { ratio: 3 / 4 },
-      { ratio: 9 / 16 },
-    ];
-    const preset = presets[presetIdx];
-    const targetW = maxW;
-    const targetH = Math.round(targetW / preset.ratio);
+    const preset = AI_EXTEND_PRESETS[presetIdx];
+    let targetW, targetH;
+
+    if (preset.custom) {
+      targetW =
+        parseInt(document.getElementById("aiExtendCustomW").value) || 1920;
+      targetH =
+        parseInt(document.getElementById("aiExtendCustomH").value) || 600;
+    } else if (preset.fixedW) {
+      targetW = preset.fixedW;
+      targetH = preset.fixedH;
+    } else {
+      targetW = parseInt(document.getElementById("aiExtendMaxW").value) || 1920;
+      targetH = Math.round(targetW / preset.ratio);
+    }
+
+    console.log("[AI Canvas Fill] Target:", targetW, "x", targetH);
 
     // Step 1: Upload the original file
     const fd = new FormData();
@@ -3730,12 +3793,12 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
     }
     const uploadData = await uploadRes.json();
     const originalUrl = uploadData.url;
-    console.log("[AI Extend] Upload response URL:", originalUrl);
+    console.log("[AI Canvas Fill] Upload URL:", originalUrl);
 
     // Step 2: Validate it's a Cloudinary URL
     if (!originalUrl || !originalUrl.includes("res.cloudinary.com")) {
       throw new Error(
-        "AI Extend requires Cloudinary storage. Please configure CLOUDINARY_URL on the server."
+        "AI Canvas Fill requires Cloudinary storage. Please configure CLOUDINARY_URL on the server."
       );
     }
 
@@ -3746,17 +3809,18 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
         "Could not extract Cloudinary public_id from URL: " + originalUrl
       );
     }
-    console.log("[AI Extend] Extracted public_id:", publicId);
-    console.log("[AI Extend] Target dimensions:", targetW, "x", targetH);
+    console.log("[AI Canvas Fill] public_id:", publicId);
 
-    // Step 4: Build transformation URLs with fallback chain
+    // Step 4: Build transformation URLs with fallback chain.
+    // c_pad creates a canvas of targetW×targetH, fits the image inside (centered),
+    // and leaves empty space. g_gen_fill fills that space with AI content.
     const marker = "/upload/";
     const markerIdx = originalUrl.indexOf(marker);
     const baseUrl = originalUrl.substring(0, markerIdx + marker.length);
 
     const transforms = [
       {
-        name: "generative fill (g_gen_fill)",
+        name: "AI generative fill (g_gen_fill)",
         path: `c_pad,w_${targetW},h_${targetH},g_gen_fill/${publicId}`,
       },
       {
@@ -3764,8 +3828,8 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
         path: `c_pad,w_${targetW},h_${targetH},g_auto/${publicId}`,
       },
       {
-        name: "standard fill crop (c_fill)",
-        path: `c_fill,w_${targetW},h_${targetH},f_auto,q_auto/${publicId}`,
+        name: "center-padded (c_pad + white bg)",
+        path: `c_pad,w_${targetW},h_${targetH},b_white/${publicId}`,
       },
     ];
 
@@ -3774,13 +3838,13 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
 
     for (const t of transforms) {
       const testUrl = `${baseUrl}${t.path}.jpg`;
-      console.log(`[AI Extend] Trying ${t.name}:`, testUrl);
+      console.log(`[AI Canvas Fill] Trying ${t.name}:`, testUrl);
       try {
-        finalUrl = await testCloudinaryUrl(testUrl, 20000);
+        finalUrl = await testCloudinaryUrl(testUrl, 25000);
         usedTransform = t.name;
         break;
       } catch (e) {
-        console.warn(`[AI Extend] ${t.name} failed:`, e.message);
+        console.warn(`[AI Canvas Fill] ${t.name} failed:`, e.message);
       }
     }
 
@@ -3790,16 +3854,16 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
       );
     }
 
-    // Step 5: Show success with which transform was used
+    // Step 5: Show success
     closeModal();
     onExtended(finalUrl);
     showToast(
-      `AI extended to ${targetW}×${targetH}px (via ${usedTransform})`,
+      `Canvas filled to ${targetW}×${targetH}px (via ${usedTransform})`,
       "success"
     );
   } catch (err) {
-    console.error("[AI Extend] Error:", err);
-    showToast(err.message || "AI extend failed", "error");
+    console.error("[AI Canvas Fill] Error:", err);
+    showToast(err.message || "AI canvas fill failed", "error");
     // Show the original image instead of a black image
     if (window._aiExtendOriginalSrc && onExtended) {
       onExtended(window._aiExtendOriginalSrc);
