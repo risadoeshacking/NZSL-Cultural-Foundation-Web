@@ -3545,7 +3545,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// --- Image Resize via Cloudinary (standard c_fill — no AI/generative) ---
+// --- AI Extend (Generative Fill via Cloudinary) ---
 function openAiExtendModal(file, onExtended) {
   if (!file || !file.type.startsWith("image/")) {
     showToast("Please select an image file first.", "error");
@@ -3572,9 +3572,9 @@ function openAiExtendModal(file, onExtended) {
       document.getElementById("modalContainer").innerHTML = `
         <div class="admin-modal-overlay" onclick="closeModal(event)">
           <div class="admin-modal" onclick="event.stopPropagation()" style="max-width:750px">
-            <h2>Resize Image</h2>
+            <h2>&#x2728; AI Extend Image</h2>
             <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:12px">
-              Original: ${origW} × ${origH}px — Choose a target aspect ratio and max width. The image will be cropped to fit.
+              Original: ${origW} × ${origH}px — Choose a target aspect ratio and AI will fill the extra space.
             </p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
               <div>
@@ -3582,7 +3582,7 @@ function openAiExtendModal(file, onExtended) {
                 <img src="${e.target.result}" style="width:100%;border-radius:8px;display:block;background:#111;max-height:280px;object-fit:contain" />
               </div>
               <div>
-                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em">Preview</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em">Extended (AI Fill)</div>
                 <div id="aiExtendPreview" style="
                   width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;
                   background:#111;display:flex;align-items:center;justify-content:center;
@@ -3607,7 +3607,7 @@ function openAiExtendModal(file, onExtended) {
             <div class="admin-form-actions">
               <button type="button" class="admin-btn" onclick="closeModal()">Cancel</button>
               <button type="button" class="btn btn-primary btn-sm" id="aiExtendBtn" onclick="applyAiExtend('${file.name}', ${origW}, ${origH}, '${file.type}', window._aiExtendOnExtended)">
-                Resize Image
+                &#x2728; Generate with AI
               </button>
             </div>
           </div>
@@ -3649,6 +3649,51 @@ function previewAiExtend(origSrc, origW, origH) {
   }
 }
 
+/**
+ * Extract the full Cloudinary public_id from a Cloudinary URL.
+ * The public_id includes the folder path but NOT the version prefix or extension.
+ *
+ * Example URL: https://res.cloudinary.com/demo/image/upload/v1234/nzsl/settings/abc.jpg
+ * Returns:     nzsl/settings/abc
+ *
+ * BUG FIX: Previous code only took the last path segment (abc), losing the
+ * folder prefix (nzsl/settings/). This caused every transformation URL to 404.
+ */
+function extractCloudinaryPublicId(url) {
+  const marker = "/upload/";
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  const path = url.substring(idx + marker.length);
+  // Remove version prefix (v1234567890/)
+  const withoutVersion = path.replace(/^v\d+\//, "");
+  // Remove extension
+  return withoutVersion.replace(/\.[^.]+$/, "");
+}
+
+/**
+ * Test if a Cloudinary URL loads successfully by attempting to load it as an image.
+ * Returns the URL on success, throws on failure.
+ */
+function testCloudinaryUrl(url, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      console.log("[AI Extend] Image loaded OK:", url);
+      resolve(url);
+    };
+    img.onerror = () => {
+      console.error("[AI Extend] Image failed to load:", url);
+      reject(new Error("load_error"));
+    };
+    img.src = url;
+    setTimeout(() => {
+      console.error("[AI Extend] Timeout loading:", url);
+      reject(new Error("timeout"));
+    }, timeoutMs || 20000);
+  });
+}
+
 async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
   const btn = document.getElementById("aiExtendBtn");
   if (!btn) return;
@@ -3671,7 +3716,7 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
     const targetW = maxW;
     const targetH = Math.round(targetW / preset.ratio);
 
-    // Upload the original file first
+    // Step 1: Upload the original file
     const fd = new FormData();
     fd.append("banner", window._aiExtendFile);
     const uploadRes = await fetch(`${API_BASE}/settings/admin/hero-banner`, {
@@ -3684,45 +3729,83 @@ async function applyAiExtend(fileName, origW, origH, fileType, onExtended) {
       throw new Error(errData.error || "Upload failed");
     }
     const uploadData = await uploadRes.json();
-    let originalUrl = uploadData.url;
+    const originalUrl = uploadData.url;
+    console.log("[AI Extend] Upload response URL:", originalUrl);
 
-    // Check if it's a Cloudinary URL
+    // Step 2: Validate it's a Cloudinary URL
     if (!originalUrl || !originalUrl.includes("res.cloudinary.com")) {
       throw new Error(
-        "Resize requires Cloudinary storage. Please configure CLOUDINARY_URL on the server."
+        "AI Extend requires Cloudinary storage. Please configure CLOUDINARY_URL on the server."
       );
     }
 
-    // Build Cloudinary resize URL (standard transformations only — no AI/generative)
-    // Insert transformations after /upload/
+    // Step 3: Extract the full public_id (including folder path)
+    const publicId = extractCloudinaryPublicId(originalUrl);
+    if (!publicId) {
+      throw new Error(
+        "Could not extract Cloudinary public_id from URL: " + originalUrl
+      );
+    }
+    console.log("[AI Extend] Extracted public_id:", publicId);
+    console.log("[AI Extend] Target dimensions:", targetW, "x", targetH);
+
+    // Step 4: Build transformation URLs with fallback chain
     const marker = "/upload/";
     const markerIdx = originalUrl.indexOf(marker);
-    if (markerIdx === -1) throw new Error("Invalid image URL");
-
     const baseUrl = originalUrl.substring(0, markerIdx + marker.length);
-    const imagePath = originalUrl.substring(markerIdx + marker.length);
 
-    // Some Cloudinary URLs may already include transformations (path segments
-    // after /upload/ that look like c_fill,w_...,g_...), which breaks our
-    // naive public_id parsing. Strip everything before the final public_id.
-    const pathParts = imagePath.split("/").filter(Boolean);
-    const publicIdWithExt = pathParts[pathParts.length - 1] || "";
+    const transforms = [
+      {
+        name: "generative fill (g_gen_fill)",
+        path: `c_pad,w_${targetW},h_${targetH},g_gen_fill/${publicId}`,
+      },
+      {
+        name: "auto gravity fill (g_auto)",
+        path: `c_pad,w_${targetW},h_${targetH},g_auto/${publicId}`,
+      },
+      {
+        name: "standard fill crop (c_fill)",
+        path: `c_fill,w_${targetW},h_${targetH},f_auto,q_auto/${publicId}`,
+      },
+    ];
 
-    // Remove extension
-    const publicId = publicIdWithExt.replace(/\.[^.]+$/, "");
-    const ext = (publicIdWithExt.split(".").pop() || "jpg").toLowerCase();
+    let finalUrl = null;
+    let usedTransform = null;
 
-    // Standard Cloudinary transformations: fill crop, auto format, auto quality.
-    // No g_gen_fill (requires paid AI plan) — uses c_fill with auto gravity instead.
-    const finalUrl = `${baseUrl}c_fill,w_${targetW},h_${targetH},f_auto,q_auto/${publicId}.${ext}`;
+    for (const t of transforms) {
+      const testUrl = `${baseUrl}${t.path}.jpg`;
+      console.log(`[AI Extend] Trying ${t.name}:`, testUrl);
+      try {
+        finalUrl = await testCloudinaryUrl(testUrl, 20000);
+        usedTransform = t.name;
+        break;
+      } catch (e) {
+        console.warn(`[AI Extend] ${t.name} failed:`, e.message);
+      }
+    }
 
+    if (!finalUrl) {
+      throw new Error(
+        "All image transforms failed. Please check your Cloudinary account settings and try a different image."
+      );
+    }
+
+    // Step 5: Show success with which transform was used
     closeModal();
     onExtended(finalUrl);
-    showToast(`Resized to ${targetW}×${targetH}px`, "success");
+    showToast(
+      `AI extended to ${targetW}×${targetH}px (via ${usedTransform})`,
+      "success"
+    );
   } catch (err) {
-    showToast(err.message || "Resize failed", "error");
+    console.error("[AI Extend] Error:", err);
+    showToast(err.message || "AI extend failed", "error");
+    // Show the original image instead of a black image
+    if (window._aiExtendOriginalSrc && onExtended) {
+      onExtended(window._aiExtendOriginalSrc);
+    }
   } finally {
-    if (btn) setBtnLoading(btn, false, "Resize Image");
+    if (btn) setBtnLoading(btn, false, "\u2728 Generate with AI");
   }
 }
 
